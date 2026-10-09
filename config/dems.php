@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'institution' => env('INSTITUTION_NAME', 'Your Institution'),
+    'institution' => env('INSTITUTION_NAME', 'Cape Peninsula University of Technology'),
 
     // Logo printed at the top of the official moderation report (set DEMS_LOGO= to disable).
     'logo' => env('DEMS_LOGO', 'resources/branding/cput-logo.jpg'),
