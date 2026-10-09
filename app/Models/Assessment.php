@@ -75,6 +75,37 @@ class Assessment extends Model
     }
 
     // ── access control ──────────────────────────────────────────────────────
+    /** Pre-moderation must be finished by this date (assessment date minus the configured days). */
+    public function preDue(): ?\Carbon\CarbonImmutable
+    {
+        return $this->assessment_date ? \Carbon\CarbonImmutable::parse($this->assessment_date)->subDays((int) config('dems.pre_moderation_days'))->startOfDay() : null;
+    }
+
+    /** Post-moderation must be finished by this date (assessment date plus the configured days). */
+    public function postDue(): ?\Carbon\CarbonImmutable
+    {
+        return $this->assessment_date ? \Carbon\CarbonImmutable::parse($this->assessment_date)->addDays((int) config('dems.post_moderation_days'))->startOfDay() : null;
+    }
+
+    /**
+     * The deadline that applies at the current stage, or null (no date / finished).
+     *
+     * @return array{phase: string, due: \Carbon\CarbonImmutable, days: int, state: string}|null  days < 0 means overdue
+     */
+    public function deadline(): ?array
+    {
+        $pre = in_array($this->status, [AssessmentStatus::Draft, AssessmentStatus::RevisionRequested, AssessmentStatus::PendingPreModeration], true);
+        $post = in_array($this->status, [AssessmentStatus::ReadyForPostModeration, AssessmentStatus::PendingFinalModeration, AssessmentStatus::PendingExternalModeration, AssessmentStatus::PendingSection3Signoff], true);
+        $due = $pre ? $this->preDue() : ($post ? $this->postDue() : null);
+        if (! $due) {
+            return null;
+        }
+        $days = (int) now('UTC')->startOfDay()->diffInDays($due, false);
+
+        return ['phase' => $pre ? 'Pre-moderation' : 'Post-moderation', 'due' => $due, 'days' => $days,
+            'state' => $days < 0 ? 'overdue' : ($days <= (int) config('dems.deadline_warn_days') ? 'soon' : 'ok')];
+    }
+
     public function scopeVisibleTo(Builder $q, User $u): Builder
     {
         return $q->where(function (Builder $w) use ($u) {

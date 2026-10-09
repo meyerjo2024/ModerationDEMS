@@ -39,6 +39,13 @@ class LifecycleTest extends TestCase
         $this->external = $mk('Xena External', Role::ExternalModerator);
         $this->hod = $mk('Hana Head', Role::Hod);
         $this->subject = Subject::create(['code' => 'CSC101', 'name' => 'Intro', 'hod_id' => $this->hod->id]);
+        $this->responsible($this->examiner, $this->subject, Role::Examiner);
+        $this->responsible($this->internal, $this->subject, Role::InternalModerator);
+    }
+
+    private function responsible(User $u, Subject $s, Role $r): void
+    {
+        \Illuminate\Support\Facades\DB::table('subject_user')->insertOrIgnore(['user_id' => $u->id, 'subject_id' => $s->id, 'role' => $r->value]);
     }
 
     // ── payload helpers ──────────────────────────────────────────────────────
@@ -336,6 +343,8 @@ class LifecycleTest extends TestCase
         $this->examiner->update(['extra_roles' => 'HOD']);
         $this->assertSame('Examiner · Head of Department', $this->examiner->fresh()->roleLabels());
         $subject = Subject::create(['code' => 'DUAL1', 'name' => 'Dual', 'department' => 'X', 'hod_id' => $this->examiner->id]);
+        $this->responsible($this->examiner, $subject, Role::Examiner);
+        $this->responsible($this->internal, $subject, Role::InternalModerator);
         $a = $this->newAssessment(true, $subject);
         $this->submitSection1($a);
         $this->approveGate1($a);
@@ -393,6 +402,53 @@ class LifecycleTest extends TestCase
         $this->as($this->examiner)->get("/assessments/{$a->id}")->assertOk()->assertSee('Comments on your documents');
     }
 
+    public function test_subject_import_my_subjects_and_responsibility_rules(): void
+    {
+        $this->as($this->hod);
+        $r = app(\App\Services\SubjectImporter::class)->import(database_path('data/Subjects.xlsx'), $this->hod);
+        $this->assertGreaterThan(70, $r['created']);
+        $this->assertSame('BEMC ECP, BEMC1', Subject::where('code', 'EMR101S')->value('qualification')); // offered in two qualifications, one subject
+        $again = app(\App\Services\SubjectImporter::class)->import(database_path('data/Subjects.xlsx'), $this->hod);
+        $this->assertSame(0, $again['created']);
+
+        $phe = Subject::where('code', 'PHE261S')->firstOrFail();
+        $other = Subject::where('code', 'PHE262S')->firstOrFail();
+        $this->as($this->examiner)->put('/my-subjects', ['subjects' => ['EXAMINER' => [$phe->id]]])->assertRedirect();
+        $this->assertTrue($this->examiner->isResponsibleFor($phe, Role::Examiner));
+        $this->as($this->examiner)->get('/assessments/create')->assertOk()->assertSee('PHE261S')->assertDontSee('PHE262S');
+        // only subjects you are responsible for
+        $this->as($this->examiner)->post('/assessments', ['subject_id' => $other->id, 'number' => 'T1', 'internal_moderator_id' => $this->internal->id])->assertSessionHas('error');
+        // moderators who registered for the subject are the only valid choice
+        $this->responsible($this->internal, $phe, Role::InternalModerator);
+        $second = User::create(['name' => 'Other Mod', 'email' => 'm2@t.test', 'role' => Role::InternalModerator, 'password' => self::PW]);
+        $this->as($this->examiner)->post('/assessments', ['subject_id' => $phe->id, 'number' => 'T1', 'internal_moderator_id' => $second->id])->assertSessionHas('error');
+        $this->as($this->examiner)->post('/assessments', ['subject_id' => $phe->id, 'number' => 'T1', 'internal_moderator_id' => $this->internal->id, 'assessment_date' => '2026-11-20'])->assertRedirect();
+        $this->as($this->external)->put('/my-subjects', ['subjects' => []])->assertForbidden();
+    }
+
+    public function test_deadlines_follow_the_assessment_date_and_remind_people(): void
+    {
+        $a = $this->newAssessment();
+        $a->update(['assessment_date' => now('UTC')->addDays(20)->toDateString()]);
+        $d = $a->fresh()->deadline();
+        $this->assertSame('Pre-moderation', $d['phase']);
+        $this->assertSame(6, $d['days']); // 20 - 14
+        $this->assertSame('ok', $d['state']);
+        $a->update(['assessment_date' => now('UTC')->addDays(15)->toDateString()]);
+        $this->assertSame('soon', $a->fresh()->deadline()['state']); // due in 1 day
+        $this->assertSame(1, app(\App\Services\DeadlineReminders::class)->run());
+        $this->assertSame(0, app(\App\Services\DeadlineReminders::class)->run()); // once a day
+        $this->assertStringContainsString('Reminder', \App\Models\Notification::where('user_id', $this->examiner->id)->latest('id')->value('message'));
+        // after the assessment the post-moderation window applies; overdue also alerts the HOD
+        $a->update(['assessment_date' => now('UTC')->subDays(20)->toDateString(), 'status' => AssessmentStatus::PendingFinalModeration]);
+        $d = $a->fresh()->deadline();
+        $this->assertSame(['Post-moderation', 'overdue'], [$d['phase'], $d['state']]);
+        $this->assertSame(-6, $d['days']);
+        $this->assertSame(2, app(\App\Services\DeadlineReminders::class)->run()); // internal moderator + HOD
+        $this->as($this->internal)->get('/')->assertOk()->assertSee('overdue');
+        $this->as($this->internal)->get("/assessments/{$a->id}")->assertOk()->assertSee('Post-moderation by');
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');
@@ -425,6 +481,8 @@ class LifecycleTest extends TestCase
     public function test_class_list_xls_is_read_checked_and_saved(): void
     {
         $phe = Subject::create(['code' => 'PHE261S', 'name' => 'Pre-hospital care 2', 'hod_id' => $this->hod->id]);
+        $this->responsible($this->examiner, $phe, Role::Examiner);
+        $this->responsible($this->internal, $phe, Role::InternalModerator);
         $a = $this->newAssessment(false, $phe, 'Test 2');
         $this->submitSection1($a);
         $this->approveGate1($a);

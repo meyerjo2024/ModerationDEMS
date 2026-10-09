@@ -69,6 +69,8 @@ Troubleshooting table (wrong branch, payment prompt, password errors, Supabase c
 - **Signatures = pen drawing + password re-entry**, stored with a SHA-256 hash of what was attested, timestamp, IP and browser.
 - Row-locked state machine: a record cannot be advanced twice.
 - Statistics are **recomputed server-side** from the source marks; the browser never supplies them.
+- **Subjects and responsibilities:** the CPUT subject list (`database/data/Subjects.xlsx`, 75 subjects) is imported automatically on deploy (and from Admin → *Import subject list*). Examiners and internal moderators tick the subjects they are responsible for under **My subjects**; examiners can only start assessments for those, and internal moderators are offered per subject.
+- **Deadlines:** give an assessment its date and pre-moderation must be finished **14 days before** it and post-moderation **14 days after** it (`config/dems.php`). Cards and records show the due date (amber when ≤ 3 days, red when overdue) and people get daily in-app reminders.
 - Word (`.docx`) papers and memoranda are reviewed **in the browser**: moderators highlight passages and comment; the comments return to the examiner with the revision request. (Older `.doc` files are download-only.)
 - Hash-chained, append-only audit log per record (tamper-evident; the PDF shows the chain head).
 - Student marks are stored as anonymous numbers; the raw workbook is downloadable by the examiner only; external moderators see a record only once it reaches them.

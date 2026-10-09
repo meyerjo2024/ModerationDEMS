@@ -22,6 +22,7 @@
           <nav class="flex items-center gap-1 text-sm font-medium text-white/80">
             <a href="{{ route('dashboard') }}" class="{{ $link }}">Dashboard</a>
             @if ($u->hasRole(\App\Enums\Role::Examiner))<a href="{{ route('assessments.create') }}" class="{{ $link }}">New assessment</a>@endif
+            @if ($u->hasRole(\App\Enums\Role::Examiner, \App\Enums\Role::InternalModerator))<a href="{{ route('my-subjects') }}" class="{{ $link }}">My subjects</a>@endif
             @if ($u->hasRole(\App\Enums\Role::Hod))<a href="{{ route('admin') }}" class="{{ $link }}">Admin</a>@endif
           </nav>
         </div>

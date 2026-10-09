@@ -2,6 +2,13 @@
 
 How a record moves through Moderation DEMS, who can act at each step, and what the system records.
 
+## Subjects, responsibilities and deadlines
+
+- **Subject list:** `php artisan dems:import-subjects [file]` (also run by the seeder, and available as *Admin → Import subject list*). Columns: Qualification, Subject Code, Subject Name. A code offered in several qualifications is one subject listing all of them.
+- **My subjects:** examiners and internal moderators choose their subjects (`subject_user`, one set per role). An examiner can only create an assessment for a chosen subject; if any internal moderators registered for the subject, one of them must be picked (otherwise anyone may be).
+- **Assessment date:** entered when creating the assessment (or in Section 1). Pre-moderation (Section 1 through Gate 1) is due `assessment date − 14 days`; post-moderation (Section 2 through final sign-off) is due `assessment date + 14 days`. Deadlines are shown, never block work.
+- **Reminders:** `dems:deadlines` (scheduled daily, and also run the first time anyone opens the dashboard each day, since the free host has no scheduler) notifies whoever the record is waiting on when it is due within 3 days or overdue; the HOD is added once it is overdue. One reminder per person and record per day.
+
 ## Reviewing Word documents
 
 The reviewer's comments live in `document_comments` (quote + offset anchor, author, addressed flag). Only the assigned moderator can add or delete (their own) comments, and only while the record is with them; the examiner can mark comments addressed while the record is a draft or returned. Comments are kept when the examiner re-uploads (shown as *earlier version* and re-anchored by their quoted text). Conversion happens in the browser (mammoth.js, sanitised with DOMPurify); the original file is never modified.

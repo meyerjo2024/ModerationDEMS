@@ -2,11 +2,19 @@
 
 You are involved twice for every assessment you are assigned: **Gate 1** (before the assessment) and **Gate 2** (after marking).
 
+## Before you start: choose your subjects
+
+Open **My subjects** and tick the subjects you moderate. Examiners are then offered you when they create an assessment for those subjects. Pre-moderation is due 14 days before the assessment date and post-moderation 14 days after it; you are reminded in the app when a deadline is close or missed.
+
 ## Find your work
 
 ![Moderator dashboard](../screenshots/dashboard-moderator.png)
 
 Cards with **"Your turn"** are waiting for you. The bell shows new hand-overs. Open a card to start.
+
+## Before you start: choose your subjects
+
+Open **My subjects** and tick the subjects you moderate. Examiners are then offered you when they create an assessment for those subjects. Pre-moderation is due 14 days before the assessment date and post-moderation 14 days after it; you are reminded in the app when a deadline is close or missed.
 
 ## Gate 1 — Pre-moderation review
 
@@ -20,12 +28,20 @@ Cards with **"Your turn"** are waiting for you. The bell shows new hand-overs. O
 2. **Check Section 1.** The examiner's assessment details and the six question types with their weightings. For each type give a rating of **0 / 1 / 2** against its criterion (HEQF alignment, outcomes, cross-field outcomes, clarity of instructions, language, time allocation), then answer Section 1 Q1–3 (Yes/No + comments).
 3. **Decide:**
 
-### Request revision
+### Before you start: choose your subjects
+
+Open **My subjects** and tick the subjects you moderate. Examiners are then offered you when they create an assessment for those subjects. Pre-moderation is due 14 days before the assessment date and post-moderation 14 days after it; you are reminded in the app when a deadline is close or missed.
+
+## Request revision
 Click **Request revision**, write specific feedback (at least a few words) and send it. The examiner is notified and the status becomes **Revision Requested**.
 
 ![Request revision](../screenshots/gate1-request-revision.png)
 
-### Approve
+### Before you start: choose your subjects
+
+Open **My subjects** and tick the subjects you moderate. Examiners are then offered you when they create an assessment for those subjects. Pre-moderation is due 14 days before the assessment date and post-moderation 14 days after it; you are reminded in the app when a deadline is close or missed.
+
+## Approve
 1. Click **Approve…**.
 2. Optionally add comments.
 3. Tick **Consensus reached with the examiner**.
@@ -34,6 +50,10 @@ Click **Request revision**, write specific feedback (at least a few words) and s
 ![Approve](../screenshots/gate1-approve.png)
 
 The status becomes **Ready for Post-Moderation**.
+
+## Before you start: choose your subjects
+
+Open **My subjects** and tick the subjects you moderate. Examiners are then offered you when they create an assessment for those subjects. Pre-moderation is due 14 days before the assessment date and post-moderation 14 days after it; you are reminded in the app when a deadline is close or missed.
 
 ## Gate 2 — Final moderation
 
@@ -52,8 +72,16 @@ After the examiner submits results you are notified again.
 - If an **external moderator** is assigned, the record goes to them (**Pending External Moderation**).
 - Otherwise the moderation is **Completed**: the PDF report is created and archived immediately.
 
-### Return to examiner
+### Before you start: choose your subjects
+
+Open **My subjects** and tick the subjects you moderate. Examiners are then offered you when they create an assessment for those subjects. Pre-moderation is due 14 days before the assessment date and post-moderation 14 days after it; you are reminded in the app when a deadline is close or missed.
+
+## Return to examiner
 If something needs correcting, click **Return to examiner**, give feedback and send. The examiner fixes Section 2 and resubmits; you then review again.
+
+## Before you start: choose your subjects
+
+Open **My subjects** and tick the subjects you moderate. Examiners are then offered you when they create an assessment for those subjects. Pre-moderation is due 14 days before the assessment date and post-moderation 14 days after it; you are reminded in the app when a deadline is close or missed.
 
 ## Good to know
 

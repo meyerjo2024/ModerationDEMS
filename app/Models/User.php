@@ -41,6 +41,17 @@ class User extends Authenticatable
         return $q->where(fn ($w) => $w->where('role', $role->value)->orWhere('extra_roles', 'like', '%'.$role->value.'%'));
     }
 
+    /** Subjects this person chose to be responsible for, as examiner or internal moderator. */
+    public function subjects(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class, 'subject_user')->withPivot('role');
+    }
+
+    public function isResponsibleFor(Subject|int $subject, Role $as): bool
+    {
+        return $this->subjects()->where('subjects.id', $subject instanceof Subject ? $subject->id : $subject)->wherePivot('role', $as->value)->exists();
+    }
+
     public function unreadCount(): int
     {
         return Notification::where('user_id', $this->id)->where('read', false)->count();

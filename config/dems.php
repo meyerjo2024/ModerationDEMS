@@ -17,6 +17,11 @@ return [
 
     'max_marks_rows' => 20000,
 
+    // Moderation windows around the assessment date.
+    'pre_moderation_days' => 14,   // pre-moderation must be finished this many days BEFORE the assessment
+    'post_moderation_days' => 14,  // post-moderation must be finished this many days AFTER it
+    'deadline_warn_days' => 3,     // reminders start this many days before a due date
+
     'gates' => [
         ['key' => 'setup', 'title' => 'Pre-Assessment', 'sub' => 'Examiner · Section 1'],
         ['key' => 'gate1', 'title' => 'Gate 1', 'sub' => 'Internal pre-moderation'],
@@ -30,6 +35,8 @@ return [
         'ASSESSMENT_CREATED' => 'Assessment created',
         'SECTION1_SAVED' => 'Section 1 draft saved',
         'FILE_UPLOADED' => 'File uploaded',
+        'SUBJECTS_IMPORTED' => 'Subject list imported',
+        'SUBJECTS_CHOSEN' => 'Subjects chosen',
         'USER_ROLES_CHANGED' => 'User roles changed',
         'DOCUMENT_COMMENTED' => 'Comment added to a document',
         'SECTION1_SUBMITTED' => 'Section 1 signed & submitted',

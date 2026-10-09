@@ -2,6 +2,12 @@
 
 You own an assessment from the first draft to the final signed report. You act in **three places**: starting the assessment and Section 1 (Phase 1), fixing feedback, and recording results (Phase 3).
 
+## Before you start: choose your subjects
+
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+
+![My subjects](../screenshots/my-subjects.png)
+
 ## A. Start a new assessment
 
 1. Click **New assessment** (header or dashboard banner).
@@ -13,6 +19,12 @@ You own an assessment from the first draft to the final signed report. You act i
 4. Click **Continue**.
 
 > You cannot choose yourself as a moderator, and a subject cannot have two assessments with the same number.
+
+## Before you start: choose your subjects
+
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+
+![My subjects](../screenshots/my-subjects.png)
 
 ## B. Phase 1 — Section 1 (before the assessment)
 
@@ -27,11 +39,23 @@ The button stays disabled until the weightings total 100 %, both documents are a
 
 Status becomes **Pending Pre-Moderation Review** and the internal moderator is notified.
 
+## Before you start: choose your subjects
+
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+
+![My subjects](../screenshots/my-subjects.png)
+
 ## C. If a revision is requested
 
 ![Revision requested](../screenshots/examiner-revision-notice.png)
 
 The record returns to **Revision Requested** with the moderator's feedback at the top. Make the changes (edit rows, replace the paper or memo), sign again and resubmit. This can repeat as often as needed; the revision number shows in the header.
+
+## Before you start: choose your subjects
+
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+
+![My subjects](../screenshots/my-subjects.png)
 
 ## D. Phase 3 — Section 2 (after marking)
 
@@ -56,6 +80,12 @@ The app checks the file against your assessment and warns you (without blocking)
 > The numbers you see are a preview. When you sign, the system **recalculates them from your file**, so what the moderator sees is always consistent with your upload.
 > The workbook itself is only visible to you. Moderators see the statistics and your sample scripts, not student numbers.
 
+## Before you start: choose your subjects
+
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+
+![My subjects](../screenshots/my-subjects.png)
+
 ## E. If the record is returned
 
 If the moderator requests a revision at Gate 1, your Word documents appear with the moderator's highlighted comments. Make the changes, upload the revised files, and mark each comment as **addressed**.
@@ -64,11 +94,23 @@ If the moderator requests a revision at Gate 1, your Word documents appear with 
 
 A moderator can send the results back with feedback. The record returns to **Ready for Post-Moderation**; correct the marks or commentary and submit again. Moderators sign again afterwards.
 
+## Before you start: choose your subjects
+
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+
+![My subjects](../screenshots/my-subjects.png)
+
 ## F. After completion
 
 When all signatures are in, the record shows **Moderation complete** and you can download the signed PDF.
 
 ![Completed record](../screenshots/record-completed.png)
+
+## Before you start: choose your subjects
+
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+
+![My subjects](../screenshots/my-subjects.png)
 
 ## Tips
 

@@ -1,4 +1,10 @@
 @php $sigs = $a->signatures->groupBy(fn ($s) => $s->section->value)->map->last()->values(); $logs = $a->auditLogs->where('action', '!=', 'FILE_VIEWED'); @endphp
+<section class="card p-6"><p class="kicker mb-3">Key dates</p>
+  <dl class="space-y-2.5 text-sm">
+    <div class="flex justify-between gap-3"><dt class="text-slate-500 dark:text-zinc-400">Assessment</dt><dd class="font-medium">{{ $a->assessment_date ? \Carbon\Carbon::parse($a->assessment_date)->format('j M Y') : 'Not set' }}</dd></div>
+    <div class="flex justify-between gap-3"><dt class="text-slate-500 dark:text-zinc-400">Pre-moderation by</dt><dd class="font-medium">{{ $a->preDue()?->format('j M Y') ?? '—' }}</dd></div>
+    <div class="flex justify-between gap-3"><dt class="text-slate-500 dark:text-zinc-400">Post-moderation by</dt><dd class="font-medium">{{ $a->postDue()?->format('j M Y') ?? '—' }}</dd></div>
+  </dl></section>
 <section class="card p-6"><p class="kicker mb-3">People</p>
   <dl class="space-y-2.5 text-sm">
     @foreach ([['Examiner', $a->examiner->name], ['Internal moderator', $a->internalModerator->name], ['External moderator', $a->externalModerator?->name], ['Head of Department', $a->subject->hod->name]] as [$k, $v])

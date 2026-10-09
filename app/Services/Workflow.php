@@ -52,8 +52,19 @@ class Workflow
             throw new WorkflowException('The external moderator must be a different person.');
         }
         $subject = Subject::find($in['subject_id']) ?? throw new WorkflowException('Unknown subject.');
+        if (! $user->isResponsibleFor($subject, Role::Examiner)) {
+            throw new WorkflowException("Add {$subject->code} to My subjects first — you can only start assessments for subjects you are responsible for.");
+        }
+        if (! empty($in['assessment_date']) && ! strtotime((string) $in['assessment_date'])) {
+            throw new WorkflowException('Enter a valid assessment date.');
+        }
         $internal = User::where('id', $in['internal_moderator_id'])->withRole(Role::InternalModerator)->where('active', true)->first()
             ?? throw new WorkflowException('Choose a valid internal moderator.');
+        // when moderators have registered for this subject, the choice must be one of them
+        $registered = DB::table('subject_user')->where('subject_id', $subject->id)->where('role', Role::InternalModerator->value)->pluck('user_id');
+        if ($registered->isNotEmpty() && ! $registered->contains($internal->id)) {
+            throw new WorkflowException("{$internal->name} has not registered as a moderator for {$subject->code}. Choose one of the moderators responsible for it.");
+        }
         $external = $ext ? (User::where('id', $ext)->withRole(Role::ExternalModerator)->where('active', true)->first()
             ?? throw new WorkflowException('Choose a valid external moderator.')) : null;
         if (Assessment::where('subject_id', $subject->id)->where('number', $in['number'])->exists()) {
@@ -63,7 +74,7 @@ class Workflow
         return DB::transaction(function () use ($user, $subject, $internal, $external, $in, $meta) {
             $a = Assessment::create([
                 'subject_id' => $subject->id, 'number' => $in['number'], 'examiner_id' => $user->id,
-                'internal_moderator_id' => $internal->id, 'external_moderator_id' => $external?->id,
+                'internal_moderator_id' => $internal->id, 'external_moderator_id' => $external?->id, 'assessment_date' => ! empty($in['assessment_date']) ? $in['assessment_date'] : null,
                 'status' => S::Draft,
             ]);
             $this->audit->log('ASSESSMENT_CREATED', $a->id, $user->id, ['subject' => $subject->code, 'number' => $a->number], $meta['ip']);
@@ -78,7 +89,8 @@ class Workflow
     {
         $this->assertExaminer($user, $a);
         $this->expect($a, S::Draft, S::RevisionRequested);
-        $a->update(['s1_examiner' => ModerationForm::s1Examiner($s1)]);
+        $norm = ModerationForm::s1Examiner($s1);
+        $a->update(['s1_examiner' => $norm, 'assessment_date' => $norm['assessment_date'] ?: $a->assessment_date]);
     }
 
     public function upload(User $user, Assessment $a, AttachmentKind $kind, string $filename, string $bytes, array $meta): Attachment
@@ -126,7 +138,7 @@ class Workflow
         $hash = Hashing::content(['section' => 1, 'id' => $a->id, 'revision' => $revision, 'form' => $form, 'paper' => $paper->sha256, 'memo' => $memo->sha256]);
         DB::transaction(function () use ($a, $user, $form, $sig, $meta, $revision, $hash) {
             $a = $this->lock($a, S::Draft, S::RevisionRequested);
-            $a->update(['status' => S::PendingPreModeration, 's1_examiner' => $form, 'revision' => $revision]);
+            $a->update(['status' => S::PendingPreModeration, 's1_examiner' => $form, 'assessment_date' => $form['assessment_date'] ?: $a->assessment_date, 'revision' => $revision]);
             $this->signer->record($a, $user, SignatureSection::ExaminerSection1, $sig['image'], $hash, $meta);
             $this->audit->log('SECTION1_SUBMITTED', $a->id, $user->id, ['revision' => $revision, 'contentHash' => $hash], $meta['ip']);
             $this->notifier->inApp([$a->internal_moderator_id], $a, "{$a->title()} is ready for your pre-moderation review.");

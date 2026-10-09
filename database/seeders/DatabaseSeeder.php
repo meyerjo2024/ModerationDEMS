@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         if (strlen($password) < 10) {
             if (User::where('role', Role::Hod->value)->exists()) {
                 $this->command?->info('DEMS_SEED_PASSWORD not set — an HOD already exists, skipping seed.');
+                $this->importSubjects();
 
                 return;
             }
@@ -27,6 +28,8 @@ class DatabaseSeeder extends Seeder
 
         $hod = $this->user(env('DEMS_SEED_NAME', 'Head of Department'), $email, Role::Hod, $password, 'Administration');
         $this->command?->info("✔ HOD account ready: {$hod->email}");
+
+        $this->importSubjects();
 
         if (! config('dems.demo')) {
             return;
@@ -40,7 +43,26 @@ class DatabaseSeeder extends Seeder
         Subject::firstOrCreate(['code' => 'MAT101'], ['name' => 'Mathematics I', 'department' => 'Mathematics', 'hod_id' => $dual->id]);
         Subject::firstOrCreate(['code' => 'CSC101'], ['name' => 'Introduction to Programming', 'department' => 'Computer Science', 'hod_id' => $hod->id]);
         Subject::firstOrCreate(['code' => 'INF202'], ['name' => 'Information Systems II', 'department' => 'Computer Science', 'hod_id' => $hod->id]);
+        // demo examiner / moderator already take responsibility for a few subjects
+        foreach (['examiner@example.edu' => 'EXAMINER', 'moderator@example.edu' => 'INTERNAL_MODERATOR'] as $mail => $role) {
+            $uid = User::where('email', $mail)->value('id');
+            foreach (['CSC101', 'INF202', 'PHE261S', 'PHE262S', 'PHE263S'] as $code) {
+                if ($sid = Subject::where('code', $code)->value('id')) {
+                    \Illuminate\Support\Facades\DB::table('subject_user')->insertOrIgnore(['user_id' => $uid, 'subject_id' => $sid, 'role' => $role]);
+                }
+            }
+        }
         $this->command?->info('✔ Demo users and subjects ready (password = DEMS_SEED_PASSWORD).');
+    }
+
+    private function importSubjects(): void
+    {
+        $file = database_path('data/Subjects.xlsx');
+        $hod = User::withRole(Role::Hod)->where('active', true)->orderBy('id')->first();
+        if ($hod && is_file($file)) {
+            $r = app(\App\Services\SubjectImporter::class)->import($file, $hod);
+            $this->command?->info("✔ Subject list: {$r['created']} new, {$r['updated']} updated.");
+        }
     }
 
     private function user(string $name, string $email, Role $role, string $password, string $dept): User

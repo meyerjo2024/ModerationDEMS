@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentCommentController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\MySubjectsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\WorkflowController;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/', DashboardController::class)->name('dashboard');
 
+    Route::get('/my-subjects', [MySubjectsController::class, 'index'])->name('my-subjects');
+    Route::put('/my-subjects', [MySubjectsController::class, 'update'])->middleware('role:EXAMINER,INTERNAL_MODERATOR')->name('my-subjects.update');
     Route::get('/assessments/create', [AssessmentController::class, 'create'])->middleware('role:EXAMINER')->name('assessments.create');
     Route::post('/assessments', [AssessmentController::class, 'store'])->middleware('role:EXAMINER')->name('assessments.store');
     Route::get('/assessments/{assessment}', [AssessmentController::class, 'show'])->name('assessments.show');
@@ -59,6 +62,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('admin');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users');
         Route::patch('/users/{user}/roles', [AdminController::class, 'updateRoles'])->name('admin.roles');
+        Route::post('/subjects/import', [AdminController::class, 'importSubjects'])->name('admin.subjects.import');
         Route::post('/subjects', [AdminController::class, 'storeSubject'])->name('admin.subjects');
     });
 });

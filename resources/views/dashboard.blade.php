@@ -64,6 +64,7 @@ $tabs = ['ALL' => ['All', $items->count()], 'ACTION' => ['Needs my action', $act
           <span class="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b {{ $t['wash'] }} to-transparent"></span>
           <div class="relative flex items-start justify-between gap-3"><x-status-badge :status="$a->status" /><x-icon name="arrow-up-right" class="h-5 w-5 text-slate-300 transition group-hover:text-accent" /></div>
           <div class="relative mt-5"><p class="text-3xl font-semibold tracking-tight">{{ $a->subject->code }}</p><p class="mt-0.5 text-sm font-medium text-slate-700 dark:text-zinc-200">{{ $a->number }}</p><p class="truncate text-sm text-slate-500 dark:text-zinc-400">{{ $a->subject->name }}</p></div>
+          <div class="relative mt-3"><x-deadline :a="$a" /></div>
           @if ($a->pass_rate !== null)
             <div class="relative mt-4 flex gap-6 text-sm"><span><span class="kicker block">Pass rate</span><span class="font-semibold tabular-nums">{{ number_format($a->pass_rate, 1) }}%</span></span><span><span class="kicker block">Candidates</span><span class="font-semibold tabular-nums">{{ $a->candidate_count }}</span></span></div>
           @endif

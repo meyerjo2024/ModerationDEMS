@@ -59,6 +59,19 @@ class AdminController extends Controller
         return [$ordered[0], count($ordered) > 1 ? implode(',', array_slice($ordered, 1)) : null];
     }
 
+    public function importSubjects(Request $request, Audit $audit, \App\Services\SubjectImporter $importer)
+    {
+        $request->validate(['file' => ['required', 'file', 'max:5120', 'mimes:xlsx,xls,csv']]);
+        try {
+            $r = $importer->import($request->file('file')->getRealPath(), $request->user());
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Could not read that file: '.$e->getMessage());
+        }
+        $audit->log('SUBJECTS_IMPORTED', null, $request->user()->id, $r, $request->ip());
+
+        return back()->with('status', "Subjects imported: {$r['created']} new, {$r['updated']} updated, {$r['skipped']} unchanged.");
+    }
+
     public function storeSubject(Request $request, Audit $audit)
     {
         $d = $request->validate([

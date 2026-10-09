@@ -21,7 +21,7 @@ $stage = $st === $S::PendingExternalModeration ? 'external' : 'internal';
     <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200"><x-icon name="arrow-left" /> Dashboard</a>
     <div class="mt-3 flex flex-wrap items-start justify-between gap-4">
       <div><h1 class="text-3xl font-semibold sm:text-4xl">{{ $a->title() }}</h1><p class="mt-1 text-slate-500 dark:text-zinc-400">{{ $a->subject->name }}@if ($a->revision > 1) · Revision {{ $a->revision }}@endif</p></div>
-      <x-status-badge :status="$st" class="!px-4 !py-1.5 !text-sm" />
+      <div class="flex flex-col items-end gap-2"><x-status-badge :status="$st" class="!px-4 !py-1.5 !text-sm" /><x-deadline :a="$a" full /></div>
     </div>
   </div>
   <div class="card p-5 sm:p-6"><x-stepper :current="$st->gateIndex((bool) $a->external_moderator_id)" :has-external="(bool) $a->external_moderator_id" /></div>
