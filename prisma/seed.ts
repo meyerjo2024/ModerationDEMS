@@ -17,7 +17,11 @@ async function main() {
   const email = (process.env.SEED_ADMIN_EMAIL ?? "hod@example.edu").toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD;
   if (!password || password.length < 10) {
-    throw new Error("Set SEED_ADMIN_PASSWORD (min 10 characters) before seeding.");
+    if (await prisma.user.findFirst({ where: { role: "HOD" } })) {
+      console.log("SEED_ADMIN_PASSWORD not set — an HOD already exists, skipping seed.");
+      return;
+    }
+    throw new Error("Set SEED_ADMIN_PASSWORD (min 10 characters) so the first HOD account can be created.");
   }
   const hod = await upsertUser(process.env.SEED_ADMIN_NAME ?? "Head of Department", email, "HOD", password, "Administration");
   console.log(`✔ HOD account ready: ${hod.email}`);

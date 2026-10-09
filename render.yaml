@@ -11,8 +11,7 @@ services:
     runtime: node
     plan: starter
     region: oregon           # keep in the same region as the database
-    buildCommand: npm ci && npm run build
-    preDeployCommand: npx prisma migrate deploy && npm run db:seed
+    buildCommand: npm ci && npm run build   # build also runs migrations + HOD seed
     startCommand: npm run start
     healthCheckPath: /api/health
     autoDeploy: true         # deploy on every push to the linked branch

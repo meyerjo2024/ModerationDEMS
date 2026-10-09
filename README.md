@@ -57,7 +57,7 @@ Demo logins (when seeded): `hod@`, `examiner@`, `moderator@`, `external@example.
 
 1. Push to GitHub, then Render → **New → Blueprint** → select this repo (`render.yaml`).
 2. Fill the prompted variables: `APP_URL`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `INSTITUTION_NAME`, SMTP settings.
-3. Each deploy runs `prisma migrate deploy` and seeds the HOD account (idempotent). Sign in, then use **Admin** to create users and subjects.
+3. Each build runs `prisma migrate deploy` and seeds the HOD account (idempotent; see `scripts/db-setup.mjs`). The service needs `DATABASE_URL` set (the Blueprint wires this automatically). Sign in, then use **Admin** to create users and subjects.
 
 Files live in PostgreSQL by default (no extra infrastructure). For S3 / R2 set `STORAGE_DRIVER=s3` and the `S3_*` variables.
 Without `SMTP_HOST`, e-mails are logged and the audit trail records `Report e-mail failed`.
