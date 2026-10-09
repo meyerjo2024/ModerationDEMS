@@ -39,27 +39,42 @@ Returning a record at Gate 2/3 sends it back to the examiner (`Ready for Post-Mo
 Candidates = non-blank numeric rows · Pass = mark ≥ 50 % of total marks · highest / lowest / class average as % ·
 non-numeric entries (e.g. `ABS`) are excluded and reported, never silently counted.
 
-## Local development
+## Database: Supabase
+
+Any PostgreSQL works; Supabase is the recommended host. In Supabase → **Project Settings → Database → Connection string** copy:
+
+- `DATABASE_URL` — **Transaction pooler** (port 6543), append `?pgbouncer=true&connection_limit=1`
+- `DIRECT_URL` — **Session pooler** (port 5432), used only for migrations (the `db.<ref>.supabase.co` host is IPv6-only, which Render can't reach)
+
+Migration `0002_enable_rls` turns on Row Level Security (no policies) for every table so Supabase's public REST/anon key cannot read your data; the app itself connects as the owner via Prisma and is unaffected.
+Files are stored in the same database by default; Supabase Storage / S3 can be used instead via `STORAGE_DRIVER=s3` (Supabase Storage exposes an S3-compatible endpoint).
+
+## Local development (with Laravel Herd)
+
+Herd runs PHP sites; this app is Node, so Herd supplies the **database** (and optionally a local domain), while Next.js runs with `npm run dev`.
 
 ```bash
-cp .env.example .env            # set DATABASE_URL, AUTH_SECRET, SEED_ADMIN_PASSWORD
+cp .env.example .env
 npm install
 npx prisma migrate deploy
-SEED_DEMO_DATA=true npm run db:seed   # HOD + demo examiner/moderators/subjects (same password)
-npm run dev                     # http://localhost:3000
-npm test                        # unit tests (calculation engine)
-node --env-file=.env scripts/smoke.mjs   # full lifecycle against a running server
+npm run db:seed
+npm run dev
 ```
 
-Demo logins (when seeded): `hod@`, `examiner@`, `moderator@`, `external@example.edu`.
+Pick one database in `.env`:
+- **Herd Pro Postgres service:** create a database named `dems`, then set `DATABASE_URL` and `DIRECT_URL` to the same `postgresql://…@127.0.0.1:5432/dems?schema=public` URL shown in Herd.
+- **Supabase directly:** use the two Supabase strings above (handy for sharing one dev DB).
 
-## Deploy to Render
+Set `SEED_ADMIN_PASSWORD` (10+ characters) and, for demo accounts, `SEED_DEMO_DATA="true"`. Open http://localhost:3000, or add a Herd proxy to `http://localhost:3000` if you want a `.test` domain.
 
-1. Push to GitHub, then Render → **New → Blueprint** → select this repo (`render.yaml`).
-2. Fill the prompted variables: `APP_URL`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `INSTITUTION_NAME`, SMTP settings.
-3. Each deploy runs `prisma migrate deploy` and seeds the HOD account (idempotent). Sign in, then use **Admin** to create users and subjects.
+Tests: `npm test` (calculation engine) · `node --env-file=.env scripts/smoke.mjs` (full lifecycle against a running server).
 
-Files live in PostgreSQL by default (no extra infrastructure). For S3 / R2 set `STORAGE_DRIVER=s3` and the `S3_*` variables.
+## Deploy to Render (with Supabase)
+
+1. Create a Supabase project and note the two connection strings above.
+2. Render → **New → Blueprint** (or your existing web service) → set `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `APP_URL`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `INSTITUTION_NAME`, SMTP settings.
+3. Every build runs `prisma migrate deploy` and seeds the HOD account (idempotent; see `scripts/db-setup.mjs`). Sign in, then use **Admin** to create users and subjects.
+
 Without `SMTP_HOST`, e-mails are logged and the audit trail records `Report e-mail failed`.
 
 ## Known limits
