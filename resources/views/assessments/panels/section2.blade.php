@@ -5,7 +5,7 @@ $marks = $a->latestAttachment($AK::Marks);
 $samples = $a->attachmentsOf($AK::SampleScript)->map(fn ($s) => ['id' => $s->id, 'filename' => $s->filename])->all();
 $feedback = $a->records->where('decision', 'REVISION_REQUESTED')->where('stage', '!=', $MS::PreModeration)->last();
 @endphp
-<div x-data="section2(@js(['id' => $a->id, 'number' => $a->number, 'subjectCode' => $a->subject->code, 'marksId' => $marks?->id, 'marksName' => $marks?->filename, 'samples' => $samples]))" @signed="sig = $event.detail" class="space-y-6">
+<div x-data="section2(@js(['id' => $a->id, 'number' => $a->number, 'subjectCode' => $a->subject->code, 'form' => $a->s2_examiner ?? ['registered' => null, 'type_of_assessment' => '', 'answers' => collect(config('moderation_form.s2_examiner_questions'))->map(fn () => '')->all()], 'marksId' => $marks?->id, 'marksName' => $marks?->filename, 'samples' => $samples]))" @signed="sig = $event.detail" class="space-y-6">
   @if ($feedback)
     <x-notice tone="warn" title="Returned by {{ $feedback->reviewer->name }}"><p class="whitespace-pre-wrap">{{ $feedback->comments }}</p><p class="mt-1 text-xs opacity-70">{{ $feedback->created_at->utc()->format('j M Y, H:i') }} UTC</p></x-notice>
   @endif
@@ -75,11 +75,21 @@ $feedback = $a->records->where('decision', 'REVISION_REQUESTED')->where('stage',
   </section>
 
   <section class="card p-6 sm:p-8">
-    <p class="kicker">Section 2 · Step 4</p><h2 class="mt-1 text-2xl font-semibold">Commentary & signature</h2>
-    <div class="mt-5"><label class="label" for="commentary">Comments on student performance</label><textarea id="commentary" rows="5" class="field" maxlength="6000" placeholder="e.g. Most candidates struggled with the essay question on …" x-model="commentary"></textarea></div>
-    <div class="mt-6"><x-signoff statement="By signing Section 2, I confirm the marks are complete and the statistics above reflect the final marked results." /></div>
+    <p class="kicker">Section 2 · Step 4</p><h2 class="mt-1 text-2xl font-semibold">Candidates & comments</h2>
+    <p class="mt-1 text-sm text-slate-500 dark:text-zinc-400">These answers appear in Section 2 of the official moderation report. Pass rate, highest and average mark come from the calculation above.</p>
+    <div class="mt-5 grid gap-4 sm:grid-cols-3">
+      <div><label class="label" for="registered">Total number of (reg.) candidates</label><input id="registered" type="number" min="0" inputmode="numeric" class="field tabular-nums" x-model.number="form.registered"><p class="mt-1 text-xs text-slate-400" x-show="preview && preview.info && preview.info.enrolled">From the class list.</p></div>
+      <div><label class="label">No. of candidates absent</label><div class="field !bg-slate-100/70 tabular-nums dark:!bg-white/5" x-text="absent === null ? '—' : absent"></div></div>
+      <div><label class="label" for="atype">Type of assessment</label><input id="atype" list="atypes" class="field" maxlength="80" placeholder="e.g. Written test" x-model="form.type_of_assessment"><datalist id="atypes"><option value="Written test"><option value="Examination"><option value="Practical"><option value="Oral"><option value="Project"><option value="Assignment"></datalist></div>
+    </div>
+    <div class="mt-5 space-y-4">
+      @foreach (config('moderation_form.s2_examiner_questions') as $k => $text)
+        <div><label class="label !normal-case !tracking-normal !text-sm !font-medium" for="q-{{ $k }}">{{ substr($k, 1) }}. {{ $text }}</label><textarea id="q-{{ $k }}" rows="3" class="field" maxlength="3000" x-model="form.answers.{{ $k }}"></textarea></div>
+      @endforeach
+    </div>
+    <div class="mt-6"><x-signoff statement="By signing Section 2, I confirm the marks are complete and the statistics and answers above are accurate." /></div>
     <template x-if="error"><x-notice tone="error" class="mt-5"><span x-text="error"></span></x-notice></template>
     <div class="mt-6 flex justify-end"><button type="button" class="btn-primary" @click="submit()" :disabled="!ready || busy"><x-icon name="send" /> <span x-text="busy === 'submit' ? 'Submitting…' : 'Sign & submit for final moderation'"></span></button></div>
-    <p x-show="!ready" class="mt-3 text-right text-xs text-slate-400">Needs calculated results, commentary and your signature.</p>
+    <p x-show="!ready" class="mt-3 text-right text-xs text-slate-400">Needs calculated results, the candidate details, all five answers and your signature.</p>
   </section>
 </div>

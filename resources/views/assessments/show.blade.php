@@ -11,6 +11,7 @@ $panel = match (true) {
   $st === $S::ReadyForPostModeration && $isExaminer => 'section2',
   $st === $S::PendingFinalModeration && $isInternal => 'final-review',
   $st === $S::PendingExternalModeration && $isExternal => 'final-review',
+  $st === $S::PendingSection3Signoff && ($isExaminer || $a->subject->hod_id === $user->id) => 'section3',
   default => 'summary',
 };
 $stage = $st === $S::PendingExternalModeration ? 'external' : 'internal';

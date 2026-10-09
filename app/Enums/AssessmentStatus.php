@@ -10,6 +10,7 @@ enum AssessmentStatus: string
     case ReadyForPostModeration = 'READY_FOR_POST_MODERATION';
     case PendingFinalModeration = 'PENDING_FINAL_MODERATION';
     case PendingExternalModeration = 'PENDING_EXTERNAL_MODERATION';
+    case PendingSection3Signoff = 'PENDING_SECTION3_SIGNOFF';
     case Completed = 'COMPLETED';
 
     public function label(): string
@@ -21,6 +22,7 @@ enum AssessmentStatus: string
             self::ReadyForPostModeration => 'Ready for Post-Moderation',
             self::PendingFinalModeration => 'Pending Final Moderation Review',
             self::PendingExternalModeration => 'Pending External Moderation',
+            self::PendingSection3Signoff => 'Pending Section 3 Sign-off',
             self::Completed => 'Completed',
         };
     }
@@ -32,6 +34,7 @@ enum AssessmentStatus: string
             self::Draft, self::RevisionRequested, self::ReadyForPostModeration => 'examiner',
             self::PendingPreModeration, self::PendingFinalModeration => 'internal',
             self::PendingExternalModeration => 'external',
+            self::PendingSection3Signoff => 'signoff',
             self::Completed => 'none',
         };
     }
@@ -44,7 +47,8 @@ enum AssessmentStatus: string
             self::PendingPreModeration => 'review the draft paper and memorandum (Gate 1)',
             self::ReadyForPostModeration => 'capture results once marking is complete (Section 2)',
             self::PendingFinalModeration => 'complete the final moderation review (Gate 2)',
-            self::PendingExternalModeration => 'complete the external moderation (Gate 3)',
+            self::PendingExternalModeration => 'complete the external moderation (Gate 3, Section 3)',
+            self::PendingSection3Signoff => 'sign Section 3 (examiner and Head of Department)',
             self::Completed => '',
         };
     }
@@ -60,6 +64,7 @@ enum AssessmentStatus: string
             self::ReadyForPostModeration => 2,
             self::PendingFinalModeration => 3,
             self::PendingExternalModeration => $hasExternal ? 4 : 3,
+            self::PendingSection3Signoff => 5,
             self::Completed => 6,
         };
     }
@@ -74,6 +79,7 @@ enum AssessmentStatus: string
             self::ReadyForPostModeration => ['chip' => 'bg-sky-500/10 text-sky-700 dark:text-sky-300', 'dot' => 'bg-sky-500 text-sky-500', 'wash' => 'from-sky-400/20', 'ring' => 'ring-sky-400/30'],
             self::PendingFinalModeration => ['chip' => 'bg-violet-500/10 text-violet-700 dark:text-violet-300', 'dot' => 'bg-violet-500 text-violet-500', 'wash' => 'from-violet-400/20', 'ring' => 'ring-violet-400/30'],
             self::PendingExternalModeration => ['chip' => 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300', 'dot' => 'bg-indigo-500 text-indigo-500', 'wash' => 'from-indigo-400/20', 'ring' => 'ring-indigo-400/30'],
+            self::PendingSection3Signoff => ['chip' => 'bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300', 'dot' => 'bg-fuchsia-500 text-fuchsia-500', 'wash' => 'from-fuchsia-400/20', 'ring' => 'ring-fuchsia-400/30'],
             self::Completed => ['chip' => 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300', 'dot' => 'bg-emerald-500 text-emerald-500', 'wash' => 'from-emerald-400/20', 'ring' => 'ring-emerald-400/30'],
         };
     }

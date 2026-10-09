@@ -1,40 +1,58 @@
-@php $AK = \App\Enums\AttachmentKind::class; $MS = \App\Enums\ModerationStage::class;
-
-
-$rows = collect($a->question_types ?? [])->map(fn ($r) => ['type' => $r['type'], 'weighting' => $r['weighting'], 'heqf_level' => $r['heqf_level'], 'aligned' => (bool) $r['aligned'], 'comment' => $r['comment'] ?? ''])->all();
-$f = fn ($k) => ($att = $a->latestAttachment($k)) ? ['id' => $att->id, 'filename' => $att->filename] : null;
-$feedback = $a->records->where('stage', $MS::PreModeration)->where('decision', 'REVISION_REQUESTED')->last();
+@php
+use App\Enums\ModerationStage;
+$f = config('moderation_form');
+$s = $a->s1_examiner ?? [];
+$form = [
+  'period' => $s['period'] ?? 'first', 'year' => $s['year'] ?? (int) date('Y'), 'heqf_level' => $s['heqf_level'] ?? 6,
+  'subject_level' => $s['subject_level'] ?? 'YR 1', 'qualification' => $s['qualification'] ?? '', 'qualification_code' => $s['qualification_code'] ?? '',
+  'assessment_date' => $s['assessment_date'] ?? '',
+  'weights' => collect(array_keys($f['question_types']))->mapWithKeys(fn ($k) => [$k => $s['weights'][$k] ?? ''])->all(),
+];
+$file = fn ($kind) => ($att = $a->latestAttachment($kind)) ? ['id' => $att->id, 'filename' => $att->filename] : null;
+$feedback = $a->records->where('stage', ModerationStage::PreModeration)->where('decision', 'REVISION_REQUESTED')->last();
 @endphp
-<div x-data="section1(@js(['id' => $a->id, 'rows' => $rows, 'files' => ['PAPER' => $f($AK::Paper), 'MEMO' => $f($AK::Memo)]]))" @signed="sig = $event.detail" class="space-y-6">
+<div x-data="section1(@js(['id' => $a->id, 'form' => $form, 'files' => ['PAPER' => $file(\App\Enums\AttachmentKind::Paper), 'MEMO' => $file(\App\Enums\AttachmentKind::Memo)]]))" @signed="sig = $event.detail" class="space-y-6">
   @if ($feedback && $a->status === \App\Enums\AssessmentStatus::RevisionRequested)
     <x-notice tone="warn" title="Revision requested by {{ $feedback->reviewer->name }}"><p class="whitespace-pre-wrap">{{ $feedback->comments }}</p><p class="mt-1 text-xs opacity-70">{{ $feedback->created_at->utc()->format('j M Y, H:i') }} UTC</p></x-notice>
   @endif
 
   <section class="card p-6 sm:p-8">
-    <p class="kicker">Section 1</p><h2 class="mt-1 text-2xl font-semibold">Types of questions</h2>
-    <p class="mt-1 text-sm text-slate-500 dark:text-zinc-400">Assign each question type its weighting and check alignment with the HEQF level descriptors.</p>
-    <div class="mt-6 space-y-3">
-      <template x-for="(r, i) in rows" :key="i">
-        <div class="card-soft grid gap-3 p-4 sm:grid-cols-[1.6fr_.8fr_.8fr_auto] sm:items-end">
-          <div><label class="label">Question type</label><input list="qtypes" class="field" placeholder="e.g. Essay" maxlength="80" x-model="r.type"></div>
-          <div><label class="label">Weighting %</label><input type="number" min="0" max="100" step="any" inputmode="decimal" class="field tabular-nums" x-model="r.weighting"></div>
-          <div><label class="label">HEQF level</label><select class="field" x-model="r.heqf_level">@foreach ([5, 6, 7, 8, 9, 10] as $l)<option value="{{ $l }}">Level {{ $l }}</option>@endforeach</select></div>
-          <div class="flex items-center justify-between gap-3 sm:justify-end">
-            <button type="button" role="switch" :aria-checked="r.aligned" @click="r.aligned = !r.aligned" class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-zinc-300">
-              <span class="relative h-6 w-10 rounded-full transition-colors" :class="r.aligned ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-600'"><span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all" :class="r.aligned ? 'left-[18px]' : 'left-0.5'"></span></span>Aligned</button>
-            <button type="button" aria-label="Remove row" :disabled="rows.length === 1" @click="remove(i)" class="rounded-full p-2 text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 disabled:opacity-30"><x-icon name="trash" /></button>
-          </div>
-          <div class="sm:col-span-4"><input class="field !py-2 text-sm" placeholder="Alignment comment (optional)" maxlength="500" x-model="r.comment"></div>
-        </div>
-      </template>
-      <datalist id="qtypes">@foreach (['Multiple choice', 'Short answer', 'Essay', 'Case study', 'Calculation', 'Practical / coding'] as $s)<option value="{{ $s }}">@endforeach</datalist>
+    <p class="kicker">Section 1 · Pre-assessment</p><h2 class="mt-1 text-2xl font-semibold">Assessment details</h2>
+    <p class="mt-1 text-sm text-slate-500 dark:text-zinc-400">These fields appear on the official moderation report. Subject, assessment number and moderators are taken from the record.</p>
+    <dl class="card-soft mt-5 grid gap-x-6 gap-y-2 p-4 text-sm sm:grid-cols-3">
+      <div><dt class="kicker">Subject</dt><dd class="font-medium">{{ $a->subject->code }} — {{ $a->subject->name }}</dd></div>
+      <div><dt class="kicker">Assessment no.</dt><dd class="font-medium">{{ $a->number }}</dd></div>
+      <div><dt class="kicker">Examiner</dt><dd class="font-medium">{{ $a->examiner->name }}</dd></div>
+      <div><dt class="kicker">Internal moderator</dt><dd class="font-medium">{{ $a->internalModerator->name }}</dd></div>
+      <div><dt class="kicker">External moderator</dt><dd class="font-medium">{{ $a->externalModerator?->name ?? 'Not required' }}</dd></div>
+    </dl>
+    <div class="mt-5 grid gap-4 sm:grid-cols-3">
+      <div><label class="label" for="period">Assessment period</label><select id="period" class="field" x-model="form.period">@foreach ($f['periods'] as $k => $l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</select></div>
+      <div><label class="label" for="year">Year</label><input id="year" type="number" min="2000" max="2100" class="field tabular-nums" x-model="form.year"></div>
+      <div><label class="label" for="adate">Assessment date</label><input id="adate" type="date" class="field" x-model="form.assessment_date"></div>
+      <div><label class="label" for="heqf">HEQF level of subject</label><select id="heqf" class="field" x-model="form.heqf_level">@foreach ([5, 6, 7, 8, 9, 10] as $l)<option value="{{ $l }}">Level {{ $l }}</option>@endforeach</select></div>
+      <div><label class="label" for="slevel">Level of subject (e.g. YR 1)</label><input id="slevel" list="levels" class="field" maxlength="40" x-model="form.subject_level"><datalist id="levels">@foreach ($f['levels'] as $l)<option value="{{ $l }}">@endforeach</datalist></div>
+      <div></div>
+      <div class="sm:col-span-2"><label class="label" for="qual">Qualification</label><input id="qual" class="field" maxlength="160" placeholder="e.g. National Diploma: Emergency Medical Care" x-model="form.qualification"></div>
+      <div><label class="label" for="qcode">Qualification code</label><input id="qcode" class="field" maxlength="40" x-model="form.qualification_code"></div>
     </div>
-    <div class="mt-4 flex flex-wrap items-center justify-between gap-4">
-      <button type="button" class="btn-secondary" @click="add()" :disabled="rows.length >= 15"><x-icon name="plus" /> Add question type</button>
-      <div class="flex items-center gap-3" aria-live="polite">
-        <div class="h-2 w-32 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10"><div class="h-full rounded-full transition-all" :class="total === 100 ? 'bg-emerald-500' : total > 100 ? 'bg-rose-500' : 'bg-accent'" :style="`width:${Math.min(total, 100)}%`"></div></div>
-        <span class="text-sm font-semibold tabular-nums" :class="total === 100 ? 'text-emerald-600 dark:text-emerald-400' : total > 100 ? 'text-rose-600' : 'text-slate-600 dark:text-zinc-300'" x-text="`${total}% / 100%`"></span>
-      </div>
+  </section>
+
+  <section class="card p-6 sm:p-8">
+    <p class="kicker">Section 1 · Table: levels of complexity of assessments</p><h2 class="mt-1 text-2xl font-semibold">Types of questions</h2>
+    <p class="mt-1 text-sm text-slate-500 dark:text-zinc-400">Enter the <b>% weighting across the task</b> for each type of question (or project assessment criteria). Leave unused types empty. The total must be 100 %.</p>
+    <div class="mt-5 space-y-3">
+      @foreach ($f['question_types'] as $k => $t)
+        <div class="card-soft grid gap-3 p-4 sm:grid-cols-[1fr_130px] sm:items-start">
+          <div><p class="text-sm font-semibold">{{ $t['label'] }}</p>
+            <details class="mt-1 text-sm text-slate-500 dark:text-zinc-400"><summary class="cursor-pointer select-none text-xs font-medium text-accent dark:text-accent-dark">Show full description</summary><p class="mt-1.5">{{ $t['text'] }}</p></details></div>
+          <div><label class="label" for="w-{{ $k }}">% weighting</label><input id="w-{{ $k }}" type="number" min="0" max="100" step="any" inputmode="decimal" class="field tabular-nums" x-model="form.weights.{{ $k }}"></div>
+        </div>
+      @endforeach
+    </div>
+    <div class="mt-4 flex items-center justify-end gap-3" aria-live="polite">
+      <div class="h-2 w-32 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10"><div class="h-full rounded-full transition-all" :class="total === 100 ? 'bg-emerald-500' : total > 100 ? 'bg-rose-500' : 'bg-accent'" :style="`width:${Math.min(total, 100)}%`"></div></div>
+      <span class="text-sm font-semibold tabular-nums" :class="total === 100 ? 'text-emerald-600 dark:text-emerald-400' : total > 100 ? 'text-rose-600' : 'text-slate-600 dark:text-zinc-300'" x-text="`${total}% / 100%`"></span>
     </div>
   </section>
 
@@ -52,13 +70,13 @@ $feedback = $a->records->where('stage', $MS::PreModeration)->where('decision', '
 
   <section class="card p-6 sm:p-8">
     <p class="kicker">Sign-off</p><h2 class="mt-1 text-2xl font-semibold">Sign & submit for pre-moderation</h2>
-    <div class="mt-5"><x-signoff statement="By signing, I confirm the question types, weightings and HEQF alignment above are accurate and the attached paper and memorandum are final for moderation." /></div>
+    <div class="mt-5"><x-signoff statement="By signing, I confirm the details and weightings above are accurate and the attached paper and memorandum are final for moderation." /></div>
     <template x-if="error"><x-notice tone="error" class="mt-5"><span x-text="error"></span></x-notice></template>
     <template x-if="saved"><x-notice tone="success" class="mt-5"><span x-text="saved"></span></x-notice></template>
     <div class="mt-6 flex flex-wrap justify-end gap-3">
       <button type="button" class="btn-secondary" @click="saveDraft()" :disabled="busy"><x-icon name="save" /> Save draft</button>
       <button type="button" class="btn-primary" @click="submit()" :disabled="!ready || busy"><x-icon name="send" /> <span x-text="busy === 'submit' ? 'Submitting…' : 'Sign & submit'"></span></button>
     </div>
-    <p x-show="!ready" class="mt-3 text-right text-xs text-slate-400"><span x-show="total !== 100">Weightings must total 100%. </span><span x-show="!files.PAPER || !files.MEMO">Upload both documents to continue. </span><span x-show="!sig">Sign and enter your password.</span></p>
+    <p x-show="!ready" class="mt-3 text-right text-xs text-slate-400"><span x-show="missing">Complete all details. </span><span x-show="total !== 100">Weightings must total 100%. </span><span x-show="!files.PAPER || !files.MEMO">Upload both documents. </span><span x-show="!sig">Sign and enter your password.</span></p>
   </section>
 </div>
