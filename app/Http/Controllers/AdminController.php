@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Enums\Role;
+use App\Models\Subject;
+use App\Models\User;
+use App\Services\Audit;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+class AdminController extends Controller
+{
+    public function index(Request $request)
+    {
+        return view('admin.index', [
+            'users' => User::orderBy('role')->orderBy('name')->get(),
+            'subjects' => Subject::with('hod')->orderBy('code')->get(),
+            'hods' => User::where('role', Role::Hod->value)->where('active', true)->orderBy('name')->get(),
+        ]);
+    }
+
+    public function storeUser(Request $request, Audit $audit)
+    {
+        $d = $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:120'],
+            'email' => ['required', 'email', 'max:190', 'unique:users,email'],
+            'role' => ['required', Rule::enum(Role::class)],
+            'department' => ['nullable', 'string', 'max:120'],
+            'password' => ['required', 'string', 'min:10', 'max:128'],
+        ], ['password.min' => 'Use at least 10 characters.', 'email.unique' => 'A user with that e-mail already exists.']);
+        $user = User::create($d + ['active' => true]);
+        $audit->log('USER_CREATED', null, $request->user()->id, ['email' => $user->email, 'role' => $user->role->value], $request->ip());
+
+        return back()->with('status', "User {$user->name} created.");
+    }
+
+    public function storeSubject(Request $request, Audit $audit)
+    {
+        $d = $request->validate([
+            'code' => ['required', 'string', 'min:2', 'max:20', 'unique:subjects,code'],
+            'name' => ['required', 'string', 'min:2', 'max:160'],
+            'department' => ['nullable', 'string', 'max:120'],
+            'hod_id' => ['required', Rule::exists('users', 'id')->where('role', Role::Hod->value)->where('active', true)],
+        ], ['code.unique' => 'That subject code already exists.']);
+        $d['code'] = mb_strtoupper(trim($d['code']));
+        $subject = Subject::create($d);
+        $audit->log('SUBJECT_CREATED', null, $request->user()->id, ['code' => $subject->code], $request->ip());
+
+        return back()->with('status', "Subject {$subject->code} created.");
+    }
+}
