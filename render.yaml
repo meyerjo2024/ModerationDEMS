@@ -1,16 +1,12 @@
 # Render Blueprint — New + → Blueprint → select this repo.
-databases:
-  - name: dems-db
-    plan: basic-256mb        # use "free" for a 30-day trial database
-    databaseName: dems
-    user: dems
+# Database: Supabase (external). Create a project there and paste its two connection strings below.
 
 services:
   - type: web
     name: moderation-dems
     runtime: node
     plan: starter
-    region: oregon           # keep in the same region as the database
+    region: oregon           # pick the region closest to your Supabase project
     buildCommand: npm ci && npm run build   # build also runs migrations + HOD seed
     startCommand: npm run start
     healthCheckPath: /api/health
@@ -18,10 +14,10 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20.18.0
-      - key: DATABASE_URL
-        fromDatabase:
-          name: dems-db
-          property: connectionString
+      - key: DATABASE_URL        # Supabase transaction pooler (port 6543, ?pgbouncer=true&connection_limit=1)
+        sync: false
+      - key: DIRECT_URL          # Supabase session pooler (port 5432) — used for migrations
+        sync: false
       - key: AUTH_SECRET
         generateValue: true
       - key: APP_URL
