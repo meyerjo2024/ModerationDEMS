@@ -1,11 +1,21 @@
 # Moderation DEMS
 
-Academic **Digital Examination & Moderation System** — replaces the manual, document-centric moderation
-cycle with a role-based, audited, web-hosted workflow that ends in a signed PDF report for the Head of
-Department. Design brief: [`docs/`](docs).
+[![CI](https://github.com/meyerjo2024/ModerationDEMS/actions/workflows/ci.yml/badge.svg)](https://github.com/meyerjo2024/ModerationDEMS/actions/workflows/ci.yml)
 
-**Stack:** Laravel 13 (PHP 8.3) · Blade + Alpine.js · Tailwind CSS 4 · PostgreSQL (Supabase) ·
-PhpSpreadsheet (marks) · Dompdf (report) — runs under **Laravel Herd** locally and as a Docker service on Render.
+**Academic Digital Examination & Moderation System** — replaces the manual, document-centric moderation cycle with a role-based, audited, web-hosted workflow that ends in a signed PDF report for the Head of Department.
+
+**Stack:** Laravel 13 (PHP 8.3) · Blade + Alpine.js · Tailwind CSS 4 · PostgreSQL (Supabase) · PhpSpreadsheet · Dompdf — develops on **Laravel Herd**, deploys as a Docker service on **Render**.
+
+![Login](docs/screenshots/login.png)
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard-examiner.png) **Dashboard** — status tiles, filters and wallet-style cards | ![Section 1](docs/screenshots/section1-form.png) **Phase 1** — question types, documents, signature |
+| ![Gate 1](docs/screenshots/gate1-review.png) **Gate 1** — document viewer and decision | ![Section 2](docs/screenshots/section2-marks-and-results.png) **Phase 3** — marks to automatic statistics |
+| ![Gate 2](docs/screenshots/gate2-quality-check-and-signoff.png) **Gate 2/3** — quality checks and signature | ![Completed](docs/screenshots/record-completed.png) **Completed** — archived record and PDF |
+| ![Report](docs/screenshots/report-page-1.png) **Signed PDF report** ([sample](docs/sample-report.pdf)) | ![Dark](docs/screenshots/dark-dashboard.png) **Dark mode** (and fully responsive) |
 
 ## Workflow
 
@@ -16,82 +26,72 @@ PhpSpreadsheet (marks) · Dompdf (report) — runs under **Laravel Herd** locall
 | 3 | Post-assessment: marks workbook → automatic statistics, commentary, Section 2 signature | Examiner | `Pending Final Moderation Review` |
 | 4 | **Gate 2** final review: statistics, sample scripts, quality checks, signature | Internal moderator | `Completed`, or `Pending External Moderation` if an external moderator is assigned |
 | 4b | **Gate 3** external review (optional) | External moderator | `Completed` |
-| 5 | PDF generated, archived, e-mailed to HOD | System | `Completed` |
+| 5 | PDF generated and archived; HOD notified | System | `Completed` |
 
-Gate numbering: Gate 1 = internal pre-approval, Gate 2 = internal final consensus, Gate 3 = optional external
-moderator. The HOD receives the archived report and can monitor every record in their subjects; they are not a signing gate.
-Returning a record at Gate 2/3 sends it back to the examiner; sign-offs restart from Gate 2.
+Gate numbering: Gate 1 = internal pre-approval, Gate 2 = internal final consensus, Gate 3 = optional external moderator. The HOD receives the report and can monitor every record in their subjects; they are not a signing gate. Diagrams and the permission matrix: **[docs/workflow.md](docs/workflow.md)**.
 
-## Security & audit model
+## Documentation
 
-- Roles: `EXAMINER`, `INTERNAL_MODERATOR`, `EXTERNAL_MODERATOR`, `HOD`. Routes are role-gated **and** every action checks the user's assignment on that record (`App\Services\Workflow`). Records a user may not see return 404.
-- Signatures = pen drawing **+ password re-entry**, stored with a SHA-256 hash of exactly what was attested, timestamp, IP and user agent.
-- The state machine locks the row (`SELECT … FOR UPDATE`), so a record can't be advanced twice.
-- Statistics are always **recomputed server-side** from the source marks; the browser never supplies them.
-- The audit log is hash-chained per record (tamper-evident); the PDF shows the chain head.
-- Student marks are stored as anonymous numbers; the raw workbook is downloadable by the examiner only.
-- External moderators only see a record once it reaches them.
-- Sessions in the database, login throttling, CSRF on every mutation, upload validation by extension **and** magic bytes.
-- Migration `…_enable_row_level_security` turns on RLS (no policies) so Supabase's public API key cannot read the data; the app connects as the table owner and is unaffected.
+| | |
+|---|---|
+| 📘 **User manuals** | [Getting started](docs/manuals/00-getting-started.md) · [Examiner](docs/manuals/01-examiner.md) · [Internal moderator](docs/manuals/02-internal-moderator.md) · [External moderator](docs/manuals/03-external-moderator.md) · [HOD & admin](docs/manuals/04-head-of-department.md) |
+| 🔄 **Workflow reference** | [docs/workflow.md](docs/workflow.md) — state machine, sequence, roles, calculations, signatures, audit |
+| 🚀 **Deployment** | [docs/deployment.md](docs/deployment.md) — Herd, Supabase, Render, troubleshooting |
+| 🛠 **Development** | [docs/development.md](docs/development.md) — structure, tests, GitHub Actions |
 
-## Calculation rules (`app/Services/StatisticsCalculator.php`)
-
-Candidates = non-blank numeric rows · Pass = mark ≥ 50 % of total marks · highest / lowest / class average as % ·
-non-numeric entries (e.g. `ABS`) are excluded and reported, never silently counted.
-
-## Local development with Laravel Herd
-
-1. Put this folder in a Herd-parked directory (or *Add site*): it is served at `http://moderation-dems.test`.
-2. Herd Pro → **Services → PostgreSQL** → create a database named `dems`. (No Herd Pro? Use Supabase — see below.)
-3. In a terminal inside the project:
+## Quick start (Laravel Herd)
 
 ```bash
 cp .env.example .env
 composer install
-npm install && npm run build        # or `npm run dev` while developing
+npm install && npm run build
 php artisan key:generate
+# set DEMS_SEED_PASSWORD (10+ chars) and DEMS_DEMO_DATA=true in .env, point DB_* at Postgres, then:
 php artisan migrate
-```
-
-4. Open `.env` and set `DEMS_SEED_PASSWORD` (10+ characters). For demo accounts also set `DEMS_DEMO_DATA=true`. Then:
-
-```bash
 php artisan db:seed
 ```
 
-5. Visit **http://moderation-dems.test** (set `APP_URL` to the same). Sign in as `DEMS_SEED_EMAIL` (default `hod@example.edu`).
-   With demo data, the login page lists `hod@`, `examiner@`, `moderator@`, `external@example.edu` — click one to fill it in.
+Open `http://moderation-dems.test`. With demo data the login page lists `hod@`, `examiner@`, `moderator@` and `external@example.edu` — click one to fill it in. Full steps: [deployment guide](docs/deployment.md).
 
-Tests: `php artisan test` (SQLite in memory by default; `DB_CONNECTION=pgsql DB_DATABASE=… php artisan test` for PostgreSQL).
+## Deploy (Render + Supabase, free)
 
-## Database: Supabase
+1. Supabase project → copy the **Session pooler** URI (port 5432) → this is `DB_URL`.
+2. Render → **Web Service** (or Blueprint) → **Docker**, **Free** → paste the variables from [`.env.render.example`](.env.render.example).
+3. Every start runs the migrations and seeds the first HOD. Check `/health`, then sign in.
 
-In Supabase → **Project Settings → Database → Connection string**, copy the **Session pooler** string (port 5432 — it works over IPv4
-and supports prepared statements) and put it in `.env`:
+Troubleshooting table (wrong branch, payment prompt, password errors, Supabase circuit breaker, …): [docs/deployment.md](docs/deployment.md#troubleshooting-problems-seen-in-real-deployments).
 
+## Security & audit model
+
+- Roles `EXAMINER`, `INTERNAL_MODERATOR`, `EXTERNAL_MODERATOR`, `HOD`. Routes are role-gated **and** every action checks the user's assignment on that record; records a user may not see return 404.
+- **Signatures = pen drawing + password re-entry**, stored with a SHA-256 hash of what was attested, timestamp, IP and browser.
+- Row-locked state machine: a record cannot be advanced twice.
+- Statistics are **recomputed server-side** from the source marks; the browser never supplies them.
+- Hash-chained, append-only audit log per record (tamper-evident; the PDF shows the chain head).
+- Student marks are stored as anonymous numbers; the raw workbook is downloadable by the examiner only; external moderators see a record only once it reaches them.
+- CSRF on every mutation, login and signing throttles, upload validation by extension **and** magic bytes, Row Level Security enabled for Supabase.
+
+## Calculation rules
+
+Candidates = non-blank numeric rows · Pass = mark ≥ 50 % of total marks · highest / lowest / class average as % · non-numeric entries (e.g. `ABS`) are excluded and reported, never silently counted. Details in [docs/workflow.md](docs/workflow.md#what-the-system-calculates).
+
+## Tests & CI
+
+```bash
+php artisan test        # SQLite in memory; add DB_CONNECTION=pgsql … for PostgreSQL
 ```
-DB_CONNECTION=pgsql
-DB_URL="postgresql://postgres.PROJECTREF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres"
-DB_SSLMODE=require
-```
 
-URL-encode special characters in the password. If you use the *transaction* pooler (port 6543) also set `DB_EMULATE_PREPARES=true`.
-Then `php artisan migrate && php artisan db:seed`. Files are stored in the same database by default (`DEMS_STORAGE=db`);
-set `DEMS_STORAGE=disk` and `DEMS_DISK=<a filesystem disk>` to use another disk.
-
-## Deploy to Render
-
-Render has no native PHP runtime, so the app ships as a Docker service (`Dockerfile`, `render.yaml`).
-
-1. Create a Supabase project (see above).
-2. Render → **New → Blueprint** → select this repo. Fill in: `APP_KEY` (`php artisan key:generate --show`), `APP_URL`, `DB_URL`, `DEMS_SEED_EMAIL`, `DEMS_SEED_PASSWORD`, `INSTITUTION_NAME` (and `DEMS_DEMO_DATA=true` if you want demo accounts on the login page).
-3. On every start the container runs the migrations and the (idempotent) HOD seed. Check `/health`, sign in, then use **Admin** to create users and subjects.
-
-E-mail is optional: with the default `MAIL_MAILER=log` nothing is sent and the signed PDF is simply available to download on the record. Configure SMTP later to e-mail it to the HOD.
+GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)) builds assets and runs the suite on SQLite **and** PostgreSQL for every push and pull request.
 
 ## Known limits
 
-- The Docker/Render setup has not been exercised on Render itself (it was written and the app tested outside Docker).
+- The Docker/Render setup was written and the app tested outside Docker; deployment issues are collected in the troubleshooting table.
 - PDF preview is inline for PDFs; Word files are download-only.
-- Marks upload supports `.xlsx` / `.csv` (header in row 1), not legacy `.xls`.
-- Login throttling uses the cache (`file` by default) — use a shared cache store if you run several instances.
+- Marks upload supports `.xlsx` / `.csv` (headings in row 1), not legacy `.xls`.
+- No self-service password reset yet; administrators set passwords.
+- E-mail is optional and only active when a real `MAIL_MAILER` is configured; otherwise the PDF is downloaded from the record.
+- Login throttling uses the cache (`file` by default); use a shared store if you run several instances.
+
+## Repository
+
+Original proposal: [`docs/Academic Moderation System Proposal (Generic)_RM.docx`](docs/Academic%20Moderation%20System%20Proposal%20%28Generic%29_RM.docx).
