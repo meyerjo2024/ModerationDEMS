@@ -21,12 +21,13 @@
 
 | # | Phase / Gate | Actor | Status after |
 |---|---|---|---|
-| 1 | Pre-assessment: Section 1 (question types, HEQF), paper + memo, signature | Examiner | `Pending Pre-Moderation Review` |
-| 2 | **Gate 1** pre-moderation: approve (consensus + signature) or request revision | Internal moderator | `Ready for Post-Moderation` / `Revision Requested` |
-| 3 | Post-assessment: marks workbook → automatic statistics, commentary, Section 2 signature | Examiner | `Pending Final Moderation Review` |
-| 4 | **Gate 2** final review: statistics, sample scripts, quality checks, signature | Internal moderator | `Completed`, or `Pending External Moderation` if an external moderator is assigned |
-| 4b | **Gate 3** external review (optional) | External moderator | `Completed` |
-| 5 | PDF generated and archived; HOD notified | System | `Completed` |
+| 1 | Pre-assessment: Section 1 details and question-type weightings, paper + memo, signature | Examiner | `Pending Pre-Moderation Review` |
+| 2 | **Gate 1** pre-moderation: rate each criterion 0/1/2, answer Section 1 Q1–3, consensus + signature, or request revision | Internal moderator | `Ready for Post-Moderation` / `Revision Requested` |
+| 3 | Post-assessment: class-list marks → automatic statistics, registered/absent, Section 2 Q1–5, signature | Examiner | `Pending Final Moderation Review` |
+| 4 | **Gate 2** final review: Section 2 Q6–8, comments, mark adjustments, signature | Internal moderator | `Completed`, or `Pending External Moderation` if an external moderator is assigned |
+| 4b | **Gate 3** external review (optional): completes Section 3 | External moderator | `Pending Section 3 Sign-off` |
+| 4c | Section 3 sign-off (only when an external moderator is assigned) | Examiner + HOD | `Completed` |
+| 5 | PDF in the layout of the official CPUT *Appendix 2: Comprehensive Moderation Report* generated and archived; HOD notified | System | `Completed` |
 
 Gate numbering: Gate 1 = internal pre-approval, Gate 2 = internal final consensus, Gate 3 = optional external moderator. The HOD receives the report and can monitor every record in their subjects; they are not a signing gate. Diagrams and the permission matrix: **[docs/workflow.md](docs/workflow.md)**.
 

@@ -5,15 +5,15 @@ You are optional, final reviewer for assessments where your name was added. You 
 ## Your task (Gate 3)
 
 1. Open the card marked **Your turn** (or follow the e-mail / bell notification).
-2. **Read the results** — statistics, distribution and the examiner's commentary.
+2. **Read the results** — statistics and the Section 1 and 2 answers.
 3. **Read the internal moderator's sign-off**, shown above the evidence (comments and scripts sampled).
 4. **Review the evidence** — sample scripts, assessment paper and memorandum, in the built-in viewer.
-5. **Complete the quality check** (Yes / No / N/A; a *No* needs an explanation) and enter the number of scripts you sampled.
+5. **Complete Section 3** of the official form: comment on coverage, difficulty, relevance, reliability, validity, feedback, best practice, standards and recommendations, and state any general adjustment of marks.
 6. Tick **Consensus reached**, sign (drawing + password) and click **Sign & approve**.
 
 ![Quality check and sign-off](../screenshots/gate2-quality-check-and-signoff.png)
 
-On approval the PDF report is generated and archived and the record becomes **Completed**.
+On approval the record moves to **Pending Section 3 Sign-off**: the examiner and the Head of Department sign Section 3, and then the PDF report is generated and archived and the record becomes **Completed**.
 
 ## If you have concerns
 
@@ -23,7 +23,7 @@ Click **Return to examiner**, explain what needs to change and send. The record 
 
 ![Completed record](../screenshots/record-completed.png)
 
-You can download the signed PDF at any time from the record. It contains both moderators' quality checks and all signatures.
+You can download the signed PDF at any time from the record. It reproduces the official form, with both moderators' sections and all signatures.
 
 ## Good to know
 

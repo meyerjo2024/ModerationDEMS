@@ -51,7 +51,7 @@ The app checks the file against your assessment and warns you (without blocking)
 
 **Step 3 – Sample scripts (optional).** Attach marked scripts (PDF, PNG, JPG) — ideally a high, an average and a low one.
 
-**Step 4 – Commentary and signature.** Describe how students performed (e.g. "essay question 2 was poorly answered"), sign and click **Sign & submit for final moderation**.
+**Step 4 – Registered/absent numbers, Section 2 Q1–5 and signature.** Confirm registered students (absent is calculated), the type of assessment, and answer the form's five questions on how students fared, then sign and click **Sign & submit for final moderation**.
 
 > The numbers you see are a preview. When you sign, the system **recalculates them from your file**, so what the moderator sees is always consistent with your upload.
 > The workbook itself is only visible to you. Moderators see the statistics and your sample scripts, not student numbers.
