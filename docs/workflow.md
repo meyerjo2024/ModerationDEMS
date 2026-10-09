@@ -96,6 +96,8 @@ Implemented in `app/Services/StatisticsCalculator.php` and unit-tested.
 | Class average | Mean mark as % of total |
 | Excluded entries | Non-numeric text (e.g. `ABS`), negatives and marks above the total are **not** counted and are reported on screen and in the PDF |
 
+**Marksheet format.** The university class-list marksheet is read directly (`.xls`, also `.xlsx` / `.csv`). The reader locates the heading row (the row containing `S_NAME` / `S_NO` and `T1…Tn`), takes the class details above it (subject code, year, lecturer, *Total Number of Students*, *Test Weights*), and offers only the `T` columns. Only the chosen test column is read — **student names and numbers are never read into the application**. Sanity checks (non-blocking warnings): class list for a different subject code, more marks than listed students, and listed students without a mark in that test.
+
 The browser only *previews* the numbers. When the examiner signs, the server **recomputes** everything from the uploaded source — client-supplied statistics are never trusted.
 
 ## Signatures and audit

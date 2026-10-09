@@ -60,7 +60,7 @@
         <td><div class="tile"><div class="k">{{ $k }}</div><div class="v">{{ $v }}</div></div></td>
       @endforeach
     </tr></table>
-    <div class="muted" style="margin-top:6px">{{ $stats['passed'] }} of {{ $stats['candidates'] }} candidates achieved {{ $stats['pass_mark'] }}% or higher. Marks are expressed as percentages of {{ $stats['total_marks'] + 0 }} total marks.@if ($stats['invalid']) {{ $stats['invalid'] }} non-numeric / out-of-range {{ $stats['invalid'] === 1 ? 'entry was' : 'entries were' }} excluded.@endif<br>@if ($stats['source'])Source: {{ $stats['source'] }}@endif</div>
+    <div class="muted" style="margin-top:6px">{{ $stats['passed'] }} of {{ $stats['candidates'] }} candidates achieved {{ $stats['pass_mark'] }}% or higher. Marks are expressed as percentages of {{ $stats['total_marks'] + 0 }} total marks.@if ($stats['invalid']) {{ $stats['invalid'] }} non-numeric / out-of-range {{ $stats['invalid'] === 1 ? 'entry was' : 'entries were' }} excluded.@endif @if ($stats['enrolled']) {{ $stats['enrolled'] }} students are listed on the class list; {{ $stats['candidates'] }} have a mark in this test.@endif @if ($stats['weight']) This test counts for {{ $stats['weight'] + 0 }}% of the year mark.@endif<br>@if ($stats['source'])Source: {{ $stats['source'] }}@endif</div>
     @php $max = max(1, ...$stats['distribution']); @endphp
     <table class="chart" style="margin-top:10px"><tr>
       @foreach ($stats['distribution'] as $i => $n)

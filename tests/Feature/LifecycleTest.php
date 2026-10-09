@@ -16,6 +16,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Tests\Support\ClassListMarksheet;
 use Tests\TestCase;
 
 class LifecycleTest extends TestCase
@@ -193,6 +194,63 @@ class LifecycleTest extends TestCase
         $this->actingAs($this->internal)->postJson("/assessments/{$a->id}/final-review", ['decision' => 'APPROVED', 'consensus' => true, 'scripts_sampled' => 2, 'checklist' => $this->checklist(), 'signature' => $this->sig()])->assertOk();
         $this->assertSame(AssessmentStatus::Completed, $a->fresh()->status);
         $this->assertNotNull($a->fresh()->attachments->firstWhere('kind', AttachmentKind::FinalReport));
+    }
+
+    public function test_class_list_xls_is_read_checked_and_saved(): void
+    {
+        $phe = Subject::create(['code' => 'PHE261S', 'name' => 'Pre-hospital care 2', 'hod_id' => $this->hod->id]);
+        $this->actingAs($this->examiner)->post('/assessments', ['subject_id' => $phe->id, 'number' => 'Test 2', 'internal_moderator_id' => $this->internal->id])->assertRedirect();
+        $a = Assessment::where('subject_id', $phe->id)->firstOrFail();
+        $this->submitSection1($a);
+        $this->actingAs($this->internal)->postJson("/assessments/{$a->id}/pre-review", ['decision' => 'APPROVED', 'consensus' => true, 'signature' => $this->sig()])->assertOk();
+
+        $t1 = array_merge([72, 70, 45, 56, 47, 31, 49, 39], range(40, 61)); // 30 students
+        $t2 = $t1;
+        $t2[3] = null; // one student has no T2 mark
+        $file = new UploadedFile(ClassListMarksheet::build($t1, $t2), 'PHE261S_OT01.xls', null, null, true);
+        $att = $this->actingAs($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'MARKS', 'file' => $file], ['Accept' => 'application/json'])->assertOk()->json('attachment.id');
+
+        $sheet = $this->actingAs($this->examiner)->getJson("/assessments/{$a->id}/marks?attachment={$att}")->assertOk()->json('sheets.0');
+        $this->assertSame('class-list', $sheet['format']);
+        $this->assertSame('PHE261S', $sheet['meta']['code']);
+        $this->assertSame(['T1', 'T2', 'T3', 'T4'], array_column($sheet['columns'], 'header'));
+        $t2col = $sheet['columns'][1];
+        $this->assertSame(29, $t2col['nonBlank']);
+
+        $source = ['type' => 'excel', 'attachment_id' => $att, 'sheet' => $sheet['name'], 'column' => $t2col['index']];
+        $prev = $this->actingAs($this->examiner)->postJson("/assessments/{$a->id}/calculate", ['source' => $source, 'total_marks' => 100])->assertOk()->json();
+        $this->assertSame(29, $prev['stats']['candidate_count']);
+        $this->assertSame(30, $prev['info']['enrolled']);
+        $this->assertEquals(25, $prev['info']['weight']);
+        $this->assertCount(1, $prev['warnings']);
+        $this->assertStringContainsString('1 of 30 listed students have no mark', $prev['warnings'][0]);
+
+        // a test that has not been written yet cannot be used
+        $this->actingAs($this->examiner)->postJson("/assessments/{$a->id}/calculate", ['source' => ['column' => $sheet['columns'][2]['index']] + $source, 'total_marks' => 100])
+            ->assertStatus(400)->assertJsonPath('error', 'No valid marks were found in the selected data.');
+
+        $this->actingAs($this->examiner)->postJson("/assessments/{$a->id}/submit-post", ['source' => $source, 'total_marks' => 100, 'commentary' => 'Test 2 results look fine.', 'signature' => $this->sig()])->assertOk();
+        $a->refresh();
+        $this->assertSame(30, $a->enrolled_count);
+        $this->assertEquals(25, $a->test_weight);
+        $this->assertSame(29, $a->candidate_count);
+        $this->assertStringContainsString('PHE261S_OT01.xls › MAS - Marksheet › T2', $a->marks_source);
+
+        // the moderator's final-review screen and the examiner's record both render the class-list details
+        $this->actingAs($this->internal)->get("/assessments/{$a->id}")->assertOk()->assertSee('29 of 30 listed students have a mark in this test')->assertSee('test weight 25% of the year mark');
+        $this->actingAs($this->examiner)->get("/assessments/{$a->id}")->assertOk()->assertSee('29 of 30 listed students');
+    }
+
+    public function test_warns_when_the_class_list_belongs_to_another_subject(): void
+    {
+        $a = $this->newAssessment(false); // subject CSC101
+        $this->submitSection1($a);
+        $this->actingAs($this->internal)->postJson("/assessments/{$a->id}/pre-review", ['decision' => 'APPROVED', 'consensus' => true, 'signature' => $this->sig()])->assertOk();
+        $file = new UploadedFile(ClassListMarksheet::build(range(30, 59), [], 'PHE261S'), 'list.xls', null, null, true);
+        $att = $this->actingAs($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'MARKS', 'file' => $file], ['Accept' => 'application/json'])->assertOk()->json('attachment.id');
+        $sheet = $this->actingAs($this->examiner)->getJson("/assessments/{$a->id}/marks?attachment={$att}")->json('sheets.0');
+        $prev = $this->actingAs($this->examiner)->postJson("/assessments/{$a->id}/calculate", ['source' => ['type' => 'excel', 'attachment_id' => $att, 'sheet' => $sheet['name'], 'column' => $sheet['columns'][0]['index']], 'total_marks' => 100])->assertOk()->json();
+        $this->assertStringContainsString('This class list is for PHE261S, but this assessment belongs to CSC101', $prev['warnings'][0]);
     }
 
     public function test_final_review_can_be_returned_to_the_examiner(): void

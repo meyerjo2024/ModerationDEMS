@@ -53,6 +53,7 @@ class ReportService
                 'candidates' => $a->candidate_count, 'passed' => $a->pass_count, 'pass_rate' => $a->pass_rate,
                 'highest' => $a->highest_mark, 'lowest' => $a->lowest_mark, 'average' => $a->class_average,
                 'invalid' => $a->invalid_entries ?? 0, 'distribution' => $c['distribution'], 'source' => $a->marks_source,
+                'enrolled' => $a->enrolled_count, 'weight' => $a->test_weight,
             ];
         }
 

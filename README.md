@@ -73,7 +73,7 @@ Troubleshooting table (wrong branch, payment prompt, password errors, Supabase c
 
 ## Calculation rules
 
-Candidates = non-blank numeric rows · Pass = mark ≥ 50 % of total marks · highest / lowest / class average as % · non-numeric entries (e.g. `ABS`) are excluded and reported, never silently counted. Details in [docs/workflow.md](docs/workflow.md#what-the-system-calculates).
+Marks are read from the class-list marksheet (`.xls`) — see [workflow](docs/workflow.md#what-the-system-calculates). Candidates = non-blank numeric rows · Pass = mark ≥ 50 % of total marks · highest / lowest / class average as % · non-numeric entries (e.g. `ABS`) are excluded and reported, never silently counted. Details in [docs/workflow.md](docs/workflow.md#what-the-system-calculates).
 
 ## Tests & CI
 
@@ -87,7 +87,7 @@ GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)) builds assets and runs the
 
 - The Docker/Render setup was written and the app tested outside Docker; deployment issues are collected in the troubleshooting table.
 - PDF preview is inline for PDFs; Word files are download-only.
-- Marks upload supports `.xlsx` / `.csv` (headings in row 1), not legacy `.xls`.
+- Marks upload reads the university **class-list marksheet** (`.xls`) as exported, and plain `.xlsx` / `.csv` with headings in row 1.
 - No self-service password reset yet; administrators set passwords.
 - E-mail is optional and only active when a real `MAIL_MAILER` is configured; otherwise the PDF is downloaded from the record.
 - Login throttling uses the cache (`file` by default); use a shared store if you run several instances.

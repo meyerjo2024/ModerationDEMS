@@ -12,3 +12,4 @@
 | [Development guide](development.md) | Developers — structure, tests, GitHub Actions |
 | [Sample report (PDF)](sample-report.pdf) | The generated moderation report |
 | `Academic Moderation System Proposal (Generic)_RM.docx` | Original proposal |
+| [Sample class list (anonymised .xls)](samples/PHE261S_class-list_SAMPLE.xls) | The marksheet layout the app reads |

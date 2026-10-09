@@ -202,10 +202,29 @@ class Workflow
     public function preview(User $user, Assessment $a, array $source, float $total): array
     {
         $this->assertExaminer($user, $a);
-        [$result, $desc] = $this->resolveMarks($a, $source, $total);
+        [$result, $desc, , $info] = $this->resolveMarks($a, $source, $total);
         unset($result['scores']);
 
-        return ['stats' => $result, 'source' => $desc];
+        return ['stats' => $result, 'source' => $desc, 'info' => $info, 'warnings' => $this->warnings($a, $result, $info)];
+    }
+
+    /** Sanity checks against the class list (never blocking). @return list<string> */
+    private function warnings(Assessment $a, array $result, array $info): array
+    {
+        $w = [];
+        if (! empty($info['code']) && strcasecmp($info['code'], $a->subject->code) !== 0) {
+            $w[] = "This class list is for {$info['code']}, but this assessment belongs to {$a->subject->code}. Make sure you uploaded the right file.";
+        }
+        if (! empty($info['enrolled'])) {
+            if ($result['candidate_count'] > $info['enrolled']) {
+                $w[] = "More marks ({$result['candidate_count']}) than students on the class list ({$info['enrolled']}).";
+            } elseif ($result['candidate_count'] < $info['enrolled']) {
+                $missing = $info['enrolled'] - $result['candidate_count'];
+                $w[] = "{$missing} of {$info['enrolled']} listed students have no mark in this test (absent or not captured) and are not counted as candidates.";
+            }
+        }
+
+        return $w;
     }
 
     public function submitPost(User $user, Assessment $a, array $source, float $total, string $commentary, array $sig, array $meta): void
@@ -213,16 +232,17 @@ class Workflow
         $this->assertExaminer($user, $a);
         $this->expect($a, S::ReadyForPostModeration);
         // Statistics are always recomputed server-side from the source — never trusted from the client.
-        [$r, $desc, $fingerprint] = $this->resolveMarks($a, $source, $total);
+        [$r, $desc, $fingerprint, $info] = $this->resolveMarks($a, $source, $total);
         $this->signer->confirm($user, $sig);
 
         $stats = Arr::only($r, ['candidate_count', 'pass_count', 'pass_rate', 'highest_mark', 'lowest_mark', 'class_average']);
         $hash = Hashing::content(['section' => 2, 'id' => $a->id, 'stats' => $stats, 'totalMarks' => $r['total_marks'], 'source' => $fingerprint, 'commentary' => $commentary]);
-        DB::transaction(function () use ($a, $user, $r, $stats, $desc, $commentary, $sig, $hash, $meta) {
+        DB::transaction(function () use ($a, $user, $r, $stats, $desc, $commentary, $sig, $hash, $meta, $info) {
             $a = $this->lock($a, S::ReadyForPostModeration);
             $a->update($stats + [
                 'status' => S::PendingFinalModeration, 'total_marks' => $r['total_marks'], 'scores' => $r['scores'],
                 'invalid_entries' => $r['invalid_entries'], 'marks_source' => $desc, 'examiner_commentary' => $commentary,
+                'enrolled_count' => $info['enrolled'] ?? null, 'test_weight' => $info['weight'] ?? null,
             ]);
             $this->signer->record($a, $user, SignatureSection::ExaminerSection2, $sig['image'], $hash, $meta);
             $this->audit->log('SECTION2_SUBMITTED', $a->id, $user->id, $stats + ['source' => $desc, 'contentHash' => $hash], $meta['ip']);
@@ -330,22 +350,24 @@ class Workflow
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
-    /** @return array{0: array, 1: string, 2: string} [result, description, fingerprint] */
+    /** @return array{0: array, 1: string, 2: string, 3: array} [result, description, fingerprint, class-list info] */
     private function resolveMarks(Assessment $a, array $source, float $total): array
     {
         if (($source['type'] ?? '') === 'manual') {
             $text = (string) ($source['text'] ?? '');
 
-            return [$this->calc->calculate($this->calc->parseManual($text), $total), 'Entered manually', hash('sha256', $text)];
+            return [$this->calc->calculate($this->calc->parseManual($text), $total), 'Entered manually', hash('sha256', $text), []];
         }
         $att = $a->attachments()->where('id', $source['attachment_id'] ?? '')->where('kind', AttachmentKind::Marks->value)->first()
             ?? throw new WorkflowException('That marks file was not found on this assessment.');
         $col = $this->workbook->column($this->files->get($att->storage_key), $att->filename, (string) $source['sheet'], (int) $source['column']);
+        $info = ['enrolled' => $col['enrolled'], 'weight' => $col['weight'], 'code' => $col['meta']['code'] ?? null, 'format' => $col['format']];
 
         return [
             $this->calc->calculate($col['values'], $total),
             "{$att->filename} › {$source['sheet']} › {$col['header']}",
             "{$att->sha256}:{$source['sheet']}:{$source['column']}",
+            $info,
         ];
     }
 

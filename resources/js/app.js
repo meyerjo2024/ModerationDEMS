@@ -218,8 +218,19 @@ Alpine.data('section2', (cfg) => ({
         this.$watch('sourceKey', () => this.schedule());
         this.$watch('total', () => this.schedule());
     },
+    get current() {
+        return this.sheets.find((s) => s.name === this.sheet) ?? null;
+    },
     get cols() {
-        return this.sheets.find((s) => s.name === this.sheet)?.columns ?? [];
+        return this.current?.columns ?? [];
+    },
+    /** Pre-select the test that matches the assessment number ("Test 2" → T2) when it has marks. */
+    autoPick() {
+        this.column = 0;
+        const n = (cfg.number.match(/\d+/) ?? [])[0];
+        const hit = n ? this.cols.find((c) => c.header.toUpperCase() === `T${n}` && c.nonBlank > 0) : null;
+        const only = this.cols.filter((c) => c.nonBlank > 0);
+        this.column = hit ? hit.index : only.length === 1 ? only[0].index : 0;
     },
     get source() {
         if (this.mode === 'excel') return this.attId && this.sheet && Number(this.column) ? { type: 'excel', attachment_id: this.attId, sheet: this.sheet, column: Number(this.column) } : null;
@@ -236,7 +247,7 @@ Alpine.data('section2', (cfg) => ({
             const r = await api('GET', `/assessments/${this.id}/marks?attachment=${this.attId}`);
             this.sheets = r.sheets;
             this.sheet = r.sheets[0]?.name ?? '';
-            this.column = 0;
+            this.autoPick();
             this.preview = null;
         } catch (e) {
             this.calcError = e.message;
