@@ -363,6 +363,29 @@ class LifecycleTest extends TestCase
         $this->assertSame('EXAMINER', User::where('email', 'dp@t.test')->value('extra_roles'));
     }
 
+    public function test_reviewer_comments_on_documents_go_back_to_the_examiner(): void
+    {
+        $a = $this->newAssessment();
+        $this->submitSection1($a);
+        $paper = Attachment::where('assessment_id', $a->id)->where('kind', AttachmentKind::Paper->value)->firstOrFail();
+        // the examiner cannot comment on their own paper, a stranger cannot even see it
+        $this->as($this->examiner)->postJson("/attachments/{$paper->id}/comments", ['body' => 'self note'])->assertForbidden();
+        $this->as($this->external)->getJson("/attachments/{$paper->id}/comments")->assertNotFound();
+        // the internal moderator comments on a passage and on the document as a whole
+        $this->as($this->internal)->postJson("/attachments/{$paper->id}/comments", ['body' => 'Question 2 is above level 6.', 'quote' => 'Explain the difference', 'start_offset' => 12])->assertCreated();
+        $this->as($this->internal)->postJson("/attachments/{$paper->id}/comments", ['body' => 'Add a cover page.'])->assertCreated();
+        $this->as($this->internal)->getJson("/attachments/{$paper->id}/comments")->assertOk()->assertJsonCount(2, 'comments')->assertJsonPath('can.comment', true);
+        $this->as($this->internal)->postJson("/assessments/{$a->id}/pre-review", ['decision' => 'REVISION_REQUESTED', 'comments' => 'See the comments in the paper.', 'signature' => $this->sig()])->assertOk();
+        $this->assertStringContainsString('2 comments', \App\Models\Notification::where('user_id', $this->examiner->id)->latest('id')->value('message'));
+        // the examiner reads them and marks one as addressed; the moderator can no longer comment while it is with the examiner
+        $r = $this->as($this->examiner)->getJson("/attachments/{$paper->id}/comments")->assertOk()->assertJsonPath('can.address', true)->assertJsonPath('can.comment', false);
+        $id = $r->json('comments.0.id');
+        $this->as($this->examiner)->patchJson("/comments/{$id}", ['addressed' => true])->assertOk()->assertJsonPath('addressed', true);
+        $this->as($this->internal)->postJson("/attachments/{$paper->id}/comments", ['body' => 'late'])->assertForbidden();
+        $this->as($this->internal)->patchJson("/comments/{$id}", ['addressed' => false])->assertForbidden();
+        $this->as($this->examiner)->get("/assessments/{$a->id}")->assertOk()->assertSee('Comments on your documents');
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');

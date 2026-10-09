@@ -14,6 +14,14 @@ $feedback = $a->records->where('stage', ModerationStage::PreModeration)->where('
 <div x-data="section1(@js(['id' => $a->id, 'form' => $form, 'files' => ['PAPER' => $file(\App\Enums\AttachmentKind::Paper), 'MEMO' => $file(\App\Enums\AttachmentKind::Memo)]]))" @signed="sig = $event.detail" class="space-y-6">
   @if ($feedback && $a->status === \App\Enums\AssessmentStatus::RevisionRequested)
     <x-notice tone="warn" title="Revision requested by {{ $feedback->reviewer->name }}"><p class="whitespace-pre-wrap">{{ $feedback->comments }}</p><p class="mt-1 text-xs opacity-70">{{ $feedback->created_at->utc()->format('j M Y, H:i') }} UTC</p></x-notice>
+    @if (\App\Models\DocumentComment::where('assessment_id', $a->id)->exists())
+      <section class="card p-6 sm:p-8">
+        <p class="kicker">Reviewer comments</p><h2 class="mt-1 text-xl font-semibold">Comments on your documents</h2>
+        <p class="mb-4 mt-1 text-sm text-slate-500 dark:text-zinc-400">The moderator marked passages in your Word documents. Make the changes, upload the revised files below, and mark each comment as addressed.</p>
+        @php $AK = \App\Enums\AttachmentKind::class; @endphp
+        <x-doc-viewer :docs="[['Assessment paper', $a->latestAttachment($AK::Paper)], ['Memorandum', $a->latestAttachment($AK::Memo)]]" />
+      </section>
+    @endif
   @endif
 
   <section class="card p-6 sm:p-8">

@@ -2,6 +2,10 @@
 
 How a record moves through Moderation DEMS, who can act at each step, and what the system records.
 
+## Reviewing Word documents
+
+The reviewer's comments live in `document_comments` (quote + offset anchor, author, addressed flag). Only the assigned moderator can add or delete (their own) comments, and only while the record is with them; the examiner can mark comments addressed while the record is a draft or returned. Comments are kept when the examiner re-uploads (shown as *earlier version* and re-anchored by their quoted text). Conversion happens in the browser (mammoth.js, sanitised with DOMPurify); the original file is never modified.
+
 ## Roles per person
 
 Each user has one primary role and may have **extra roles** (Admin → *Add user → Also acts as*). A Head of Department can therefore also be an examiner or internal moderator. What a person may do on a record is decided by their assignment to it (examiner, internal/external moderator, subject HOD); extra roles only unlock the matching screens and pickers. Rules that still apply: you cannot moderate your own assessment, and moderators must be different people. If one person is both the examiner and the subject's HOD, they sign Section 3 **twice**, once in each capacity.

@@ -69,6 +69,7 @@ Troubleshooting table (wrong branch, payment prompt, password errors, Supabase c
 - **Signatures = pen drawing + password re-entry**, stored with a SHA-256 hash of what was attested, timestamp, IP and browser.
 - Row-locked state machine: a record cannot be advanced twice.
 - Statistics are **recomputed server-side** from the source marks; the browser never supplies them.
+- Word (`.docx`) papers and memoranda are reviewed **in the browser**: moderators highlight passages and comment; the comments return to the examiner with the revision request. (Older `.doc` files are download-only.)
 - Hash-chained, append-only audit log per record (tamper-evident; the PDF shows the chain head).
 - Student marks are stored as anonymous numbers; the raw workbook is downloadable by the examiner only; external moderators see a record only once it reaches them.
 - CSRF on every mutation, login and signing throttles, upload validation by extension **and** magic bytes, Row Level Security enabled for Supabase.

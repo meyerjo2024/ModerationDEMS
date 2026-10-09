@@ -58,6 +58,10 @@ The app checks the file against your assessment and warns you (without blocking)
 
 ## E. If the record is returned
 
+If the moderator requests a revision at Gate 1, your Word documents appear with the moderator's highlighted comments. Make the changes, upload the revised files, and mark each comment as **addressed**.
+
+![Reviewer comments](../screenshots/word-review-examiner.png)
+
 A moderator can send the results back with feedback. The record returns to **Ready for Post-Moderation**; correct the marks or commentary and submit again. Moderators sign again afterwards.
 
 ## F. After completion
