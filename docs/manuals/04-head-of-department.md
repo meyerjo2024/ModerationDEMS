@@ -8,7 +8,8 @@ The HOD role has two jobs: **monitor** moderation across the subjects they head,
 
 - The dashboard lists **every record in your subjects**, whatever its status. Use the tiles, tabs and search to see what is pending, returned or completed.
 - Open any record to see its progress, collected signatures and audit trail.
-- You do **not** sign anything; you receive the result.
+- If you also hold the Examiner or Internal Moderator role (set by an administrator under *Admin → Add user → Also acts as*), those screens appear for you too; on a record where you are both examiner and HOD you sign Section 3 twice, once per capacity.
+- When an external moderator is assigned, you **sign Section 3** of the form (with the examiner) after the external moderator has finished; the record shows **Pending Section 3 Sign-off** and is marked *Your turn*. Otherwise you only receive the result.
 
 ### The final report
 
@@ -16,7 +17,7 @@ When a record is **Completed** you get a notification and can download the signe
 
 ![Completed record](../screenshots/record-completed.png)
 
-If the server is connected to a mail service, the PDF is also e-mailed to you. The report contains: question types, document fingerprints, performance statistics with chart, examiner commentary, each gate's quality checks and decision, every signature, and the audit-chain reference.
+If the server is connected to a mail service, the PDF is also e-mailed to you. The report contains: the official CPUT Appendix 2 form: Sections 1–3, ratings, performance statistics, adjustments, every signature, document fingerprints and the audit-chain reference.
 
 ![Report page 1](../screenshots/report-page-1.png)
 ![Report page 3](../screenshots/report-page-3.png)

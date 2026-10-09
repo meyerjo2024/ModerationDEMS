@@ -2,6 +2,10 @@
 
 How a record moves through Moderation DEMS, who can act at each step, and what the system records.
 
+## Roles per person
+
+Each user has one primary role and may have **extra roles** (Admin → *Add user → Also acts as*). A Head of Department can therefore also be an examiner or internal moderator. What a person may do on a record is decided by their assignment to it (examiner, internal/external moderator, subject HOD); extra roles only unlock the matching screens and pickers. Rules that still apply: you cannot moderate your own assessment, and moderators must be different people. If one person is both the examiner and the subject's HOD, they sign Section 3 **twice**, once in each capacity.
+
 ## Journey at a glance
 
 ![Dashboard](screenshots/dashboard-examiner.png)
@@ -12,8 +16,9 @@ How a record moves through Moderation DEMS, who can act at each step, and what t
 | **Phase 1 — Section 1** | Examiner | Fills the *Types of questions* table (weighting + HEQF level + alignment), uploads paper and memorandum, signs | `Pending Pre-Moderation Review` |
 | **Gate 1** | Internal moderator | Reviews documents in the built-in viewer, then **approves** (consensus + signature) or **requests revision** (feedback) | `Ready for Post-Moderation` / `Revision Requested` |
 | **Phase 3 — Section 2** | Examiner | Uploads marks (or types them), the engine calculates statistics, adds commentary and optional sample scripts, signs | `Pending Final Moderation Review` |
-| **Gate 2** | Internal moderator | Reviews statistics, commentary, scripts; answers the quality checks; signs, or returns the record | `Completed` or `Pending External Moderation` |
-| **Gate 3** (optional) | External moderator | Same review, final signature | `Completed` |
+| **Gate 2** | Internal moderator | Reviews statistics, commentary, scripts; answers Section 2 Q6–8, comments and mark adjustments; signs, or returns the record | `Completed` or `Pending External Moderation` |
+| **Gate 3** (optional) | External moderator | Completes Section 3 and signs | `Pending Section 3 Sign-off` |
+| **Section 3 sign-off** (only with an external moderator) | Examiner, then/and HOD | Both sign Section 3; the last signature completes the record | `Completed` |
 | **Phase 5 — Completion** | System | Generates the PDF report, archives it, notifies everyone (and e-mails the HOD when mail is configured) | `Completed` |
 
 ## State machine
@@ -30,7 +35,8 @@ stateDiagram-v2
     PENDING_FINAL_MODERATION --> PENDING_EXTERNAL_MODERATION: Gate 2 approves (external assigned)
     PENDING_FINAL_MODERATION --> COMPLETED: Gate 2 approves (no external)
     PENDING_EXTERNAL_MODERATION --> READY_FOR_POST_MODERATION: Gate 3 returns the record
-    PENDING_EXTERNAL_MODERATION --> COMPLETED: Gate 3 approves
+    PENDING_EXTERNAL_MODERATION --> PENDING_SECTION3_SIGNOFF: Gate 3 approves
+    PENDING_SECTION3_SIGNOFF --> COMPLETED: Examiner and HOD sign Section 3
     COMPLETED --> [*]
 ```
 
@@ -63,7 +69,7 @@ sequenceDiagram
     I->>S: Gate 2 — quality checks, scripts sampled, sign
     opt External moderator assigned
         S-->>X: Notification: external moderation
-        X->>S: Gate 3 — quality checks, sign
+        X->>S: Gate 3 — Section 3, sign
     end
     S->>S: Generate PDF report, archive, write audit entry
     S-->>H: Notification (+ e-mail with PDF when mail is configured)
@@ -96,6 +102,8 @@ Implemented in `app/Services/StatisticsCalculator.php` and unit-tested.
 | Class average | Mean mark as % of total |
 | Excluded entries | Non-numeric text (e.g. `ABS`), negatives and marks above the total are **not** counted and are reported on screen and in the PDF |
 
+**Marksheet format.** The university class-list marksheet is read directly (`.xls`, also `.xlsx` / `.csv`). The reader locates the heading row (the row containing `S_NAME` / `S_NO` and `T1…Tn`), takes the class details above it (subject code, year, lecturer, *Total Number of Students*, *Test Weights*), and offers only the `T` columns. Only the chosen test column is read — **student names and numbers are never read into the application**. Sanity checks (non-blocking warnings): class list for a different subject code, more marks than listed students, and listed students without a mark in that test.
+
 The browser only *previews* the numbers. When the examiner signs, the server **recomputes** everything from the uploaded source — client-supplied statistics are never trusted.
 
 ## Signatures and audit
@@ -118,7 +126,7 @@ In-app (bell icon) for every hand-over. E-mail is optional: it is sent only when
 | Table | Content |
 |---|---|
 | `assessments` | Status, Section 1 rows, Section 2 statistics, commentary (raw scores are stored only as anonymous numbers) |
-| `moderation_records` | Each gate decision, comments, quality-check answers, scripts sampled |
+| `moderation_records` | Each gate decision, comments, and the official-form answers (JSON per section) |
 | `signatures` | Image, content hash, signer, IP, time |
 | `attachments` / `file_blobs` | Paper, memo, marks, scripts, final PDF |
 | `audit_logs` | Hash-chained event log |

@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/calculate', 'calculate')->middleware('role:EXAMINER');
         Route::post('/submit-post', 'submitPost')->middleware('role:EXAMINER');
         Route::post('/final-review', 'finalReview')->middleware('role:INTERNAL_MODERATOR,EXTERNAL_MODERATOR');
+        Route::post('/section3-sign', 'section3Sign')->middleware('role:EXAMINER,HOD');
     });
 
     Route::get('/files/{attachment}', [FileController::class, 'show'])->name('files.show');

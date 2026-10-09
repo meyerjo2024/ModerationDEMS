@@ -26,7 +26,7 @@ app/
     Audit.php / Hashing.php hash-chained audit log
     ReportService.php       PDF data + rendering
     FileStore.php           db / disk storage
-config/dems.php     institution, gates, quality-check questions, audit labels
+config/dems.php     institution, gates, audit labels (form text is in config/moderation_form.php)
 resources/views/    components (x-…), panels per workflow step, pdf/report.blade.php
 resources/js/app.js Alpine components: signature pad, forms, notifications
 database/migrations tables + Row Level Security
@@ -67,7 +67,7 @@ Deployments are done by Render, which rebuilds the Docker image when the linked 
 
 - **Statuses and actors:** `app/Enums/AssessmentStatus.php`.
 - **Rules per step:** `app/Services/Workflow.php` (add a test in `tests/Feature/LifecycleTest.php`).
-- **Quality-check questions:** `config/dems.php` → `quality_checks`.
+- **Official form wording** (periods, question types, ratings, Q1–8, Section 3 items, adjustments): `config/moderation_form.php`; validation in `app/Services/ModerationForm.php`.
 - **Look and feel:** colours and component classes in `resources/css/app.css` (`--color-brand`, `--color-navy`, `--color-accent`).
 - **Report layout:** `resources/views/pdf/report.blade.php`.
 

@@ -40,15 +40,18 @@ When the moderator approves, the status is **Ready for Post-Moderation**. Once t
 ![Section 2](../screenshots/section2-marks-and-results.png)
 
 **Step 1 – Student marks**
-- **Excel / CSV:** upload the marks workbook (`.xlsx` or `.csv`, headings in row 1). Choose the **sheet** (if there are several) and the **assessment column**, e.g. `T1`.
+- **Marksheet file (the university class list):** upload the exported class-list marksheet **as it comes out of the system** (`.xls`; `.xlsx` and `.csv` also work). The app finds the heading row by itself and shows **"Class list recognised"** with the subject code, year, lecturer and number of students listed.
+- Choose the **test** (`T1`, `T2`, …). Only the test columns are offered, each with its **weight** (e.g. *T1 · 20% of year mark · 30 marks*); tests that have not been captured yet are greyed out ("no marks yet"). If your assessment is called *Test 1*, *T1* is selected for you.
 - **Enter manually:** switch the tab and type one mark per line.
-- Enter the **total marks available** (default 100).
+- **Total marks available:** 100 for a class list (its marks are already percentages).
+
+The app checks the file against your assessment and warns you (without blocking) if the class list belongs to a different subject code, or if some listed students have **no mark** in the chosen test (absent / not captured) — those students are not counted as candidates. An anonymised example is in [`docs/samples/PHE261S_class-list_SAMPLE.xls`](../samples/PHE261S_class-list_SAMPLE.xls).
 
 **Step 2 – Calculated results** appear automatically: candidates, pass rate (≥ 50 %), class average, highest and lowest mark, plus a distribution chart. Entries that cannot be used (such as `ABS`) are listed as excluded. Check these look right before continuing.
 
 **Step 3 – Sample scripts (optional).** Attach marked scripts (PDF, PNG, JPG) — ideally a high, an average and a low one.
 
-**Step 4 – Commentary and signature.** Describe how students performed (e.g. "essay question 2 was poorly answered"), sign and click **Sign & submit for final moderation**.
+**Step 4 – Registered/absent numbers, Section 2 Q1–5 and signature.** Confirm registered students (absent is calculated), the type of assessment, and answer the form's five questions on how students fared, then sign and click **Sign & submit for final moderation**.
 
 > The numbers you see are a preview. When you sign, the system **recalculates them from your file**, so what the moderator sees is always consistent with your upload.
 > The workbook itself is only visible to you. Moderators see the statistics and your sample scripts, not student numbers.
@@ -66,6 +69,6 @@ When all signatures are in, the record shows **Moderation complete** and you can
 ## Tips
 
 - Check the **Audit trail** in the sidebar if you are unsure what happened last.
-- Keep column headings (e.g. `T1`) unique in your workbook.
+- Don't edit the exported class list (no extra header rows or merged cells); the app reads it as exported.
 - Marks as percentages (`62%`) or with a decimal comma (`45,5`) are understood.
 - If a button is greyed out, look for the grey hint under it.

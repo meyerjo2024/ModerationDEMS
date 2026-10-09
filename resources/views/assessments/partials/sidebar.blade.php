@@ -10,7 +10,7 @@
     <ul class="space-y-3">@foreach ($sigs as $s)
       <li class="card-soft p-3"><p class="text-[11px] font-semibold uppercase tracking-wider text-accent dark:text-accent-dark">{{ $s->section->label() }}</p>
         <div class="my-1.5 rounded-lg bg-white p-1.5"><img src="{{ $s->image_data }}" alt="Signature of {{ $s->user->name }}" class="h-12 w-auto max-w-full object-contain"></div>
-        <p class="text-sm font-semibold">{{ $s->user->name }}</p><p class="text-xs text-slate-500 dark:text-zinc-400">{{ $s->user->role->label() }} · {{ $s->signed_at->utc()->format('j M Y, H:i') }} UTC</p></li>
+        <p class="text-sm font-semibold">{{ $s->user->name }}</p><p class="text-xs text-slate-500 dark:text-zinc-400">{{ $s->signed_at->utc()->format('j M Y, H:i') }} UTC</p></li>
     @endforeach</ul></section>
 @endif
 <section class="card p-6"><p class="kicker mb-4">Audit trail</p>

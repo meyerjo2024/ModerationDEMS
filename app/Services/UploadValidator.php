@@ -12,6 +12,7 @@ class UploadValidator
         'pdf' => ['ext' => ['pdf'], 'mime' => 'application/pdf'],
         'docx' => ['ext' => ['docx'], 'mime' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
         'doc' => ['ext' => ['doc'], 'mime' => 'application/msword'],
+        'xls' => ['ext' => ['xls'], 'mime' => 'application/vnd.ms-excel'],
         'xlsx' => ['ext' => ['xlsx'], 'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
         'csv' => ['ext' => ['csv'], 'mime' => 'text/csv'],
         'png' => ['ext' => ['png'], 'mime' => 'image/png'],
@@ -46,7 +47,7 @@ class UploadValidator
         return match ($key) {
             'pdf' => str_starts_with($d, '%PDF'),
             'docx', 'xlsx' => str_starts_with($d, "PK\x03\x04"),
-            'doc' => str_starts_with($d, "\xD0\xCF\x11\xE0"),
+            'doc', 'xls' => str_starts_with($d, "\xD0\xCF\x11\xE0"),
             'png' => str_starts_with($d, "\x89PNG"),
             'jpg' => str_starts_with($d, "\xFF\xD8\xFF"),
             'csv' => ! str_contains(substr($d, 0, 4096), "\0"),

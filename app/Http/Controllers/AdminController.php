@@ -16,7 +16,7 @@ class AdminController extends Controller
         return view('admin.index', [
             'users' => User::orderBy('role')->orderBy('name')->get(),
             'subjects' => Subject::with('hod')->orderBy('code')->get(),
-            'hods' => User::where('role', Role::Hod->value)->where('active', true)->orderBy('name')->get(),
+            'hods' => User::withRole(Role::Hod)->where('active', true)->orderBy('name')->get(),
         ]);
     }
 
@@ -26,11 +26,14 @@ class AdminController extends Controller
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
             'role' => ['required', Rule::enum(Role::class)],
+            'extra_roles' => ['nullable', 'array'],
+            'extra_roles.*' => [Rule::enum(Role::class)],
             'department' => ['nullable', 'string', 'max:120'],
             'password' => ['required', 'string', 'min:10', 'max:128'],
         ], ['password.min' => 'Use at least 10 characters.', 'email.unique' => 'A user with that e-mail already exists.']);
-        $user = User::create($d + ['active' => true]);
-        $audit->log('USER_CREATED', null, $request->user()->id, ['email' => $user->email, 'role' => $user->role->value], $request->ip());
+        $extra = array_values(array_diff(array_unique($d['extra_roles'] ?? []), [$d['role']]));
+        $user = User::create(['name' => $d['name'], 'email' => $d['email'], 'role' => $d['role'], 'extra_roles' => $extra ? implode(',', $extra) : null, 'department' => $d['department'] ?? null, 'password' => $d['password'], 'active' => true]);
+        $audit->log('USER_CREATED', null, $request->user()->id, ['email' => $user->email, 'roles' => $user->roleValues()], $request->ip());
 
         return back()->with('status', "User {$user->name} created.");
     }
@@ -41,7 +44,7 @@ class AdminController extends Controller
             'code' => ['required', 'string', 'min:2', 'max:20', 'unique:subjects,code'],
             'name' => ['required', 'string', 'min:2', 'max:160'],
             'department' => ['nullable', 'string', 'max:120'],
-            'hod_id' => ['required', Rule::exists('users', 'id')->where('role', Role::Hod->value)->where('active', true)],
+            'hod_id' => ['required', Rule::exists('users', 'id')->where(fn ($q) => $q->where('active', true)->where(fn ($w) => $w->where('role', Role::Hod->value)->orWhere('extra_roles', 'like', '%'.Role::Hod->value.'%')))],
         ], ['code.unique' => 'That subject code already exists.']);
         $d['code'] = mb_strtoupper(trim($d['code']));
         $subject = Subject::create($d);

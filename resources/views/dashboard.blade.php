@@ -6,7 +6,7 @@ $actionCount = $items->filter(fn ($i) => $i->needsActionFrom($user))->count();
 $first = collect(explode(' ', $user->name))->reject(fn ($p) => preg_match('/^(dr|prof|mr|mrs|ms)\.?$/i', $p))->first() ?? $user->name;
 $meta = $items->map(fn ($i) => ['status' => $i->status->value, 'action' => $i->needsActionFrom($user), 'text' => "{$i->subject->code} {$i->subject->name} {$i->number}"])->values();
 $headline = [$S::PendingPreModeration, $S::RevisionRequested, $S::ReadyForPostModeration, $S::Completed];
-$tabs = ['ALL' => ['All', $items->count()], 'ACTION' => ['Needs my action', $actionCount], 'DRAFT' => ['Drafts', $counts['DRAFT'] ?? 0], 'FINAL' => ['Final review', ($counts['PENDING_FINAL_MODERATION'] ?? 0) + ($counts['PENDING_EXTERNAL_MODERATION'] ?? 0)]];
+$tabs = ['ALL' => ['All', $items->count()], 'ACTION' => ['Needs my action', $actionCount], 'DRAFT' => ['Drafts', $counts['DRAFT'] ?? 0], 'FINAL' => ['Final review', ($counts['PENDING_FINAL_MODERATION'] ?? 0) + ($counts['PENDING_EXTERNAL_MODERATION'] ?? 0) + ($counts['PENDING_SECTION3_SIGNOFF'] ?? 0)]];
 @endphp
 <div x-data="dashboard(@js($meta))" class="space-y-8">
   <div class="relative overflow-hidden rounded-4xl bg-navy p-8 text-white shadow-lift sm:p-10">

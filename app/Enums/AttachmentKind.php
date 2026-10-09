@@ -26,7 +26,7 @@ enum AttachmentKind: string
     {
         return match ($this) {
             self::Paper, self::Memo => ['pdf', 'docx', 'doc'],
-            self::Marks => ['xlsx', 'csv'],
+            self::Marks => ['xls', 'xlsx', 'csv'],
             self::SampleScript => ['pdf', 'png', 'jpg'],
             self::FinalReport => ['pdf'],
         };

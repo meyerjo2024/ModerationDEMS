@@ -15,8 +15,8 @@ class AssessmentController extends Controller
     {
         return view('assessments.create', [
             'subjects' => Subject::orderBy('code')->get(),
-            'internals' => User::where('role', Role::InternalModerator->value)->where('active', true)->where('id', '!=', $request->user()->id)->orderBy('name')->get(),
-            'externals' => User::where('role', Role::ExternalModerator->value)->where('active', true)->orderBy('name')->get(),
+            'internals' => User::withRole(Role::InternalModerator)->where('active', true)->where('id', '!=', $request->user()->id)->orderBy('name')->get(),
+            'externals' => User::withRole(Role::ExternalModerator)->where('active', true)->orderBy('name')->get(),
         ]);
     }
 

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\AssessmentStatus;
 use App\Enums\AttachmentKind;
+use App\Enums\ModerationStage;
+use App\Enums\SignatureSection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
@@ -21,7 +23,11 @@ class Assessment extends Model
     {
         return [
             'status' => AssessmentStatus::class,
-            'question_types' => 'array',
+            's1_examiner' => 'array',
+            's1_moderator' => 'array',
+            's2_examiner' => 'array',
+            's2_moderator' => 'array',
+            's3_external' => 'array',
             'scores' => 'array',
             'completed_at' => 'datetime',
         ];
@@ -75,7 +81,7 @@ class Assessment extends Model
             $w->where('examiner_id', $u->id)
                 ->orWhere('internal_moderator_id', $u->id)
                 ->orWhere(fn (Builder $x) => $x->where('external_moderator_id', $u->id)
-                    ->whereIn('status', [AssessmentStatus::PendingExternalModeration->value, AssessmentStatus::Completed->value]))
+                    ->whereIn('status', [AssessmentStatus::PendingExternalModeration->value, AssessmentStatus::PendingSection3Signoff->value, AssessmentStatus::Completed->value]))
                 ->orWhereHas('subject', fn (Builder $s) => $s->where('hod_id', $u->id));
         });
     }
@@ -91,7 +97,7 @@ class Assessment extends Model
 
         // External moderators only see a record once it is handed to them.
         return $this->external_moderator_id === $u->id
-            && in_array($this->status, [AssessmentStatus::PendingExternalModeration, AssessmentStatus::Completed], true);
+            && in_array($this->status, [AssessmentStatus::PendingExternalModeration, AssessmentStatus::PendingSection3Signoff, AssessmentStatus::Completed], true);
     }
 
     public function needsActionFrom(User $u): bool
@@ -100,6 +106,8 @@ class Assessment extends Model
             'examiner' => $this->examiner_id === $u->id,
             'internal' => $this->internal_moderator_id === $u->id,
             'external' => $this->external_moderator_id === $u->id,
+            'signoff' => ($this->examiner_id === $u->id && ! $this->hasSection3Signature(SignatureSection::ExaminerSection3))
+                || ($this->subject->hod_id === $u->id && ! $this->hasSection3Signature(SignatureSection::HodSection3)),
             default => false,
         };
     }
@@ -114,6 +122,15 @@ class Assessment extends Model
     public function attachmentsOf(AttachmentKind $kind)
     {
         return $this->attachments->where('kind', $kind)->values();
+    }
+
+    /** Has this Section 3 signature been given since the external moderator's latest approval? */
+    public function hasSection3Signature(SignatureSection $section): bool
+    {
+        $approvedAt = $this->records->where('stage', ModerationStage::FinalExternal)->where('decision', 'APPROVED')->last()?->created_at;
+
+        return $this->signatures->where('section', $section)
+            ->contains(fn ($s) => ! $approvedAt || $s->signed_at->greaterThanOrEqualTo($approvedAt));
     }
 
     public function title(): string

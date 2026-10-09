@@ -126,26 +126,30 @@ Alpine.data('signoff', () => ({
 // ── Phase 1: Section 1 ──────────────────────────────────────────────────────
 Alpine.data('section1', (cfg) => ({
     id: cfg.id,
-    rows: cfg.rows.length ? cfg.rows : [{ type: '', weighting: '', heqf_level: 6, aligned: true, comment: '' }],
+    form: cfg.form,
     files: cfg.files, // { PAPER: {filename,...}|null, MEMO: ... }
     sig: null,
     busy: null,
     error: '',
     saved: '',
     get total() {
-        return +this.rows.reduce((s, r) => s + (Number(r.weighting) || 0), 0).toFixed(2);
+        return +Object.values(this.form.weights).reduce((s, v) => s + (Number(v) || 0), 0).toFixed(2);
+    },
+    get missing() {
+        const f = this.form;
+        return !(f.period && f.year && f.heqf_level && String(f.subject_level).trim() && f.qualification.trim() && f.qualification_code.trim() && f.assessment_date);
     },
     get ready() {
-        return this.sig && this.total === 100 && this.files.PAPER && this.files.MEMO;
-    },
-    add() {
-        if (this.rows.length < 15) this.rows.push({ type: '', weighting: '', heqf_level: 6, aligned: true, comment: '' });
-    },
-    remove(i) {
-        if (this.rows.length > 1) this.rows.splice(i, 1);
+        return this.sig && !this.missing && this.total === 100 && this.files.PAPER && this.files.MEMO;
     },
     payload() {
-        return this.rows.map((r) => ({ ...r, weighting: Number(r.weighting) || 0, heqf_level: Number(r.heqf_level) }));
+        const f = this.form;
+        return {
+            ...f,
+            year: Number(f.year) || null,
+            heqf_level: Number(f.heqf_level) || null,
+            weights: Object.fromEntries(Object.entries(f.weights).map(([k, v]) => [k, Number(v) || 0])),
+        };
     },
     upload(kind, file) {
         return run(this, kind, async () => {
@@ -158,13 +162,13 @@ Alpine.data('section1', (cfg) => ({
     },
     saveDraft() {
         return run(this, 'save', async () => {
-            await api('PUT', `/assessments/${this.id}/section1`, { question_types: this.payload() });
+            await api('PUT', `/assessments/${this.id}/section1`, { s1: this.payload() });
             this.saved = 'Draft saved.';
         });
     },
     submit() {
         return run(this, 'submit', async () => {
-            go(await api('POST', `/assessments/${this.id}/submit-pre`, { question_types: this.payload(), signature: this.sig }));
+            go(await api('POST', `/assessments/${this.id}/submit-pre`, { s1: this.payload(), signature: this.sig }));
         });
     },
 }));
@@ -172,6 +176,12 @@ Alpine.data('section1', (cfg) => ({
 // ── Gate 1 ──────────────────────────────────────────────────────────────────
 Alpine.data('preReview', (cfg) => ({
     id: cfg.id,
+    ratings: cfg.ratings,
+    questions: cfg.questions,
+    form: {
+        ratings: Object.fromEntries(cfg.ratings.map((r) => [r.key, null])),
+        questions: Object.fromEntries(cfg.questions.map((q) => [q.key, { answer: null, comment: '' }])),
+    },
     approving: false,
     sheet: false,
     comments: '',
@@ -180,9 +190,15 @@ Alpine.data('preReview', (cfg) => ({
     busy: null,
     error: '',
     saved: '',
+    get formComplete() {
+        return (
+            this.ratings.every((r) => this.form.ratings[r.key] !== null) &&
+            this.questions.every((q) => this.form.questions[q.key].answer && (this.form.questions[q.key].answer !== 'NO' || this.form.questions[q.key].comment.trim()))
+        );
+    },
     approve() {
         return run(this, 'approve', async () => {
-            go(await api('POST', `/assessments/${this.id}/pre-review`, { decision: 'APPROVED', consensus: this.consensus, comments: this.comments || null, signature: this.sig }));
+            go(await api('POST', `/assessments/${this.id}/pre-review`, { decision: 'APPROVED', consensus: this.consensus, comments: this.comments || null, s1_moderator: this.form, signature: this.sig }));
         });
     },
     revise() {
@@ -207,7 +223,7 @@ Alpine.data('section2', (cfg) => ({
     preview: null,
     calcError: '',
     calculating: false,
-    commentary: '',
+    form: cfg.form, // { registered, type_of_assessment, answers: {q1..q5} }
     sig: null,
     busy: null,
     error: '',
@@ -218,8 +234,19 @@ Alpine.data('section2', (cfg) => ({
         this.$watch('sourceKey', () => this.schedule());
         this.$watch('total', () => this.schedule());
     },
+    get current() {
+        return this.sheets.find((s) => s.name === this.sheet) ?? null;
+    },
     get cols() {
-        return this.sheets.find((s) => s.name === this.sheet)?.columns ?? [];
+        return this.current?.columns ?? [];
+    },
+    /** Pre-select the test that matches the assessment number ("Test 2" → T2) when it has marks. */
+    autoPick() {
+        this.column = 0;
+        const n = (cfg.number.match(/\d+/) ?? [])[0];
+        const hit = n ? this.cols.find((c) => c.header.toUpperCase() === `T${n}` && c.nonBlank > 0) : null;
+        const only = this.cols.filter((c) => c.nonBlank > 0);
+        this.column = hit ? hit.index : only.length === 1 ? only[0].index : 0;
     },
     get source() {
         if (this.mode === 'excel') return this.attId && this.sheet && Number(this.column) ? { type: 'excel', attachment_id: this.attId, sheet: this.sheet, column: Number(this.column) } : null;
@@ -228,15 +255,26 @@ Alpine.data('section2', (cfg) => ({
     get sourceKey() {
         return JSON.stringify(this.source);
     },
+    get absent() {
+        const n = this.preview?.stats?.candidate_count;
+        return n === undefined || this.form.registered === null || this.form.registered === '' ? null : Math.max(0, this.form.registered - n);
+    },
     get ready() {
-        return this.preview && this.commentary.trim().length >= 10 && this.sig;
+        const f = this.form;
+        return (
+            this.preview &&
+            this.sig &&
+            f.registered !== null && f.registered !== '' && f.registered >= this.preview.stats.candidate_count &&
+            f.type_of_assessment.trim() &&
+            Object.values(f.answers).every((v) => v.trim())
+        );
     },
     async loadSheets() {
         try {
             const r = await api('GET', `/assessments/${this.id}/marks?attachment=${this.attId}`);
             this.sheets = r.sheets;
             this.sheet = r.sheets[0]?.name ?? '';
-            this.column = 0;
+            this.autoPick();
             this.preview = null;
         } catch (e) {
             this.calcError = e.message;
@@ -253,6 +291,7 @@ Alpine.data('section2', (cfg) => ({
         this._t = setTimeout(async () => {
             try {
                 this.preview = await api('POST', `/assessments/${this.id}/calculate`, { source: this.source, total_marks: Number(this.total) });
+                if (this.form.registered === null || this.form.registered === '') this.form.registered = this.preview.info?.enrolled ?? this.preview.stats.candidate_count;
             } catch (e) {
                 this.preview = null;
                 this.calcError = e.message;
@@ -278,17 +317,23 @@ Alpine.data('section2', (cfg) => ({
     },
     submit() {
         return run(this, 'submit', async () => {
-            go(await api('POST', `/assessments/${this.id}/submit-post`, { source: this.source, total_marks: Number(this.total), commentary: this.commentary, signature: this.sig }));
+            go(await api('POST', `/assessments/${this.id}/submit-post`, { source: this.source, total_marks: Number(this.total), s2: { ...this.form, registered: Number(this.form.registered) }, signature: this.sig }));
         });
     },
 }));
 
-// ── Gate 2 / Gate 3 ─────────────────────────────────────────────────────────
+// ── Gate 2 (Section 2, questions 6–8) / Gate 3 (Section 3) ───────────────────
 Alpine.data('finalReview', (cfg) => ({
     id: cfg.id,
-    checks: cfg.checks, // [{id, question}]
-    answers: Object.fromEntries(cfg.checks.map((c) => [c.id, { answer: null, comment: '' }])),
-    scripts: '',
+    mode: cfg.mode,
+    answers: cfg.answers,
+    items: cfg.items,
+    adjustments: cfg.adjustments,
+    form: {
+        answers: Object.fromEntries(cfg.answers.map((q) => [q.key, ''])),
+        items: Object.fromEntries(cfg.items.map((i) => [i.key, ''])),
+        adjustments: { recommended: null, specify: '' },
+    },
     comments: '',
     consensus: false,
     sheet: false,
@@ -297,23 +342,40 @@ Alpine.data('finalReview', (cfg) => ({
     error: '',
     saved: '',
     get complete() {
-        return this.checks.every((c) => this.answers[c.id].answer && (this.answers[c.id].answer !== 'NO' || this.answers[c.id].comment.trim()));
+        const f = this.form;
+        return (
+            this.answers.every((q) => f.answers[q.key].trim()) &&
+            this.items.every((i) => f.items[i.key].trim()) &&
+            f.adjustments.recommended &&
+            (f.adjustments.recommended !== 'YES' || f.adjustments.specify.trim())
+        );
     },
     approve() {
         return run(this, 'approve', async () => {
-            go(await api('POST', `/assessments/${this.id}/final-review`, {
-                decision: 'APPROVED',
-                consensus: this.consensus,
-                scripts_sampled: Number(this.scripts),
-                comments: this.comments || null,
-                checklist: this.checks.map((c) => ({ id: c.id, answer: this.answers[c.id].answer, comment: this.answers[c.id].comment })),
-                signature: this.sig,
-            }));
+            const body = { decision: 'APPROVED', consensus: this.consensus, comments: this.comments || null, signature: this.sig };
+            if (this.mode === 'external') body.s3_external = { items: this.form.items, adjustments: this.form.adjustments };
+            else body.s2_moderator = this.form;
+            go(await api('POST', `/assessments/${this.id}/final-review`, body));
         });
     },
     revise() {
         return run(this, 'revise', async () => {
             go(await api('POST', `/assessments/${this.id}/final-review`, { decision: 'REVISION_REQUESTED', comments: this.comments }));
+        });
+    },
+}));
+
+// ── Section 3 sign-off (examiner and Head of Department) ────────────────────
+Alpine.data('section3', (cfg) => ({
+    id: cfg.id,
+    open: cfg.open || [],
+    sig: null,
+    busy: null,
+    error: '',
+    saved: '',
+    sign() {
+        return run(this, 'sign', async () => {
+            go(await api('POST', `/assessments/${this.id}/section3-sign`, { signature: this.sig, as: this.open[0] }));
         });
     },
 }));
@@ -351,7 +413,7 @@ Alpine.data('dashboard', (meta) => ({
     show(i) {
         const { status, action, text } = this.meta[i];
         const f = this.filter;
-        const ok = f === 'ALL' || (f === 'ACTION' ? action : f === 'FINAL' ? ['PENDING_FINAL_MODERATION', 'PENDING_EXTERNAL_MODERATION'].includes(status) : status === f);
+        const ok = f === 'ALL' || (f === 'ACTION' ? action : f === 'FINAL' ? ['PENDING_FINAL_MODERATION', 'PENDING_EXTERNAL_MODERATION', 'PENDING_SECTION3_SIGNOFF'].includes(status) : status === f);
         return ok && text.toLowerCase().includes(this.q.toLowerCase());
     },
     get none() {

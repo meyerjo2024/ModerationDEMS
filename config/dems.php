@@ -1,7 +1,11 @@
 <?php
 
 return [
-    'institution' => env('INSTITUTION_NAME', 'Your Institution'),
+    'institution' => env('INSTITUTION_NAME', 'Cape Peninsula University of Technology'),
+
+    // Logo printed at the top of the official moderation report (set DEMS_LOGO= to disable).
+    'logo' => env('DEMS_LOGO', 'resources/branding/cput-logo.jpg'),
+    'paper' => env('DEMS_PAPER', 'a4'), // 'a4' or 'letter' (the Word original is Letter)
 
     // "db" keeps files in PostgreSQL (default, survives redeploys); "disk" uses a Laravel filesystem disk.
     'storage' => env('DEMS_STORAGE', 'db'),
@@ -22,17 +26,6 @@ return [
         ['key' => 'done', 'title' => 'Archive', 'sub' => 'PDF · HOD'],
     ],
 
-    'quality_checks' => [
-        'accuracy' => 'Marking is accurate and in line with the memorandum.',
-        'totals' => 'Marks have been totalled and transcribed correctly.',
-        'fairness' => 'Marking was fair and free from bias across candidates.',
-        'consistency' => 'Marking was applied consistently across the sample (high, average and low scripts).',
-        'alternatives' => 'Valid alternative answers were credited appropriately.',
-        'alignment' => 'Outcomes align with the intended learning outcomes and HEQF level descriptors.',
-        'statistics' => 'The pass rate and mark distribution are reasonable, and any anomalies are explained.',
-        'commentary' => "The examiner's commentary on student performance is accurate and sufficient.",
-    ],
-
     'audit_labels' => [
         'ASSESSMENT_CREATED' => 'Assessment created',
         'SECTION1_SAVED' => 'Section 1 draft saved',
@@ -41,9 +34,10 @@ return [
         'PRE_REVIEW_APPROVED' => 'Pre-moderation approved',
         'PRE_REVIEW_REVISION' => 'Revision requested',
         'SECTION2_SUBMITTED' => 'Section 2 signed & submitted',
+        'SECTION3_SIGNED' => 'Section 3 signed',
         'FINAL_REVIEW_APPROVED' => 'Final moderation approved',
         'FINAL_REVIEW_RETURNED' => 'Returned to examiner',
-        'EXTERNAL_REVIEW_APPROVED' => 'External moderation approved',
+        'EXTERNAL_REVIEW_APPROVED' => 'External moderation approved (Section 3)',
         'EXTERNAL_REVIEW_RETURNED' => 'Returned by external moderator',
         'REPORT_GENERATED' => 'Final PDF report generated',
         'REPORT_EMAILED' => 'Report e-mailed to HOD',
