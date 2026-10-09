@@ -12,7 +12,11 @@ Cards with **"Your turn"** are waiting for you. The bell shows new hand-overs. O
 
 ![Gate 1 review](../screenshots/gate1-review.png)
 
-1. **Read the documents.** The viewer has tabs for the **assessment paper** and the **memorandum**. PDFs open inside the page; Word files are offered as a download. *Download* is available for both.
+1. **Read and comment on the documents.** Word (`.docx`) papers and memoranda open **in the browser**: select any passage and write a comment (or use *+ General comment*). Comments are saved immediately, highlighted in yellow, and listed beside the document; you can delete your own. When you **Request revision** they go back to the examiner together with your feedback.
+
+![Commenting on a Word document](../screenshots/word-review-moderator.png)
+
+   Viewer: The viewer has tabs for the **assessment paper** and the **memorandum**. PDFs open inside the page; Word files are offered as a download. *Download* is available for both.
 2. **Check Section 1.** The examiner's assessment details and the six question types with their weightings. For each type give a rating of **0 / 1 / 2** against its criterion (HEQF alignment, outcomes, cross-field outcomes, clarity of instructions, language, time allocation), then answer Section 1 Q1–3 (Yes/No + comments).
 3. **Decide:**
 

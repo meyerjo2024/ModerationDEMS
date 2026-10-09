@@ -380,6 +380,124 @@ Alpine.data('section3', (cfg) => ({
     },
 }));
 
+// ── Word document review: render the .docx in the page and comment on selected passages ──
+Alpine.data('wordReview', (cfg) => ({
+    url: cfg.url,
+    api: cfg.comments,
+    loading: true,
+    error: '',
+    comments: [],
+    can: { comment: false, address: false },
+    draft: null,
+    text: '',
+    busy: false,
+    html: '',
+    active: null,
+    async init() {
+        try {
+            const [{ default: mammoth }, { default: DOMPurify }] = await Promise.all([import('mammoth/mammoth.browser'), import('dompurify')]);
+            const buf = await (await fetch(this.url, { credentials: 'same-origin' })).arrayBuffer();
+            const out = await mammoth.convertToHtml({ arrayBuffer: buf });
+            this.html = DOMPurify.sanitize(out.value, { USE_PROFILES: { html: true } });
+            await this.load(false);
+            this.paint();
+            this.$watch('comments', () => setTimeout(() => this.paint(), 0), { deep: false });
+        } catch (e) {
+            this.error = 'This document could not be shown in the browser. Download it to read it.';
+        } finally {
+            this.loading = false;
+        }
+    },
+    async load(repaint = true) {
+        const r = await api('GET', this.api);
+        this.comments = r.comments;
+        this.can = r.can;
+    },
+    paint() {
+        const root = this.$refs.body;
+        if (!root) return;
+        root.innerHTML = this.html;
+        const full = root.textContent;
+        this.comments.filter((c) => c.quote).forEach((c) => {
+            let at = c.offset !== null && full.substr(c.offset, c.quote.length) === c.quote ? c.offset : -1;
+            if (at < 0) {
+                const all = [];
+                for (let i = full.indexOf(c.quote); i >= 0; i = full.indexOf(c.quote, i + 1)) all.push(i);
+                at = all.length ? all.reduce((b, i) => (Math.abs(i - (c.offset || 0)) < Math.abs(b - (c.offset || 0)) ? i : b)) : -1;
+            }
+            c.anchored = at >= 0;
+            if (at >= 0) this.mark(root, at, at + c.quote.length, c);
+        });
+    },
+    mark(root, from, to, c) {
+        const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        for (let n = w.nextNode(); n; n = w.nextNode()) nodes.push(n);
+        let pos = 0;
+        for (const n of nodes) {
+            const len = n.nodeValue.length, s = Math.max(from, pos), e = Math.min(to, pos + len);
+            if (s < e) {
+                const r = document.createRange();
+                r.setStart(n, s - pos); r.setEnd(n, e - pos);
+                const m = document.createElement('mark');
+                m.dataset.cid = c.id;
+                m.className = c.addressed ? 'doc-mark doc-mark-done' : 'doc-mark';
+                m.addEventListener('click', () => this.focus(c.id));
+                r.surroundContents(m);
+            }
+            pos += len;
+        }
+    },
+    focus(id) {
+        this.active = id;
+        this.$nextTick(() => document.getElementById('c-' + id)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+    },
+    goTo(c) {
+        this.active = c.id;
+        this.$refs.body.querySelector(`[data-cid="${c.id}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    },
+    select() {
+        if (!this.can.comment) return;
+        const sel = window.getSelection();
+        const root = this.$refs.body;
+        if (!sel || sel.isCollapsed || !root.contains(sel.anchorNode) || !root.contains(sel.focusNode)) return;
+        const range = sel.getRangeAt(0);
+        const quote = range.toString().trim();
+        if (!quote) return;
+        const pre = document.createRange();
+        pre.selectNodeContents(root);
+        pre.setEnd(range.startContainer, range.startOffset);
+        const lead = range.toString().length - range.toString().trimStart().length;
+        this.draft = { quote: quote.slice(0, 600), offset: pre.toString().length + lead };
+        this.text = '';
+    },
+    general() {
+        this.draft = { quote: null, offset: null };
+        this.text = '';
+    },
+    async save() {
+        this.busy = true;
+        try {
+            await api('POST', this.api, { body: this.text, quote: this.draft.quote, start_offset: this.draft.offset });
+            this.draft = null;
+            window.getSelection()?.removeAllRanges();
+            await this.load();
+        } catch (e) {
+            this.error = e.message;
+        } finally {
+            this.busy = false;
+        }
+    },
+    async remove(c) {
+        await api('DELETE', `/comments/${c.id}`);
+        await this.load();
+    },
+    async toggle(c) {
+        await api('PATCH', `/comments/${c.id}`, { addressed: !c.addressed });
+        await this.load();
+    },
+}));
+
 // ── Chrome ──────────────────────────────────────────────────────────────────
 Alpine.data('docViewer', (first) => ({ tab: first }));
 

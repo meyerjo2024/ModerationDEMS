@@ -1,4 +1,4 @@
-{{-- $docs: list of [label, Attachment|null]. PDFs preview inline; Word files are download-only. --}}
+{{-- $docs: list of [label, Attachment|null]. PDFs preview inline; Word (.docx) files open in the browser with comments. --}}
 @props(['docs'])
 @php $docs = collect($docs)->filter(fn ($d) => $d[1])->values(); @endphp
 @if ($docs->isEmpty())
@@ -21,10 +21,12 @@
       <div x-show="tab === {{ $i }}" @if ($i) x-cloak @endif>
         @if ($att->isPdf())
           <iframe title="{{ $label }}" x-bind:src="tab === {{ $i }} ? '{{ route('files.show', $att) }}?inline=1#view=FitH' : null" class="h-[70vh] w-full rounded-2xl border border-slate-200/70 bg-white dark:border-white/10"></iframe>
+        @elseif ($att->mime_type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' && in_array($att->kind, [\App\Enums\AttachmentKind::Paper, \App\Enums\AttachmentKind::Memo], true))
+          <template x-if="tab === {{ $i }}"><div><x-word-review :att="$att" /></div></template>
         @else
           <div class="card-soft grid place-items-center gap-3 px-6 py-14 text-center">
             <x-icon name="file" class="h-9 w-9 text-slate-400" />
-            <div><p class="font-medium">{{ $att->filename }}</p><p class="text-sm text-slate-500 dark:text-zinc-400">{{ number_format($att->size / 1024) }} KB · Word documents can’t be previewed in the browser.</p></div>
+            <div><p class="font-medium">{{ $att->filename }}</p><p class="text-sm text-slate-500 dark:text-zinc-400">{{ number_format($att->size / 1024) }} KB · Older .doc files can’t be previewed — save as .docx or PDF.</p></div>
             <a href="{{ route('files.show', $att) }}" class="btn-primary"><x-icon name="download" /> Download to review</a>
           </div>
         @endif

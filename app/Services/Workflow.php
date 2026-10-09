@@ -149,7 +149,8 @@ class Workflow
                 $a->update(['status' => S::RevisionRequested]);
                 ModerationRecord::create(['assessment_id' => $a->id, 'stage' => ModerationStage::PreModeration, 'reviewer_id' => $user->id, 'decision' => 'REVISION_REQUESTED', 'comments' => $in['comments']]);
                 $this->audit->log('PRE_REVIEW_REVISION', $a->id, $user->id, ['comments' => $in['comments']], $meta['ip']);
-                $this->notifier->inApp([$a->examiner_id], $a, "Revision requested on {$a->title()}.");
+                $n = \App\Models\DocumentComment::where('assessment_id', $a->id)->where('addressed', false)->count();
+                $this->notifier->inApp([$a->examiner_id], $a, "Revision requested on {$a->title()}".($n ? " — with {$n} comment".($n > 1 ? 's' : '').' on your documents.' : '.'));
             });
             $this->notifier->email([$a->examiner_id], $a, "Revision requested: {$a->title()}", "{$user->name} asked for changes: {$in['comments']}");
 

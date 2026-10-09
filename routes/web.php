@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentCommentController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\WorkflowController;
@@ -47,6 +48,10 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/files/{attachment}', [FileController::class, 'show'])->name('files.show');
+    Route::get('/attachments/{attachment}/comments', [DocumentCommentController::class, 'index']);
+    Route::post('/attachments/{attachment}/comments', [DocumentCommentController::class, 'store']);
+    Route::delete('/comments/{comment}', [DocumentCommentController::class, 'destroy']);
+    Route::patch('/comments/{comment}', [DocumentCommentController::class, 'address']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/read', [NotificationController::class, 'markRead']);
 
