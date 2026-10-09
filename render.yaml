@@ -4,7 +4,7 @@ services:
   - type: web
     name: moderation-dems
     runtime: docker
-    plan: starter
+    plan: free                # free tier: sleeps after ~15 min idle (first request then takes ~1 min); fine for demos
     region: oregon            # pick the region closest to your Supabase project
     healthCheckPath: /health
     autoDeploy: true          # deploy on every push to the linked branch
