@@ -31,7 +31,8 @@ stateDiagram-v2
     PENDING_FINAL_MODERATION --> PENDING_EXTERNAL_MODERATION: Gate 2 approves (external assigned)
     PENDING_FINAL_MODERATION --> COMPLETED: Gate 2 approves (no external)
     PENDING_EXTERNAL_MODERATION --> READY_FOR_POST_MODERATION: Gate 3 returns the record
-    PENDING_EXTERNAL_MODERATION --> COMPLETED: Gate 3 approves
+    PENDING_EXTERNAL_MODERATION --> PENDING_SECTION3_SIGNOFF: Gate 3 approves
+    PENDING_SECTION3_SIGNOFF --> COMPLETED: Examiner and HOD sign Section 3
     COMPLETED --> [*]
 ```
 
