@@ -30,6 +30,7 @@ return [
         'ASSESSMENT_CREATED' => 'Assessment created',
         'SECTION1_SAVED' => 'Section 1 draft saved',
         'FILE_UPLOADED' => 'File uploaded',
+        'USER_ROLES_CHANGED' => 'User roles changed',
         'DOCUMENT_COMMENTED' => 'Comment added to a document',
         'SECTION1_SUBMITTED' => 'Section 1 signed & submitted',
         'PRE_REVIEW_APPROVED' => 'Pre-moderation approved',

@@ -359,8 +359,15 @@ class LifecycleTest extends TestCase
         $this->as($this->hod)->get('/assessments/create')->assertOk()->assertSee($this->internal->name);
         $this->assertTrue($this->hod->fresh()->hasRole(\App\Enums\Role::Examiner));
         $this->assertTrue(User::withRole(\App\Enums\Role::InternalModerator)->whereKey($this->hod->id)->exists());
-        $this->as($this->hod)->post('/admin/users', ['name' => 'Dual Person', 'email' => 'dp@t.test', 'role' => 'HOD', 'extra_roles' => ['EXAMINER', 'HOD'], 'password' => 'long-enough-pw'])->assertRedirect();
-        $this->assertSame('EXAMINER', User::where('email', 'dp@t.test')->value('extra_roles'));
+        $this->as($this->hod)->post('/admin/users', ['name' => 'Dual Person', 'email' => 'dp@t.test', 'roles' => ['HOD', 'EXAMINER'], 'password' => 'long-enough-pw'])->assertRedirect();
+        $u = User::where('email', 'dp@t.test')->firstOrFail();
+        $this->assertSame('EXAMINER', $u->role->value); // primary = first in the fixed order
+        $this->assertSame('Examiner · Head of Department', $u->roleLabels());
+        $this->as($this->hod)->post('/admin/users', ['name' => 'None', 'email' => 'none@t.test', 'password' => 'long-enough-pw'])->assertSessionHasErrors('roles');
+        $this->as($this->hod)->patch("/admin/users/{$u->id}/roles", ['roles' => ['EXAMINER', 'INTERNAL_MODERATOR']])->assertRedirect();
+        $this->assertSame('Examiner · Internal Moderator', $u->fresh()->roleLabels());
+        $this->as($this->hod)->patch("/admin/users/{$this->hod->id}/roles", ['roles' => ['EXAMINER']])->assertSessionHas('error');
+        $this->assertTrue($this->hod->fresh()->hasRole(\App\Enums\Role::Hod));
     }
 
     public function test_reviewer_comments_on_documents_go_back_to_the_examiner(): void

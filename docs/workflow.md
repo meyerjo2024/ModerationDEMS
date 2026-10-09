@@ -8,7 +8,7 @@ The reviewer's comments live in `document_comments` (quote + offset anchor, auth
 
 ## Roles per person
 
-Each user has one primary role and may have **extra roles** (Admin → *Add user → Also acts as*). A Head of Department can therefore also be an examiner or internal moderator. What a person may do on a record is decided by their assignment to it (examiner, internal/external moderator, subject HOD); extra roles only unlock the matching screens and pickers. Rules that still apply: you cannot moderate your own assessment, and moderators must be different people. If one person is both the examiner and the subject's HOD, they sign Section 3 **twice**, once in each capacity.
+Each user has one primary role and may have **extra roles** (Admin → *Add user*: tick every role the person needs; *Edit roles* changes them later). A Head of Department can therefore also be an examiner or internal moderator. What a person may do on a record is decided by their assignment to it (examiner, internal/external moderator, subject HOD); extra roles only unlock the matching screens and pickers. Rules that still apply: you cannot moderate your own assessment, and moderators must be different people. If one person is both the examiner and the subject's HOD, they sign Section 3 **twice**, once in each capacity.
 
 ## Journey at a glance
 
