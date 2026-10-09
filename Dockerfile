@@ -29,6 +29,7 @@ RUN install-php-extensions gd intl zip
 COPY --chown=www-data:www-data --from=vendor /app /var/www/html
 COPY --chown=www-data:www-data --from=assets /app/public/build /var/www/html/public/build
 # Runs after the image's own Laravel automations (which already execute `php artisan migrate --force`).
+COPY --chmod=755 docker/40-dems-dbcheck.sh /etc/entrypoint.d/40-dems-dbcheck.sh
 COPY --chmod=755 docker/60-dems-seed.sh /etc/entrypoint.d/60-dems-seed.sh
 USER www-data
 EXPOSE 8080
