@@ -27,9 +27,4 @@ services:
       - { key: DEMS_SEED_EMAIL, sync: false }
       - { key: DEMS_SEED_PASSWORD, sync: false } # 10+ characters: becomes the first HOD login
       - { key: INSTITUTION_NAME, sync: false }
-      - { key: MAIL_MAILER, value: smtp }
-      - { key: MAIL_HOST, sync: false }
-      - { key: MAIL_PORT, value: "587" }
-      - { key: MAIL_USERNAME, sync: false }
-      - { key: MAIL_PASSWORD, sync: false }
-      - { key: MAIL_FROM_ADDRESS, sync: false }
+      # E-mail is optional for now: with MAIL_MAILER=log (default) the PDF is just available to download.

@@ -319,9 +319,7 @@ class Workflow
         try {
             $hod = $a->subject->hod;
             if (in_array(config('mail.default'), ['log', 'array'], true)) {
-                $this->audit->log('REPORT_EMAIL_FAILED', $a->id, $user->id, ['reason' => 'No mail transport configured (MAIL_MAILER)'], $meta['ip']);
-
-                return;
+                return; // demo / development: no mail server configured, the report is simply available to download
             }
             Mail::to($hod->email)->send(new ReportReady($a->title(), $hod->name, $pdf['bytes'], $pdf['filename']));
             $this->audit->log('REPORT_EMAILED', $a->id, $user->id, ['to' => $hod->email], $meta['ip']);

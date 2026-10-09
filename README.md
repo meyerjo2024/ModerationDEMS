@@ -84,10 +84,10 @@ set `DEMS_STORAGE=disk` and `DEMS_DISK=<a filesystem disk>` to use another disk.
 Render has no native PHP runtime, so the app ships as a Docker service (`Dockerfile`, `render.yaml`).
 
 1. Create a Supabase project (see above).
-2. Render → **New → Blueprint** → select this repo. Fill in: `APP_KEY` (`php artisan key:generate --show`), `APP_URL`, `DB_URL`, `DEMS_SEED_EMAIL`, `DEMS_SEED_PASSWORD`, `INSTITUTION_NAME` and the `MAIL_*` SMTP settings.
+2. Render → **New → Blueprint** → select this repo. Fill in: `APP_KEY` (`php artisan key:generate --show`), `APP_URL`, `DB_URL`, `DEMS_SEED_EMAIL`, `DEMS_SEED_PASSWORD`, `INSTITUTION_NAME` (and `DEMS_DEMO_DATA=true` if you want demo accounts on the login page).
 3. On every start the container runs the migrations and the (idempotent) HOD seed. Check `/health`, sign in, then use **Admin** to create users and subjects.
 
-With `MAIL_MAILER=log` nothing is delivered; the record page then says the HOD e-mail was **not** delivered and the audit trail records it.
+E-mail is optional: with the default `MAIL_MAILER=log` nothing is sent and the signed PDF is simply available to download on the record. Configure SMTP later to e-mail it to the HOD.
 
 ## Known limits
 
