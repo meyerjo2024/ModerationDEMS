@@ -380,8 +380,12 @@ Alpine.data('section3', (cfg) => ({
     },
 }));
 
+const pendingLocked = {}; // encrypted bytes, kept out of Alpine's reactive state
+
 // ── Word document review: render the .docx in the page and comment on selected passages ──
-Alpine.data('wordReview', (cfg) => ({
+Alpine.data('wordReview', (cfg) => {
+  let rootEl; // kept outside Alpine's state; the unlock form (inside an x-if) is removed after unlocking, so $refs/$root can't be used then
+  return {
     url: cfg.url,
     api: cfg.comments,
     loading: true,
@@ -393,19 +397,63 @@ Alpine.data('wordReview', (cfg) => ({
     busy: false,
     html: '',
     active: null,
+    locked: false,
+    password: '',
+    unlocking: false,
+    mammoth: null,
+    purify: null,
     async init() {
+        rootEl = this.$root;
         try {
             const [{ default: mammoth }, { default: DOMPurify }] = await Promise.all([import('mammoth/mammoth.browser'), import('dompurify')]);
+            this.mammoth = mammoth;
+            this.purify = DOMPurify;
             const buf = await (await fetch(this.url, { credentials: 'same-origin' })).arrayBuffer();
-            const out = await mammoth.convertToHtml({ arrayBuffer: buf });
-            this.html = DOMPurify.sanitize(out.value, { USE_PROFILES: { html: true } });
-            await this.load(false);
-            this.paint();
-            this.$watch('comments', () => setTimeout(() => this.paint(), 0), { deep: false });
+            const { isOle } = await import('./officecrypto.js');
+            if (isOle(new Uint8Array(buf))) {
+                // password-protected Word file: ask the reviewer for the password (it stays in this browser)
+                pendingLocked[this.url] = buf;
+                this.locked = true;
+                return;
+            }
+            await this.show(buf);
         } catch (e) {
             this.error = 'This document could not be shown in the browser. Download it to read it.';
         } finally {
             this.loading = false;
+        }
+    },
+    async show(buf) {
+        const out = await this.mammoth.convertToHtml({ arrayBuffer: buf });
+        this.html = this.purify.sanitize(out.value, { USE_PROFILES: { html: true } });
+        await this.load(false);
+        await this.$nextTick();
+        this.paint();
+        setTimeout(() => this.paint(), 50);
+        this.$watch('comments', () => setTimeout(() => this.paint(), 0), { deep: false });
+    },
+    async unlock() {
+        this.unlocking = true;
+        this.error = '';
+        try {
+            const { decryptDocx, WrongPassword } = await import('./officecrypto.js');
+            let plain;
+            try {
+                plain = await decryptDocx(pendingLocked[this.url], this.password);
+            } catch (e) {
+                this.error = e instanceof WrongPassword ? e.message : (e.message || 'Could not open the file.');
+                return;
+            }
+            this.password = '';
+            this.locked = false;
+            delete pendingLocked[this.url];
+            try {
+                await this.show(plain);
+            } catch (e) {
+                this.error = 'Unlocked, but the document could not be shown: ' + (e.message || e);
+            }
+        } finally {
+            this.unlocking = false;
         }
     },
     async load(repaint = true) {
@@ -414,7 +462,7 @@ Alpine.data('wordReview', (cfg) => ({
         this.can = r.can;
     },
     paint() {
-        const root = this.$refs.body;
+        const root = rootEl.querySelector(".doc-body");
         if (!root) return;
         root.innerHTML = this.html;
         const full = root.textContent;
@@ -454,12 +502,12 @@ Alpine.data('wordReview', (cfg) => ({
     },
     goTo(c) {
         this.active = c.id;
-        this.$refs.body.querySelector(`[data-cid="${c.id}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        rootEl.querySelector(`.doc-body [data-cid="${c.id}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     },
     select() {
         if (!this.can.comment) return;
         const sel = window.getSelection();
-        const root = this.$refs.body;
+        const root = rootEl.querySelector(".doc-body");
         if (!sel || sel.isCollapsed || !root.contains(sel.anchorNode) || !root.contains(sel.focusNode)) return;
         const range = sel.getRangeAt(0);
         const quote = range.toString().trim();
@@ -496,7 +544,8 @@ Alpine.data('wordReview', (cfg) => ({
         await api('PATCH', `/comments/${c.id}`, { addressed: !c.addressed });
         await this.load();
     },
-}));
+  };
+});
 
 // ── Chrome ──────────────────────────────────────────────────────────────────
 Alpine.data('docViewer', (first) => ({ tab: first }));

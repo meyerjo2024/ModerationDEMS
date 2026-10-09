@@ -449,6 +449,16 @@ class LifecycleTest extends TestCase
         $this->as($this->internal)->get("/assessments/{$a->id}")->assertOk()->assertSee('Post-moderation by');
     }
 
+    public function test_password_protected_word_papers_are_accepted(): void
+    {
+        $a = $this->newAssessment();
+        $file = new UploadedFile(base_path('docs/samples/PHE261S_Test1_paper_PASSWORD-demo123.docx'), 'protected.docx', null, null, true);
+        $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'PAPER', 'file' => $file], ['Accept' => 'application/json'])->assertOk();
+        // an ordinary legacy Word binary is still not a .docx
+        $fake = UploadedFile::fake()->createWithContent('old.docx', "\xD0\xCF\x11\xE0 just an old .doc");
+        $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'MEMO', 'file' => $fake], ['Accept' => 'application/json'])->assertStatus(400);
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');

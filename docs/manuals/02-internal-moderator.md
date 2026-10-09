@@ -22,6 +22,10 @@ Open **My subjects** and tick the subjects you moderate. Examiners are then offe
 
 1. **Read and comment on the documents.** Word (`.docx`) papers and memoranda open **in the browser**: select any passage and write a comment (or use *+ General comment*). Comments are saved immediately, highlighted in yellow, and listed beside the document; you can delete your own. When you **Request revision** they go back to the examiner together with your feedback.
 
+**Password-protected documents.** If the examiner protected the Word file with a password, the viewer asks for it before showing the paper. Get the password from the examiner (outside the system); it is used only in your browser to unlock the file and is never sent to the server or stored. PDFs with a password are asked for by your browser's own PDF viewer.
+
+![Password prompt](../screenshots/word-password-prompt.png)
+
 ![Commenting on a Word document](../screenshots/word-review-moderator.png)
 
    Viewer: The viewer has tabs for the **assessment paper** and the **memorandum**. PDFs open inside the page; Word files are offered as a download. *Download* is available for both.

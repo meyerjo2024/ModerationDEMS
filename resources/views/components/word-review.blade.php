@@ -2,7 +2,15 @@
 @props(['att'])
 <div x-data="wordReview(@js(['url' => route('files.show', $att), 'comments' => url('/attachments/'.$att->id.'/comments')]))" class="space-y-3">
   <template x-if="loading"><p class="rounded-2xl bg-slate-900/[.04] px-4 py-10 text-center text-sm text-slate-500 dark:bg-white/5 dark:text-zinc-400">Opening document…</p></template>
-  <template x-if="error && !html"><div class="card-soft grid place-items-center gap-3 px-6 py-12 text-center"><x-icon name="file" class="h-9 w-9 text-slate-400" /><div><p class="font-medium">{{ $att->filename }}</p><p class="text-sm text-slate-500 dark:text-zinc-400" x-text="error"></p></div>
+  <template x-if="locked"><form @submit.prevent="unlock()" class="card-soft mx-auto grid max-w-md gap-3 px-6 py-8 text-center">
+    <x-icon name="lock" class="mx-auto h-8 w-8 text-slate-400" />
+    <div><p class="font-semibold">This document is password-protected</p><p class="mt-1 text-sm text-slate-500 dark:text-zinc-400">Enter the password the examiner gave you. It is used in your browser only and is never sent to the server or stored.</p></div>
+    <input type="password" class="field text-center" autocomplete="off" placeholder="Document password" aria-label="Document password" x-model="password" required>
+    <template x-if="error"><p class="text-sm font-medium text-rose-600" x-text="error"></p></template>
+    <button class="btn-primary justify-center" :disabled="unlocking || !password"><span x-text="unlocking ? 'Unlocking…' : 'Unlock and review'"></span></button>
+    <a href="{{ route('files.show', $att) }}" class="text-xs font-medium text-accent dark:text-accent-dark">Download the protected file instead</a>
+  </form></template>
+  <template x-if="error && !html && !locked"><div class="card-soft grid place-items-center gap-3 px-6 py-12 text-center"><x-icon name="file" class="h-9 w-9 text-slate-400" /><div><p class="font-medium">{{ $att->filename }}</p><p class="text-sm text-slate-500 dark:text-zinc-400" x-text="error"></p></div>
     <a href="{{ route('files.show', $att) }}" class="btn-primary"><x-icon name="download" /> Download to review</a></div></template>
   <div x-show="html" x-cloak class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
     <div>

@@ -42,11 +42,18 @@ class UploadValidator
         return ['mime' => self::TYPES[$key]['mime'], 'filename' => $safe];
     }
 
+    /** A password-protected .docx is an OLE container holding an "EncryptedPackage" stream. */
+    private function isEncryptedOffice(string $d): bool
+    {
+        return str_starts_with($d, "\xD0\xCF\x11\xE0") && str_contains($d, "E\0n\0c\0r\0y\0p\0t\0e\0d\0P\0a\0c\0k\0a\0g\0e\0");
+    }
+
     private function magicOk(string $key, string $d): bool
     {
         return match ($key) {
             'pdf' => str_starts_with($d, '%PDF'),
-            'docx', 'xlsx' => str_starts_with($d, "PK\x03\x04"),
+            'docx' => str_starts_with($d, "PK\x03\x04") || $this->isEncryptedOffice($d),
+            'xlsx' => str_starts_with($d, "PK\x03\x04"),
             'doc', 'xls' => str_starts_with($d, "\xD0\xCF\x11\xE0"),
             'png' => str_starts_with($d, "\x89PNG"),
             'jpg' => str_starts_with($d, "\xFF\xD8\xFF"),

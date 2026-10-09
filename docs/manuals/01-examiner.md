@@ -8,6 +8,8 @@ Open **My subjects**, tick the subjects you are responsible for and save. You ca
 
 ![My subjects](../screenshots/my-subjects.png)
 
+> **Password-protected papers.** You may upload a Word file (`.docx`, saved in Word 2010 or later) or PDF that is protected with a password. Tell your moderator the password directly (not through the system): they are asked for it when they open the document, and it is never stored. Moderators can read and comment on unlocked Word files in the browser; protected `.doc` (old format) files can only be downloaded.
+
 ## A. Start a new assessment
 
 1. Click **New assessment** (header or dashboard banner).

@@ -11,7 +11,7 @@ How a record moves through Moderation DEMS, who can act at each step, and what t
 
 ## Reviewing Word documents
 
-The reviewer's comments live in `document_comments` (quote + offset anchor, author, addressed flag). Only the assigned moderator can add or delete (their own) comments, and only while the record is with them; the examiner can mark comments addressed while the record is a draft or returned. Comments are kept when the examiner re-uploads (shown as *earlier version* and re-anchored by their quoted text). Conversion happens in the browser (mammoth.js, sanitised with DOMPurify); the original file is never modified.
+The reviewer's comments live in `document_comments` (quote + offset anchor, author, addressed flag). Only the assigned moderator can add or delete (their own) comments, and only while the record is with them; the examiner can mark comments addressed while the record is a draft or returned. Comments are kept when the examiner re-uploads (shown as *earlier version* and re-anchored by their quoted text). Password-protected `.docx` files (Office 2010+ "agile" encryption) are accepted at upload; the viewer asks the reviewer for the password and decrypts the file **in the browser** (Web Crypto) — the password is never sent to the server or stored. PDFs with passwords prompt via the browser's PDF viewer. Conversion happens in the browser (mammoth.js, sanitised with DOMPurify); the original file is never modified.
 
 ## Roles per person
 
