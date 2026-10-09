@@ -1,52 +1,35 @@
 # Render Blueprint — New + → Blueprint → select this repo.
-# Database: Supabase (external). Create a project there and paste its two connection strings below.
-
+# Database: Supabase (external PostgreSQL). Paste its Session-pooler connection string into DB_URL.
 services:
   - type: web
     name: moderation-dems
-    runtime: node
+    runtime: docker
     plan: starter
-    region: oregon           # pick the region closest to your Supabase project
-    buildCommand: npm ci && npm run build   # build also runs migrations + HOD seed
-    startCommand: npm run start
-    healthCheckPath: /api/health
-    autoDeploy: true         # deploy on every push to the linked branch
+    region: oregon            # pick the region closest to your Supabase project
+    healthCheckPath: /health
+    autoDeploy: true          # deploy on every push to the linked branch
     envVars:
-      - key: NODE_VERSION
-        value: 20.18.0
-      - key: DATABASE_URL        # Supabase transaction pooler (port 6543, ?pgbouncer=true&connection_limit=1)
-        sync: false
-      - key: DIRECT_URL          # Supabase session pooler (port 5432) — used for migrations
-        sync: false
-      - key: AUTH_SECRET
-        generateValue: true
-      - key: APP_URL
-        sync: false          # e.g. https://moderation-dems.onrender.com
-      - key: SEED_ADMIN_EMAIL
-        sync: false
-      - key: SEED_ADMIN_PASSWORD
-        sync: false
-      - key: SEED_ADMIN_NAME
-        value: Head of Department
-      - key: INSTITUTION_NAME
-        sync: false
-      - key: STORAGE_DRIVER
-        value: db            # or "s3" + the S3_* variables below
-      - key: S3_BUCKET
-        sync: false
-      - key: S3_REGION
-        sync: false
-      - key: S3_ACCESS_KEY_ID
-        sync: false
-      - key: S3_SECRET_ACCESS_KEY
-        sync: false
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
-      - key: MAIL_FROM
-        sync: false
+      - { key: APP_NAME, value: Moderation DEMS }
+      - { key: APP_ENV, value: production }
+      - { key: APP_DEBUG, value: "false" }
+      - { key: APP_KEY, sync: false }            # run: php artisan key:generate --show
+      - { key: APP_URL, sync: false }            # e.g. https://moderation-dems.onrender.com
+      - { key: PORT, value: "8080" }             # the port the container listens on
+      - { key: LOG_CHANNEL, value: stderr }
+      - { key: DB_CONNECTION, value: pgsql }
+      - { key: DB_URL, sync: false }             # Supabase → Connection string → Session pooler (port 5432)
+      - { key: DB_SSLMODE, value: require }
+      - { key: SESSION_DRIVER, value: database }
+      - { key: SESSION_SECURE_COOKIE, value: "true" }
+      - { key: SESSION_LIFETIME, value: "480" }
+      - { key: CACHE_STORE, value: file }
+      - { key: QUEUE_CONNECTION, value: sync }
+      - { key: DEMS_SEED_EMAIL, sync: false }
+      - { key: DEMS_SEED_PASSWORD, sync: false } # 10+ characters: becomes the first HOD login
+      - { key: INSTITUTION_NAME, sync: false }
+      - { key: MAIL_MAILER, value: smtp }
+      - { key: MAIL_HOST, sync: false }
+      - { key: MAIL_PORT, value: "587" }
+      - { key: MAIL_USERNAME, sync: false }
+      - { key: MAIL_PASSWORD, sync: false }
+      - { key: MAIL_FROM_ADDRESS, sync: false }

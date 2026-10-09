@@ -1,0 +1,52 @@
+<?php
+
+return [
+    'institution' => env('INSTITUTION_NAME', 'Your Institution'),
+
+    // "db" keeps files in PostgreSQL (default, survives redeploys); "disk" uses a Laravel filesystem disk.
+    'storage' => env('DEMS_STORAGE', 'db'),
+    'disk' => env('DEMS_DISK', 'local'),
+    'max_upload_mb' => (int) env('DEMS_MAX_UPLOAD_MB', 15),
+
+    // Advertise demo logins on the sign-in page (only when seeded with DEMS_DEMO_DATA=true).
+    'demo' => (bool) env('DEMS_DEMO_DATA', false),
+
+    'max_marks_rows' => 20000,
+
+    'gates' => [
+        ['key' => 'setup', 'title' => 'Pre-Assessment', 'sub' => 'Examiner · Section 1'],
+        ['key' => 'gate1', 'title' => 'Gate 1', 'sub' => 'Internal pre-moderation'],
+        ['key' => 'harvest', 'title' => 'Post-Assessment', 'sub' => 'Examiner · Section 2'],
+        ['key' => 'gate2', 'title' => 'Gate 2', 'sub' => 'Internal final review'],
+        ['key' => 'gate3', 'title' => 'Gate 3', 'sub' => 'External (optional)'],
+        ['key' => 'done', 'title' => 'Archive', 'sub' => 'PDF · HOD'],
+    ],
+
+    'quality_checks' => [
+        'accuracy' => 'Marking is accurate and in line with the memorandum.',
+        'totals' => 'Marks have been totalled and transcribed correctly.',
+        'fairness' => 'Marking was fair and free from bias across candidates.',
+        'consistency' => 'Marking was applied consistently across the sample (high, average and low scripts).',
+        'alternatives' => 'Valid alternative answers were credited appropriately.',
+        'alignment' => 'Outcomes align with the intended learning outcomes and HEQF level descriptors.',
+        'statistics' => 'The pass rate and mark distribution are reasonable, and any anomalies are explained.',
+        'commentary' => "The examiner's commentary on student performance is accurate and sufficient.",
+    ],
+
+    'audit_labels' => [
+        'ASSESSMENT_CREATED' => 'Assessment created',
+        'SECTION1_SAVED' => 'Section 1 draft saved',
+        'FILE_UPLOADED' => 'File uploaded',
+        'SECTION1_SUBMITTED' => 'Section 1 signed & submitted',
+        'PRE_REVIEW_APPROVED' => 'Pre-moderation approved',
+        'PRE_REVIEW_REVISION' => 'Revision requested',
+        'SECTION2_SUBMITTED' => 'Section 2 signed & submitted',
+        'FINAL_REVIEW_APPROVED' => 'Final moderation approved',
+        'FINAL_REVIEW_RETURNED' => 'Returned to examiner',
+        'EXTERNAL_REVIEW_APPROVED' => 'External moderation approved',
+        'EXTERNAL_REVIEW_RETURNED' => 'Returned by external moderator',
+        'REPORT_GENERATED' => 'Final PDF report generated',
+        'REPORT_EMAILED' => 'Report e-mailed to HOD',
+        'REPORT_EMAIL_FAILED' => 'Report e-mail not delivered',
+    ],
+];
