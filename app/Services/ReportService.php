@@ -38,6 +38,7 @@ class ReportService
         return [
             'institution' => config('dems.institution'),
             'logo' => $this->logo(),
+            'ring' => $this->ring(),
             'reportId' => $a->id,
             'generatedAt' => now('UTC'),
             'form' => config('moderation_form'),
@@ -105,5 +106,26 @@ class ReportService
         $mime = str_ends_with(strtolower($path), 'png') ? 'image/png' : 'image/jpeg';
 
         return "data:{$mime};base64,".base64_encode(file_get_contents($path));
+    }
+
+    /** A black ring on a transparent background, drawn round the chosen rating (0/1/2) on the form. */
+    private function ring(): string
+    {
+        $n = 114; // drawn at 6x and scaled down for a smooth edge
+        $im = imagecreatetruecolor($n, $n);
+        imagealphablending($im, false);
+        imagesavealpha($im, true);
+        imagefill($im, 0, 0, imagecolorallocatealpha($im, 255, 255, 255, 127));
+        imagefilledellipse($im, $n / 2, $n / 2, $n - 8, $n - 8, imagecolorallocate($im, 0, 0, 0));
+        imagefilledellipse($im, $n / 2, $n / 2, $n - 8 - 16, $n - 8 - 16, imagecolorallocatealpha($im, 255, 255, 255, 127)); // punch out the middle
+        $out = imagecreatetruecolor(38, 38);
+        imagealphablending($out, false);
+        imagesavealpha($out, true);
+        imagefill($out, 0, 0, imagecolorallocatealpha($out, 255, 255, 255, 127));
+        imagecopyresampled($out, $im, 0, 0, 0, 0, 38, 38, $n, $n);
+        ob_start();
+        imagepng($out);
+
+        return 'data:image/png;base64,'.base64_encode((string) ob_get_clean());
     }
 }

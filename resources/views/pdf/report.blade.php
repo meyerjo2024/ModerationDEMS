@@ -21,7 +21,7 @@ $s1q = $s1m['questions'] ?? [];
   .title { text-align: center; font-weight: bold; font-size: 12px; margin: 6px 0 10px; }
   .banner-green { background: #D5E2BB; border: 0.8px solid #000; font-weight: bold; padding: 6px 8px; margin: 8px 0 6px; }
   .banner-peach { background: #FAE3D4; border: 0.8px solid #000; font-weight: bold; padding: 6px 8px; text-align: center; margin: 12px 0 0; }
-  .sel { background: #0a1f44; color: #fff; font-weight: bold; }
+  .circ { background-image: url('{{ $ring }}'); background-repeat: no-repeat; background-position: center center; background-size: 19px 19px; font-weight: bold; }
   .box { border: 0.6px solid #000; min-height: 12px; }
   .small { font-size: 7px; }
   .sigcell { height: 34px; vertical-align: middle; text-align: center; }
@@ -70,7 +70,7 @@ $s1q = $s1m['questions'] ?? [];
       <td class="c b" style="vertical-align:middle">@isset($s1e['weights'][$tk]){{ $s1e['weights'][$tk] + 0 }}%@endisset</td>
       <td class="blue" style="vertical-align:middle">{{ $rk ? $f['ratings'][$rk] : '' }}</td>
       @foreach ([0, 1, 2] as $n)
-        <td class="c {{ $rk && $val === $n ? 'sel' : '' }}" style="vertical-align:middle">{{ $rk ? $n : '' }}</td>
+        <td class="c {{ $rk && $val === $n ? 'circ' : '' }}" style="vertical-align:middle">{{ $rk ? $n : '' }}</td>
       @endforeach
     </tr>
   @endforeach
