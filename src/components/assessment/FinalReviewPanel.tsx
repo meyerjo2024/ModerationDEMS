@@ -136,7 +136,7 @@ export function FinalReviewPanel({ a, stage }: { a: Detail; stage: "internal" | 
         <p className="kicker">Sign-off</p>
         <h2 className="mt-1 text-xl font-semibold">{willComplete ? "Final signature & completion" : "Final signature"}</h2>
         <label className="mt-5 flex cursor-pointer items-center gap-3 text-sm font-medium">
-          <input type="checkbox" className="h-5 w-5 rounded-md accent-[#0071e3]" checked={consensus} onChange={(e) => setConsensus(e.target.checked)} />
+          <input type="checkbox" className="h-5 w-5 rounded-md accent-[#0b4ea2]" checked={consensus} onChange={(e) => setConsensus(e.target.checked)} />
           Consensus reached
         </label>
         <div className="mt-5">

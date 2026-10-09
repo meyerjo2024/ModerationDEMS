@@ -68,7 +68,7 @@ export function PreReviewPanel({ a }: { a: Detail }) {
                   <textarea id="pre-comments" rows={3} className="field" value={comments} onChange={(e) => setComments(e.target.value)} />
                 </div>
                 <label className="flex cursor-pointer items-center gap-3 text-sm font-medium">
-                  <input type="checkbox" className="h-5 w-5 rounded-md accent-[#0071e3]" checked={consensus} onChange={(e) => setConsensus(e.target.checked)} />
+                  <input type="checkbox" className="h-5 w-5 rounded-md accent-[#0b4ea2]" checked={consensus} onChange={(e) => setConsensus(e.target.checked)} />
                   Consensus reached with the examiner
                 </label>
                 <SignOff statement="By signing, I confirm I have reviewed the paper and memorandum and approve them for assessment." onChange={setSig} />

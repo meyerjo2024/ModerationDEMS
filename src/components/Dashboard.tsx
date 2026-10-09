@@ -48,19 +48,23 @@ export function Dashboard({ user, items }: { user: { name: string; role: Role };
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="kicker">Overview</p>
-          <h1 className="mt-1 text-3xl font-semibold sm:text-4xl">Welcome back, {first}.</h1>
-          <p className="mt-1 text-slate-500 dark:text-zinc-400">
-            {actionCount ? `${actionCount} record${actionCount === 1 ? "" : "s"} waiting on you.` : "Nothing is waiting on you right now."}
-          </p>
+      <div className="relative overflow-hidden rounded-4xl bg-navy p-8 text-white shadow-lift sm:p-10">
+        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-brand/30 blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 opacity-[.06]" style={{ backgroundImage: "radial-gradient(#fff 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
+        <div className="relative flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-brand">Overview</p>
+            <h1 className="mt-1 text-3xl font-semibold sm:text-4xl">Welcome back, {first}.</h1>
+            <p className="mt-1 text-white/70">
+              {actionCount ? `${actionCount} record${actionCount === 1 ? "" : "s"} waiting on you.` : "Nothing is waiting on you right now."}
+            </p>
+          </div>
+          {user.role === "EXAMINER" && (
+            <Link href="/assessments/new" className="btn bg-brand text-white shadow-sm hover:brightness-110">
+              <FilePlus2 className="h-4 w-4" /> New assessment
+            </Link>
+          )}
         </div>
-        {user.role === "EXAMINER" && (
-          <Link href="/assessments/new" className="btn-primary">
-            <FilePlus2 className="h-4 w-4" /> New assessment
-          </Link>
-        )}
       </div>
 
       {/* Status tiles */}
