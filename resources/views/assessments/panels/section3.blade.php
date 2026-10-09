@@ -1,11 +1,13 @@
 @php
 $SG = \App\Enums\SignatureSection::class;
 $a->loadMissing(['records', 'signatures']);
-$mine = $a->examiner_id === $user->id ? $SG::ExaminerSection3 : ($a->subject->hod_id === $user->id ? $SG::HodSection3 : null);
-$signed = $mine ? $a->hasSection3Signature($mine) : false;
+$caps = array_values(array_filter([$a->examiner_id === $user->id ? $SG::ExaminerSection3 : null, $a->subject->hod_id === $user->id ? $SG::HodSection3 : null]));
+$open = array_values(array_filter($caps, fn ($c) => ! $a->hasSection3Signature($c)));
+$mine = $caps[0] ?? null;
+$signed = $caps && ! $open;
 $people = [['Examiner', $a->examiner->name, $a->hasSection3Signature($SG::ExaminerSection3)], ['Head of Department', $a->subject->hod->name, $a->hasSection3Signature($SG::HodSection3)]];
 @endphp
-<div x-data="section3(@js(['id' => $a->id]))" @signed="sig = $event.detail" class="space-y-6">
+<div x-data="section3(@js(['id' => $a->id, 'open' => array_map(fn ($c) => $c->value, $open)]))" @signed="sig = $event.detail" class="space-y-6">
   <section class="card p-6 sm:p-8">
     <p class="kicker">Section 3 · Sign-off</p><h2 class="mt-1 text-2xl font-semibold">External moderator’s report</h2>
     <p class="mt-1 text-sm text-slate-500 dark:text-zinc-400">The external moderator has completed Section 3. The examiner and the Head of Department sign to acknowledge it; the signed report is then archived.</p>
@@ -21,7 +23,8 @@ $people = [['Examiner', $a->examiner->name, $a->hasSection3Signature($SG::Examin
 
   @if ($mine && ! $signed)
     <section class="card p-6 sm:p-8">
-      <p class="kicker">Your signature</p><h2 class="mt-1 text-xl font-semibold">Sign Section 3 as {{ $mine === $SG::HodSection3 ? 'Head of Department' : 'Examiner' }}</h2>
+      <p class="kicker">Your signature</p><h2 class="mt-1 text-xl font-semibold">Sign Section 3 as {{ $open[0] === $SG::HodSection3 ? 'Head of Department' : 'Examiner' }}</h2>
+      @if (count($open) > 1)<p class="mt-1 text-sm text-slate-500 dark:text-zinc-400">You hold both roles on this record, so you sign twice — once as Examiner and once as Head of Department. This is the first.</p>@endif
       <div class="mt-5"><x-signoff statement="By signing, I confirm I have read the external moderator’s comments in Section 3." /></div>
       <template x-if="error"><x-notice tone="error" class="mt-5"><span x-text="error"></span></x-notice></template>
       <div class="mt-6 flex justify-end"><button type="button" class="btn-primary" @click="sign()" :disabled="!sig || busy"><x-icon name="pen" /> <span x-text="busy === 'sign' ? 'Signing…' : 'Sign Section 3'"></span></button></div>

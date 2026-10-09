@@ -34,6 +34,10 @@ class DatabaseSeeder extends Seeder
         $this->user('Dr Amara Okafor', 'examiner@example.edu', Role::Examiner, $password, 'Computer Science');
         $this->user('Prof Liam van der Merwe', 'moderator@example.edu', Role::InternalModerator, $password, 'Computer Science');
         $this->user('Dr Priya Naidoo', 'external@example.edu', Role::ExternalModerator, $password, 'External');
+        // One person, several roles: Head of Department of MAT101 who also examines and moderates other subjects.
+        $dual = $this->user('Prof Thandi Mokoena', 'dual@example.edu', Role::Hod, $password, 'Mathematics');
+        $dual->update(['extra_roles' => 'EXAMINER,INTERNAL_MODERATOR']);
+        Subject::firstOrCreate(['code' => 'MAT101'], ['name' => 'Mathematics I', 'department' => 'Mathematics', 'hod_id' => $dual->id]);
         Subject::firstOrCreate(['code' => 'CSC101'], ['name' => 'Introduction to Programming', 'department' => 'Computer Science', 'hod_id' => $hod->id]);
         Subject::firstOrCreate(['code' => 'INF202'], ['name' => 'Information Systems II', 'department' => 'Computer Science', 'hod_id' => $hod->id]);
         $this->command?->info('✔ Demo users and subjects ready (password = DEMS_SEED_PASSWORD).');

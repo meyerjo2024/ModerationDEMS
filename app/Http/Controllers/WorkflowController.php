@@ -133,7 +133,7 @@ class WorkflowController extends Controller
     public function section3Sign(Request $request, Assessment $assessment)
     {
         $a = $this->visible($request, $assessment);
-        $status = $this->workflow->section3Sign($request->user(), $a, $this->signature($request), $this->meta($request));
+        $status = $this->workflow->section3Sign($request->user(), $a, $this->signature($request), $this->meta($request), $request->input('as'));
 
         return $this->done($a, ['status' => $status->value]);
     }

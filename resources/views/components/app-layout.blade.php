@@ -38,7 +38,7 @@
               </li></template></ul>
             </div>
           </div>
-          <div class="hidden text-right leading-tight sm:block"><p class="text-[13px] font-semibold">{{ $u->name }}</p><p class="text-[11px] text-white/60">{{ $u->role->label() }}</p></div>
+          <div class="hidden text-right leading-tight sm:block"><p class="text-[13px] font-semibold">{{ $u->name }}</p><p class="text-[11px] text-white/60">{{ $u->roleLabels() }}</p></div>
           <form method="POST" action="{{ route('logout') }}">@csrf<button class="rounded-full p-2 text-white/80 hover:bg-white/10" aria-label="Sign out"><x-icon name="logout" class="h-[18px] w-[18px]" /></button></form>
         </div>
       </div>

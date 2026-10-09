@@ -368,13 +368,14 @@ Alpine.data('finalReview', (cfg) => ({
 // ── Section 3 sign-off (examiner and Head of Department) ────────────────────
 Alpine.data('section3', (cfg) => ({
     id: cfg.id,
+    open: cfg.open || [],
     sig: null,
     busy: null,
     error: '',
     saved: '',
     sign() {
         return run(this, 'sign', async () => {
-            go(await api('POST', `/assessments/${this.id}/section3-sign`, { signature: this.sig }));
+            go(await api('POST', `/assessments/${this.id}/section3-sign`, { signature: this.sig, as: this.open[0] }));
         });
     },
 }));

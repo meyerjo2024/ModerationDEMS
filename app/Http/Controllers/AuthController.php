@@ -15,8 +15,8 @@ class AuthController extends Controller
         // Demo accounts are only advertised when the database was seeded with DEMS_DEMO_DATA=true.
         $demo = config('dems.demo') ? [
             'password' => (string) env('DEMS_SEED_PASSWORD'),
-            'accounts' => User::whereIn('email', ['hod@example.edu', 'examiner@example.edu', 'moderator@example.edu', 'external@example.edu'])
-                ->orderBy('id')->get(['name', 'email', 'role'])->map(fn ($u) => ['role' => $u->role->label(), 'email' => $u->email])->all(),
+            'accounts' => User::whereIn('email', ['hod@example.edu', 'examiner@example.edu', 'moderator@example.edu', 'external@example.edu', 'dual@example.edu'])
+                ->orderBy('id')->get(['name', 'email', 'role', 'extra_roles'])->map(fn ($u) => ['role' => $u->roleLabels(), 'email' => $u->email])->all(),
         ] : null;
 
         return view('auth.login', ['demo' => $demo]);

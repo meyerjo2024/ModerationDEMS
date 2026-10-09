@@ -14,7 +14,8 @@
 |---|---|
 | ![Dashboard](docs/screenshots/dashboard-examiner.png) **Dashboard** — status tiles, filters and wallet-style cards | ![Section 1](docs/screenshots/section1-form.png) **Phase 1** — question types, documents, signature |
 | ![Gate 1](docs/screenshots/gate1-review.png) **Gate 1** — document viewer and decision | ![Section 2](docs/screenshots/section2-marks-and-results.png) **Phase 3** — marks to automatic statistics |
-| ![Gate 2](docs/screenshots/gate2-quality-check-and-signoff.png) **Gate 2/3** — quality checks and signature | ![Completed](docs/screenshots/record-completed.png) **Completed** — archived record and PDF |
+| ![Gate 2](docs/screenshots/gate2-final-review.png) **Gate 2/3** — quality checks and signature | ![Completed](docs/screenshots/record-completed.png) **Completed** — archived record and PDF |
+| ![Section 3](docs/screenshots/section3-signoff.png) **Section 3 sign-off** — examiner and HOD | ![Multi-role](docs/screenshots/dual-role-dashboard.png) **One person, several roles** (HOD who also examines/moderates) |
 | ![Report](docs/screenshots/report-page-1.png) **Signed PDF report** ([sample](docs/sample-report.pdf)) | ![Dark](docs/screenshots/dark-dashboard.png) **Dark mode** (and fully responsive) |
 
 ## Workflow

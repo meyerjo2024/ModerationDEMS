@@ -52,9 +52,9 @@ class Workflow
             throw new WorkflowException('The external moderator must be a different person.');
         }
         $subject = Subject::find($in['subject_id']) ?? throw new WorkflowException('Unknown subject.');
-        $internal = User::where('id', $in['internal_moderator_id'])->where('role', Role::InternalModerator->value)->where('active', true)->first()
+        $internal = User::where('id', $in['internal_moderator_id'])->withRole(Role::InternalModerator)->where('active', true)->first()
             ?? throw new WorkflowException('Choose a valid internal moderator.');
-        $external = $ext ? (User::where('id', $ext)->where('role', Role::ExternalModerator->value)->where('active', true)->first()
+        $external = $ext ? (User::where('id', $ext)->withRole(Role::ExternalModerator)->where('active', true)->first()
             ?? throw new WorkflowException('Choose a valid external moderator.')) : null;
         if (Assessment::where('subject_id', $subject->id)->where('number', $in['number'])->exists()) {
             throw WorkflowException::conflict("{$subject->code} already has an assessment called “{$in['number']}”.");
@@ -328,18 +328,22 @@ class Workflow
      * Section 3 sign-off after the external moderator: the examiner and the Head of Department each sign;
      * the last signature completes the moderation and archives the report.
      */
-    public function section3Sign(User $user, Assessment $a, array $sig, array $meta): S
+    public function section3Sign(User $user, Assessment $a, array $sig, array $meta, ?string $as = null): S
     {
         $this->expect($a, S::PendingSection3Signoff);
-        $section = match (true) {
-            $a->examiner_id === $user->id => SignatureSection::ExaminerSection3,
-            $a->subject->hod_id === $user->id => SignatureSection::HodSection3,
-            default => throw WorkflowException::forbidden('Only the examiner and the Head of Department sign Section 3.'),
-        };
         $a->load(['records', 'signatures']);
-        if ($a->hasSection3Signature($section)) {
+        // One person can hold both capacities (a Head of Department who is also the examiner): they sign once for each.
+        $open = array_values(array_filter([
+            $a->examiner_id === $user->id ? SignatureSection::ExaminerSection3 : null,
+            $a->subject->hod_id === $user->id ? SignatureSection::HodSection3 : null,
+        ], fn ($s) => $s && ! $a->hasSection3Signature($s)));
+        if (! $open && ! ($a->examiner_id === $user->id || $a->subject->hod_id === $user->id)) {
+            throw WorkflowException::forbidden('Only the examiner and the Head of Department sign Section 3.');
+        }
+        if (! $open) {
             throw WorkflowException::conflict('You have already signed Section 3.');
         }
+        $section = ($as && ($pick = SignatureSection::tryFrom($as)) && in_array($pick, $open, true)) ? $pick : $open[0];
         $this->signer->confirm($user, $sig);
 
         $hash = Hashing::content(['section' => 3, 'id' => $a->id, 'form' => $a->s3_external, 'signer' => $section->value]);
@@ -351,7 +355,9 @@ class Workflow
             $done = $a->hasSection3Signature(SignatureSection::ExaminerSection3) && $a->hasSection3Signature(SignatureSection::HodSection3);
             if (! $done) {
                 $other = $section === SignatureSection::HodSection3 ? $a->examiner_id : $a->subject->hod_id;
-                $this->notifier->inApp([$other], $a, "{$user->name} signed Section 3 of {$a->title()}. Your signature is still needed.");
+                if ($other !== $user->id) {
+                    $this->notifier->inApp([$other], $a, "{$user->name} signed Section 3 of {$a->title()}. Your signature is still needed.");
+                }
 
                 return null;
             }

@@ -11,7 +11,7 @@ You are optional, final reviewer for assessments where your name was added. You 
 5. **Complete Section 3** of the official form: comment on coverage, difficulty, relevance, reliability, validity, feedback, best practice, standards and recommendations, and state any general adjustment of marks.
 6. Tick **Consensus reached**, sign (drawing + password) and click **Sign & approve**.
 
-![Quality check and sign-off](../screenshots/gate2-quality-check-and-signoff.png)
+![Quality check and sign-off](../screenshots/gate2-final-review.png)
 
 On approval the record moves to **Pending Section 3 Sign-off**: the examiner and the Head of Department sign Section 3, and then the PDF report is generated and archived and the record becomes **Completed**.
 

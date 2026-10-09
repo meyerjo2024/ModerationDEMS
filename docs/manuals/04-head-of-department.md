@@ -8,6 +8,7 @@ The HOD role has two jobs: **monitor** moderation across the subjects they head,
 
 - The dashboard lists **every record in your subjects**, whatever its status. Use the tiles, tabs and search to see what is pending, returned or completed.
 - Open any record to see its progress, collected signatures and audit trail.
+- If you also hold the Examiner or Internal Moderator role (set by an administrator under *Admin → Add user → Also acts as*), those screens appear for you too; on a record where you are both examiner and HOD you sign Section 3 twice, once per capacity.
 - When an external moderator is assigned, you **sign Section 3** of the form (with the examiner) after the external moderator has finished; the record shows **Pending Section 3 Sign-off** and is marked *Your turn*. Otherwise you only receive the result.
 
 ### The final report

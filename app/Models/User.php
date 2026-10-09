@@ -18,7 +18,27 @@ class User extends Authenticatable
 
     public function hasRole(Role ...$roles): bool
     {
-        return in_array($this->role, $roles, true);
+        return count(array_intersect(array_map(fn (Role $r) => $r->value, $roles), $this->roleValues())) > 0;
+    }
+
+    /** @return list<string> primary role first, then any extra roles */
+    public function roleValues(): array
+    {
+        $extra = array_filter(explode(',', (string) $this->extra_roles));
+
+        return array_values(array_unique([$this->role->value, ...$extra]));
+    }
+
+    /** "Head of Department · Examiner" */
+    public function roleLabels(): string
+    {
+        return implode(' · ', array_map(fn (string $v) => Role::from($v)->label(), $this->roleValues()));
+    }
+
+    /** Users who hold the role as their primary or an extra role. */
+    public function scopeWithRole($q, Role $role)
+    {
+        return $q->where(fn ($w) => $w->where('role', $role->value)->orWhere('extra_roles', 'like', '%'.$role->value.'%'));
     }
 
     public function unreadCount(): int

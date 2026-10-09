@@ -35,14 +35,14 @@ The status becomes **Ready for Post-Moderation**.
 
 After the examiner submits results you are notified again.
 
-![Gate 2 – results and evidence](../screenshots/gate2-results-and-evidence.png)
+![Gate 2 – results and evidence](../screenshots/gate2-final-review.png)
 
 1. **Review the results.** Statistics, registered/absent numbers and the examiner's answers to Section 2 Q1–5 are at the top.
 2. **Review the evidence.** Open sample scripts (tabs *Script 1, 2, …*) and, if needed, the paper and memorandum.
 3. **Complete your part of Section 2.** Answer Q6 (marking of the assessor up to standard), Q7 (marking recommended for acceptance) with comments, comment on coverage, difficulty, relevance, reliability, validity and feedback, and state any general adjustment of marks (Yes/No + specify).
 4. Tick **Consensus reached**, sign and click **Sign & approve**.
 
-![Gate 2 – quality check and sign-off](../screenshots/gate2-quality-check-and-signoff.png)
+![Gate 2 – quality check and sign-off](../screenshots/gate2-final-review.png)
 
 **What happens next**
 - If an **external moderator** is assigned, the record goes to them (**Pending External Moderation**).

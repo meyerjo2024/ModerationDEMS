@@ -330,6 +330,39 @@ class LifecycleTest extends TestCase
         $this->get("/assessments/{$a->id}")->assertRedirect('/login');
     }
 
+    public function test_one_person_can_be_examiner_and_head_of_department(): void
+    {
+        // the examiner is also the HOD of the subject: they must sign Section 3 twice, once per capacity
+        $this->examiner->update(['extra_roles' => 'HOD']);
+        $this->assertSame('Examiner · Head of Department', $this->examiner->fresh()->roleLabels());
+        $subject = Subject::create(['code' => 'DUAL1', 'name' => 'Dual', 'department' => 'X', 'hod_id' => $this->examiner->id]);
+        $a = $this->newAssessment(true, $subject);
+        $this->submitSection1($a);
+        $this->approveGate1($a);
+        $this->submitSection2Manual($a);
+        $this->approveGate2($a);
+        $this->as($this->external)->postJson("/assessments/{$a->id}/final-review", ['decision' => 'APPROVED', 'consensus' => true, 's3_external' => $this->s3External(), 'signature' => $this->sig()])->assertOk();
+        $this->as($this->examiner)->get("/assessments/{$a->id}")->assertOk()->assertSee('you sign twice');
+        $this->as($this->examiner)->postJson("/assessments/{$a->id}/section3-sign", ['signature' => $this->sig(), 'as' => 'HOD_SECTION3'])->assertOk();
+        $this->assertSame(AssessmentStatus::PendingSection3Signoff, $a->fresh()->status);
+        $this->as($this->examiner)->postJson("/assessments/{$a->id}/section3-sign", ['signature' => $this->sig()])->assertOk();
+        $this->assertSame(AssessmentStatus::Completed, $a->fresh()->status);
+        $this->as($this->examiner)->postJson("/assessments/{$a->id}/section3-sign", ['signature' => $this->sig()])->assertStatus(409);
+        $data = app(\App\Services\ReportService::class)->data($a->fresh());
+        $this->assertNotNull($data['sig']['s3']['hod']);
+        $this->assertNotNull($data['sig']['s3']['examiner']);
+    }
+
+    public function test_extra_roles_grant_access_and_appear_in_pickers(): void
+    {
+        $this->hod->update(['extra_roles' => 'EXAMINER,INTERNAL_MODERATOR']);
+        $this->as($this->hod)->get('/assessments/create')->assertOk()->assertSee($this->internal->name);
+        $this->assertTrue($this->hod->fresh()->hasRole(\App\Enums\Role::Examiner));
+        $this->assertTrue(User::withRole(\App\Enums\Role::InternalModerator)->whereKey($this->hod->id)->exists());
+        $this->as($this->hod)->post('/admin/users', ['name' => 'Dual Person', 'email' => 'dp@t.test', 'role' => 'HOD', 'extra_roles' => ['EXAMINER', 'HOD'], 'password' => 'long-enough-pw'])->assertRedirect();
+        $this->assertSame('EXAMINER', User::where('email', 'dp@t.test')->value('extra_roles'));
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');
