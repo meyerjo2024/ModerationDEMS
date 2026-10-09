@@ -25,17 +25,38 @@ class AdminController extends Controller
         $d = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
-            'role' => ['required', Rule::enum(Role::class)],
-            'extra_roles' => ['nullable', 'array'],
-            'extra_roles.*' => [Rule::enum(Role::class)],
+            'roles' => ['required', 'array', 'min:1'],
+            'roles.*' => [Rule::enum(Role::class)],
             'department' => ['nullable', 'string', 'max:120'],
             'password' => ['required', 'string', 'min:10', 'max:128'],
         ], ['password.min' => 'Use at least 10 characters.', 'email.unique' => 'A user with that e-mail already exists.']);
-        $extra = array_values(array_diff(array_unique($d['extra_roles'] ?? []), [$d['role']]));
-        $user = User::create(['name' => $d['name'], 'email' => $d['email'], 'role' => $d['role'], 'extra_roles' => $extra ? implode(',', $extra) : null, 'department' => $d['department'] ?? null, 'password' => $d['password'], 'active' => true]);
+        [$primary, $extra] = $this->splitRoles($d['roles']);
+        $user = User::create(['name' => $d['name'], 'email' => $d['email'], 'role' => $primary, 'extra_roles' => $extra, 'department' => $d['department'] ?? null, 'password' => $d['password'], 'active' => true]);
         $audit->log('USER_CREATED', null, $request->user()->id, ['email' => $user->email, 'roles' => $user->roleValues()], $request->ip());
 
         return back()->with('status', "User {$user->name} created.");
+    }
+
+    /** Tick any combination of roles; the first (in the order shown) becomes the primary role. */
+    public function updateRoles(Request $request, User $user, Audit $audit)
+    {
+        $d = $request->validate(['roles' => ['required', 'array', 'min:1'], 'roles.*' => [Rule::enum(Role::class)]], ['roles.required' => 'Choose at least one role.', 'roles.min' => 'Choose at least one role.']);
+        if ($user->id === $request->user()->id && ! in_array(Role::Hod->value, $d['roles'], true)) {
+            return back()->with('error', 'You cannot remove your own Head of Department role.');
+        }
+        [$primary, $extra] = $this->splitRoles($d['roles']);
+        $user->update(['role' => $primary, 'extra_roles' => $extra]);
+        $audit->log('USER_ROLES_CHANGED', null, $request->user()->id, ['email' => $user->email, 'roles' => $user->roleValues()], $request->ip());
+
+        return back()->with('status', "Roles updated for {$user->name}.");
+    }
+
+    /** @return array{0: string, 1: ?string} */
+    private function splitRoles(array $roles): array
+    {
+        $ordered = array_values(array_filter(array_map(fn (Role $r) => $r->value, Role::cases()), fn ($v) => in_array($v, $roles, true)));
+
+        return [$ordered[0], count($ordered) > 1 ? implode(',', array_slice($ordered, 1)) : null];
     }
 
     public function storeSubject(Request $request, Audit $audit)
