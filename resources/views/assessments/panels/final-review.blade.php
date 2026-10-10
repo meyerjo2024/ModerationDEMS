@@ -57,7 +57,7 @@ $willComplete = ! $external && ! $a->external_moderator_id;
   <section class="card p-6 sm:p-8">
     <p class="kicker">Declaration & sign-off</p><h2 class="mt-1 text-xl font-semibold">{{ $willComplete ? 'Final signature & completion' : 'Signature' }}</h2>
     <div class="mt-4"><label for="final-comments" class="label">General comments <span class="normal-case tracking-normal text-slate-400">(optional)</span></label><textarea id="final-comments" rows="2" class="field" x-model="comments"></textarea></div>
-    <label class="mt-5 flex cursor-pointer items-center gap-3 text-sm font-medium"><input type="checkbox" class="h-5 w-5 rounded-md accent-[#0b4ea2]" x-model="consensus"> {{ $external ? 'Consensus reached with the examiner' : 'Consensus reached between the examiner and the moderator(s)' }}</label>
+    <label class="mt-5 flex cursor-pointer items-center gap-3 text-sm font-medium"><input type="checkbox" class="h-5 w-5 rounded-md accent-[#006699]" x-model="consensus"> {{ $external ? 'Consensus reached with the examiner' : 'Consensus reached between the examiner and the moderator(s)' }}</label>
     <div class="mt-5"><x-signoff statement="By signing, I declare that consensus has been reached and the answers above are my honest assessment." /></div>
     <x-notice tone="info" class="mt-5">
       @if ($external) After your approval the examiner and the Head of Department sign Section 3, then the signed report is archived.

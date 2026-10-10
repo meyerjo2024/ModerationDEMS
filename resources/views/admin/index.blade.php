@@ -9,7 +9,7 @@
         <div><label class="label">Full name</label><input name="name" required class="field" value="{{ old('name') }}"></div>
         <div><label class="label">E-mail</label><input name="email" type="email" required class="field" value="{{ old('email') }}"></div>
         <div class="sm:col-span-2"><label class="label">Roles <span class="font-normal text-slate-400">(tick every role this person needs)</span></label>
-          <div class="mt-1 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">@foreach (\App\Enums\Role::cases() as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="h-4 w-4 rounded accent-[#0b4ea2]" @checked(in_array($r->value, old('roles', []), true))> {{ $r->label() }}</label>@endforeach</div>
+          <div class="mt-1 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">@foreach (\App\Enums\Role::cases() as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="h-4 w-4 rounded accent-[#006699]" @checked(in_array($r->value, old('roles', []), true))> {{ $r->label() }}</label>@endforeach</div>
           @error('roles')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror</div>
         <div><label class="label">Department</label><input name="department" class="field" value="{{ old('department') }}"></div>
       </div>
@@ -40,7 +40,7 @@
       <ul class="divide-y divide-slate-200/60 text-sm dark:divide-white/10">@foreach ($users as $u)<li class="py-2.5"><div class="flex justify-between gap-3"><span class="min-w-0"><span class="font-medium">{{ $u->name }}</span> <span class="truncate text-slate-400">{{ $u->email }}</span></span><span class="shrink-0 text-slate-500">{{ $u->roleLabels() }}</span></div>
         <details class="mt-1"><summary class="cursor-pointer select-none text-xs font-medium text-accent dark:text-accent-dark">Edit roles</summary>
           <form method="POST" action="{{ route('admin.roles', $u) }}" class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">@csrf @method('PATCH')
-            @foreach (\App\Enums\Role::cases() as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="h-4 w-4 rounded accent-[#0b4ea2]" @checked($u->hasRole($r))> {{ $r->label() }}</label>@endforeach
+            @foreach (\App\Enums\Role::cases() as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="h-4 w-4 rounded accent-[#006699]" @checked($u->hasRole($r))> {{ $r->label() }}</label>@endforeach
             <button class="btn-secondary !py-1 text-xs">Save</button></form></details></li>@endforeach</ul></section>
   </div>
 </div>

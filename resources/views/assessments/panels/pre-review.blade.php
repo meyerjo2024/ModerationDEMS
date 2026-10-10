@@ -54,7 +54,7 @@ $cfg = [
     </div>
     <div x-show="approving" x-cloak x-transition class="mt-6 space-y-5 border-t border-slate-200/60 pt-6 dark:border-white/10">
       <div><label class="label" for="pre-comments">General comments <span class="normal-case tracking-normal text-slate-400">(optional)</span></label><textarea id="pre-comments" rows="3" class="field" x-model="comments"></textarea></div>
-      <label class="flex cursor-pointer items-center gap-3 text-sm font-medium"><input type="checkbox" class="h-5 w-5 rounded-md accent-[#0b4ea2]" x-model="consensus"> Consensus reached with the examiner</label>
+      <label class="flex cursor-pointer items-center gap-3 text-sm font-medium"><input type="checkbox" class="h-5 w-5 rounded-md accent-[#006699]" x-model="consensus"> Consensus reached with the examiner</label>
       <x-signoff statement="By signing, I declare that consensus has been reached with the examiner and I approve the assessment." />
       <template x-if="error"><x-notice tone="error"><span x-text="error"></span></x-notice></template>
       <div class="flex justify-end"><button type="button" class="btn-primary" :disabled="!formComplete || !consensus || !sig || busy" @click="approve()"><span x-text="busy === 'approve' ? 'Approving…' : 'Sign & approve'"></span></button></div>

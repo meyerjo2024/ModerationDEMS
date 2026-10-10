@@ -4,7 +4,7 @@
     <h1 style="font-size:22px;margin:8px 0 12px;color:#111827">{{ $heading }}</h1>
     <p style="font-size:15px;line-height:1.55;color:#374151">{{ $body }}</p>
     @if ($url)
-      <p style="margin-top:24px"><a href="{{ $url }}" style="background:#f58220;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-size:14px;font-weight:600">{{ $cta }}</a></p>
+      <p style="margin-top:24px"><a href="{{ $url }}" style="background:#0099cc;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-size:14px;font-weight:600">{{ $cta }}</a></p>
     @endif
   </div>
 </div>

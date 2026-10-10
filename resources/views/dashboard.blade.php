@@ -9,7 +9,7 @@ $headline = [$S::PendingPreModeration, $S::RevisionRequested, $S::ReadyForPostMo
 $tabs = ['ALL' => ['All', $items->count()], 'ACTION' => ['Needs my action', $actionCount], 'DRAFT' => ['Drafts', $counts['DRAFT'] ?? 0], 'FINAL' => ['Final review', ($counts['PENDING_FINAL_MODERATION'] ?? 0) + ($counts['PENDING_EXTERNAL_MODERATION'] ?? 0) + ($counts['PENDING_SECTION3_SIGNOFF'] ?? 0)]];
 @endphp
 <div x-data="dashboard(@js($meta))" class="space-y-8">
-  <div class="relative overflow-hidden rounded-4xl bg-navy p-8 text-white shadow-lift sm:p-10">
+  <div class="hero-plate relative overflow-hidden bg-navy p-8 text-white sm:p-10">
     <div class="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-brand/30 blur-3xl"></div>
     <div class="pointer-events-none absolute inset-0 opacity-[.06]" style="background-image:radial-gradient(#fff 1px,transparent 1px);background-size:22px 22px"></div>
     <div class="relative flex flex-wrap items-end justify-between gap-4">

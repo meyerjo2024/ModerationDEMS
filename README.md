@@ -18,6 +18,10 @@
 | ![Section 3](docs/screenshots/section3-signoff.png) **Section 3 sign-off** — examiner and HOD | ![Multi-role](docs/screenshots/dual-role-dashboard.png) **One person, several roles** (HOD who also examines/moderates) |
 | ![Report](docs/screenshots/report-page-1.png) **Signed PDF report** ([sample](docs/sample-report.pdf)) | ![Dark](docs/screenshots/dark-dashboard.png) **Dark mode** (and fully responsive) |
 
+## Design
+
+A tactile, **skeuomorphic** interface in the official CPUT colours — Dark Blue `#006699`, Mid Blue `#0099CC`, Sea Blue `#66CCCC`: paper-sheet cards on a woven desk, brushed-metal header, raised keys that press down, debossed inputs, glossy progress beads; light and dark modes. All colours live in one place (`resources/css/app.css`, the `@theme` block) so they can be changed centrally.
+
 ## Workflow
 
 | # | Phase / Gate | Actor | Status after |

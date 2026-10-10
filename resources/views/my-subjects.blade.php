@@ -17,7 +17,7 @@
                 @foreach ($list as $s)
                   <label class="flex cursor-pointer items-start gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-slate-900/5 dark:hover:bg-white/10"
                     x-show="!q || {{ \Illuminate\Support\Js::from(mb_strtolower($s->code.' '.$s->name.' '.$qual)) }}.includes(q.toLowerCase())">
-                    <input type="checkbox" name="subjects[{{ $role->value }}][]" value="{{ $s->id }}" class="mt-0.5 h-4 w-4 rounded accent-[#0b4ea2]" @checked(in_array($s->id, $chosen[$role->value] ?? [], true))>
+                    <input type="checkbox" name="subjects[{{ $role->value }}][]" value="{{ $s->id }}" class="mt-0.5 h-4 w-4 rounded accent-[#006699]" @checked(in_array($s->id, $chosen[$role->value] ?? [], true))>
                     <span><span class="font-semibold">{{ $s->code }}</span> <span class="text-slate-600 dark:text-zinc-300">{{ $s->name }}</span></span>
                   </label>
                 @endforeach

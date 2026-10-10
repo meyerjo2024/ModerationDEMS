@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <meta name="theme-color" content="#0a1f44">
+  <meta name="theme-color" content="#00334d">
   <title>{{ $title }} · Moderation DEMS</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   @vite(['resources/css/app.css', 'resources/js/app.js'])
