@@ -28,7 +28,8 @@ class AssessmentController extends Controller
             'internal_moderator_id' => ['required', 'integer'],
             'external_moderator_id' => ['nullable', 'integer'],
             'assessment_date' => ['nullable', 'date'],
-        ], ['number.required' => 'Choose the assessment number.', 'number.in' => 'Choose T1 to T7.', 'internal_moderator_id.required' => 'Choose an internal moderator.']);
+            'year_level' => ['required', \Illuminate\Validation\Rule::in(config('moderation_form.levels'))],
+        ], ['number.required' => 'Choose the assessment number.', 'number.in' => 'Choose T1 to T7.', 'year_level.required' => 'Choose the year level.', 'year_level.in' => 'Choose Y0 to Y4.', 'internal_moderator_id.required' => 'Choose an internal moderator.']);
         $a = $workflow->create($request->user(), $data, $this->meta($request));
 
         return redirect()->route('assessments.show', $a);

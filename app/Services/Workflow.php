@@ -74,7 +74,7 @@ class Workflow
         return DB::transaction(function () use ($user, $subject, $internal, $external, $in, $meta) {
             $a = Assessment::create([
                 'subject_id' => $subject->id, 'number' => $in['number'], 'examiner_id' => $user->id,
-                'internal_moderator_id' => $internal->id, 'external_moderator_id' => $external?->id, 'assessment_date' => ! empty($in['assessment_date']) ? $in['assessment_date'] : null,
+                'internal_moderator_id' => $internal->id, 'external_moderator_id' => $external?->id, 'assessment_date' => ! empty($in['assessment_date']) ? $in['assessment_date'] : null, 'year_level' => $in['year_level'] ?? null,
                 'status' => S::Draft,
             ]);
             $this->audit->log('ASSESSMENT_CREATED', $a->id, $user->id, ['subject' => $subject->code, 'number' => $a->number], $meta['ip']);
@@ -90,7 +90,7 @@ class Workflow
         $this->assertExaminer($user, $a);
         $this->expect($a, S::Draft, S::RevisionRequested);
         $norm = ModerationForm::s1Examiner($s1);
-        $a->update(['s1_examiner' => $norm, 'assessment_date' => $norm['assessment_date'] ?: $a->assessment_date]);
+        $a->update(['s1_examiner' => $norm, 'assessment_date' => $norm['assessment_date'] ?: $a->assessment_date, 'year_level' => $norm['subject_level'] ?: $a->year_level]);
     }
 
     public function upload(User $user, Assessment $a, AttachmentKind $kind, string $filename, string $bytes, array $meta): Attachment
@@ -138,7 +138,7 @@ class Workflow
         $hash = Hashing::content(['section' => 1, 'id' => $a->id, 'revision' => $revision, 'form' => $form, 'paper' => $paper->sha256, 'memo' => $memo->sha256]);
         DB::transaction(function () use ($a, $user, $form, $sig, $meta, $revision, $hash) {
             $a = $this->lock($a, S::Draft, S::RevisionRequested);
-            $a->update(['status' => S::PendingPreModeration, 's1_examiner' => $form, 'assessment_date' => $form['assessment_date'] ?: $a->assessment_date, 'revision' => $revision]);
+            $a->update(['status' => S::PendingPreModeration, 's1_examiner' => $form, 'assessment_date' => $form['assessment_date'] ?: $a->assessment_date, 'year_level' => $form['subject_level'] ?: $a->year_level, 'revision' => $revision]);
             $this->signer->record($a, $user, SignatureSection::ExaminerSection1, $sig['image'], $hash, $meta);
             $this->audit->log('SECTION1_SUBMITTED', $a->id, $user->id, ['revision' => $revision, 'contentHash' => $hash], $meta['ip']);
             $this->notifier->inApp([$a->internal_moderator_id], $a, "{$a->title()} is ready for your pre-moderation review.");

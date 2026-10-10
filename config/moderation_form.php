@@ -10,7 +10,7 @@ return [
 
     'periods' => ['first' => 'First semester', 'second' => 'Second semester', 'full' => 'Full year'],
 
-    'levels' => ['YR 1', 'YR 2', 'YR 3', 'YR 4', 'Postgraduate'],
+    'levels' => ['Y0', 'Y1', 'Y2', 'Y3', 'Y4'],
 
     /** Table 1 — levels of complexity of assessments (weighting must total 100 %). */
     'question_types' => [

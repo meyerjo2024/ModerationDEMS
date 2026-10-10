@@ -4,7 +4,7 @@ $f = config('moderation_form');
 $s = $a->s1_examiner ?? [];
 $form = [
   'period' => $s['period'] ?? 'first', 'year' => $s['year'] ?? (int) date('Y'), 'heqf_level' => $s['heqf_level'] ?? 6,
-  'subject_level' => $s['subject_level'] ?? 'YR 1', 'qualification' => $s['qualification'] ?? '', 'qualification_code' => $s['qualification_code'] ?? '',
+  'subject_level' => $s['subject_level'] ?? $a->year_level ?? '', 'qualification' => $s['qualification'] ?? '', 'qualification_code' => $s['qualification_code'] ?? '',
   'assessment_date' => $s['assessment_date'] ?? '',
   'weights' => collect(array_keys($f['question_types']))->mapWithKeys(fn ($k) => [$k => $s['weights'][$k] ?? ''])->all(),
 ];
@@ -39,7 +39,7 @@ $feedback = $a->records->where('stage', ModerationStage::PreModeration)->where('
       <div><label class="label" for="year">Year</label><input id="year" type="number" min="2000" max="2100" class="field tabular-nums" x-model="form.year"></div>
       <div><label class="label" for="adate">Assessment date</label><input id="adate" type="date" class="field" x-model="form.assessment_date"></div>
       <div><label class="label" for="heqf">HEQF level of subject</label><select id="heqf" class="field" x-model="form.heqf_level">@foreach ([5, 6, 7, 8, 9, 10] as $l)<option value="{{ $l }}">Level {{ $l }}</option>@endforeach</select></div>
-      <div><label class="label" for="slevel">Level of subject (e.g. YR 1)</label><input id="slevel" list="levels" class="field" maxlength="40" x-model="form.subject_level"><datalist id="levels">@foreach ($f['levels'] as $l)<option value="{{ $l }}">@endforeach</datalist></div>
+      <div><label class="label" for="slevel">Year level</label><select id="slevel" class="field" x-model="form.subject_level"><option value="">Select…</option>@foreach (array_unique(array_merge($f['levels'], array_filter([$form['subject_level']]))) as $l)<option value="{{ $l }}">{{ $l }}</option>@endforeach</select></div>
       <div></div>
       <div class="sm:col-span-2"><label class="label" for="qual">Qualification</label><input id="qual" class="field" maxlength="160" placeholder="e.g. National Diploma: Emergency Medical Care" x-model="form.qualification"></div>
       <div><label class="label" for="qcode">Qualification code</label><input id="qcode" class="field" maxlength="40" x-model="form.qualification_code"></div>

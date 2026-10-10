@@ -16,6 +16,8 @@
     <div><label class="label" for="number">Assessment number</label><select id="number" name="number" required class="field"><option value="">Select…</option>@foreach (config('dems.assessment_numbers') as $n)<option value="{{ $n }}" @selected(old('number') === $n)>{{ $n }}</option>@endforeach</select>
       <p class="mt-1 text-xs text-slate-400">Matches the T column in the marks sheet.</p></div>
   </div>
+  <div class="grid gap-5 sm:grid-cols-2"><div><label class="label" for="year_level">Year level</label>
+    <select id="year_level" name="year_level" required class="field"><option value="">Select…</option>@foreach (config('moderation_form.levels') as $l)<option value="{{ $l }}" @selected(old('year_level') === $l)>{{ $l }}</option>@endforeach</select></div></div>
   <div><label class="label" for="adate">Assessment date <span class="normal-case tracking-normal text-slate-400">(optional, sets the deadlines)</span></label>
     <input id="adate" name="assessment_date" type="date" class="field max-w-[220px]" x-model="date">
     <p class="mt-1.5 text-xs text-slate-500 dark:text-zinc-400" x-show="date" x-cloak>Pre-moderation must be finished by <b x-text="shift(-{{ (int) config('dems.pre_moderation_days') }})"></b>; post-moderation by <b x-text="shift({{ (int) config('dems.post_moderation_days') }})"></b>.</p></div>

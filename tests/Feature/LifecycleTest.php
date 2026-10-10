@@ -68,7 +68,7 @@ class LifecycleTest extends TestCase
     private function s1(int $recall = 20): array
     {
         return [
-            'period' => 'first', 'year' => 2026, 'heqf_level' => 6, 'subject_level' => 'YR 2',
+            'period' => 'first', 'year' => 2026, 'heqf_level' => 6, 'subject_level' => 'Y2',
             'qualification' => 'National Diploma: Emergency Medical Care', 'qualification_code' => 'D2EMCA', 'assessment_date' => '2026-03-12',
             'weights' => ['recall_simple' => $recall, 'recall_complex' => 10, 'application_simple' => 30, 'application_complex' => 20, 'analysis_simple' => 15, 'analysis_complex' => 100 - $recall - 75],
         ];
@@ -138,9 +138,9 @@ class LifecycleTest extends TestCase
     private function newAssessment(bool $withExternal = true, ?Subject $subject = null, string $number = 'T1'): Assessment
     {
         $subject ??= $this->subject;
-        $this->as($this->examiner)->post('/assessments', [
+        $this->as($this->examiner)->post('/assessments', ['year_level' => 'Y1', 
             'subject_id' => $subject->id, 'number' => $number,
-            'internal_moderator_id' => $this->internal->id, 'external_moderator_id' => $withExternal ? $this->external->id : null,
+            'internal_moderator_id' => $this->internal->id, 'external_moderator_id' => $withExternal ? $this->external->id : null, 'year_level' => 'Y2',
         ])->assertRedirect();
 
         return Assessment::where('subject_id', $subject->id)->where('number', $number)->firstOrFail();
@@ -323,7 +323,7 @@ class LifecycleTest extends TestCase
     public function test_access_control(): void
     {
         $a = $this->newAssessment();
-        $this->as($this->internal)->post('/assessments', ['subject_id' => $this->subject->id, 'number' => 'X', 'internal_moderator_id' => $this->internal->id])->assertForbidden();
+        $this->as($this->internal)->post('/assessments', ['year_level' => 'Y1', 'subject_id' => $this->subject->id, 'number' => 'X', 'internal_moderator_id' => $this->internal->id])->assertForbidden();
         $this->as($this->examiner)->postJson("/assessments/{$a->id}/pre-review", ['decision' => 'REVISION_REQUESTED', 'comments' => 'nope nope'])->assertForbidden();
         $this->as($this->external)->get("/assessments/{$a->id}")->assertNotFound(); // not handed to them yet
         $this->as($this->internal)->get("/assessments/{$a->id}")->assertOk();
@@ -417,12 +417,12 @@ class LifecycleTest extends TestCase
         $this->assertTrue($this->examiner->isResponsibleFor($phe, Role::Examiner));
         $this->as($this->examiner)->get('/assessments/create')->assertOk()->assertSee('PHE261S')->assertDontSee('PHE262S');
         // only subjects you are responsible for
-        $this->as($this->examiner)->post('/assessments', ['subject_id' => $other->id, 'number' => 'T1', 'internal_moderator_id' => $this->internal->id])->assertSessionHas('error');
+        $this->as($this->examiner)->post('/assessments', ['year_level' => 'Y1', 'subject_id' => $other->id, 'number' => 'T1', 'internal_moderator_id' => $this->internal->id])->assertSessionHas('error');
         // moderators who registered for the subject are the only valid choice
         $this->responsible($this->internal, $phe, Role::InternalModerator);
         $second = User::create(['name' => 'Other Mod', 'email' => 'm2@t.test', 'role' => Role::InternalModerator, 'password' => self::PW]);
-        $this->as($this->examiner)->post('/assessments', ['subject_id' => $phe->id, 'number' => 'T1', 'internal_moderator_id' => $second->id])->assertSessionHas('error');
-        $this->as($this->examiner)->post('/assessments', ['subject_id' => $phe->id, 'number' => 'T1', 'internal_moderator_id' => $this->internal->id, 'assessment_date' => '2026-11-20'])->assertRedirect();
+        $this->as($this->examiner)->post('/assessments', ['year_level' => 'Y1', 'subject_id' => $phe->id, 'number' => 'T1', 'internal_moderator_id' => $second->id])->assertSessionHas('error');
+        $this->as($this->examiner)->post('/assessments', ['year_level' => 'Y1', 'subject_id' => $phe->id, 'number' => 'T1', 'internal_moderator_id' => $this->internal->id, 'assessment_date' => '2026-11-20'])->assertRedirect();
         $this->as($this->external)->put('/my-subjects', ['subjects' => []])->assertForbidden();
     }
 
@@ -463,10 +463,15 @@ class LifecycleTest extends TestCase
     {
         $this->as($this->examiner)->get('/assessments/create')->assertOk()->assertSee('Matches the T column')->assertSee('>T7<', false);
         foreach (['Test 1', 'T8', 't1', ''] as $bad) {
-            $this->as($this->examiner)->post('/assessments', ['subject_id' => $this->subject->id, 'number' => $bad, 'internal_moderator_id' => $this->internal->id])->assertSessionHasErrors('number');
+            $this->as($this->examiner)->post('/assessments', ['year_level' => 'Y1', 'subject_id' => $this->subject->id, 'number' => $bad, 'internal_moderator_id' => $this->internal->id])->assertSessionHasErrors('number');
         }
-        $this->as($this->examiner)->post('/assessments', ['subject_id' => $this->subject->id, 'number' => 'T7', 'internal_moderator_id' => $this->internal->id])->assertRedirect();
+        foreach (['', 'YR 1', 'Y5'] as $bad) {
+            $this->as($this->examiner)->post('/assessments', ['year_level' => $bad, 'subject_id' => $this->subject->id, 'number' => 'T6', 'internal_moderator_id' => $this->internal->id])->assertSessionHasErrors('year_level');
+        }
+        $this->as($this->examiner)->post('/assessments', ['year_level' => 'Y1', 'subject_id' => $this->subject->id, 'number' => 'T7', 'internal_moderator_id' => $this->internal->id])->assertRedirect();
         $this->assertSame('CSC101 · T7', Assessment::firstOrFail()->title());
+        $this->assertSame('Y1', Assessment::firstOrFail()->year_level);
+        $this->as($this->examiner)->get('/assessments/'.Assessment::firstOrFail()->id)->assertOk()->assertSee('Year level');
     }
 
     public function test_login_and_pages_render_for_every_stage(): void
