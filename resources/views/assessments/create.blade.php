@@ -13,7 +13,8 @@
   <div class="grid gap-5 sm:grid-cols-2">
     <div><label class="label" for="subject">Subject</label>
       <select id="subject" name="subject_id" required class="field" x-model="subject" @change="internal = ''"><option value="">Select…</option>@foreach ($subjects as $s)<option value="{{ $s->id }}">{{ $s->code }} — {{ $s->name }}</option>@endforeach</select></div>
-    <div><label class="label" for="number">Assessment number</label><input id="number" name="number" required maxlength="40" class="field" placeholder="e.g. Test 1, Exam" value="{{ old('number') }}"></div>
+    <div><label class="label" for="number">Assessment number</label><select id="number" name="number" required class="field"><option value="">Select…</option>@foreach (config('dems.assessment_numbers') as $n)<option value="{{ $n }}" @selected(old('number') === $n)>{{ $n }}</option>@endforeach</select>
+      <p class="mt-1 text-xs text-slate-400">Matches the T column in the marks sheet.</p></div>
   </div>
   <div><label class="label" for="adate">Assessment date <span class="normal-case tracking-normal text-slate-400">(optional, sets the deadlines)</span></label>
     <input id="adate" name="assessment_date" type="date" class="field max-w-[220px]" x-model="date">

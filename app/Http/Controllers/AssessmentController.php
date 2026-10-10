@@ -24,11 +24,11 @@ class AssessmentController extends Controller
     {
         $data = $request->validate([
             'subject_id' => ['required', 'integer'],
-            'number' => ['required', 'string', 'max:40'],
+            'number' => ['required', 'string', \Illuminate\Validation\Rule::in(config('dems.assessment_numbers'))],
             'internal_moderator_id' => ['required', 'integer'],
             'external_moderator_id' => ['nullable', 'integer'],
             'assessment_date' => ['nullable', 'date'],
-        ], ['number.required' => 'Enter the assessment number.', 'internal_moderator_id.required' => 'Choose an internal moderator.']);
+        ], ['number.required' => 'Choose the assessment number.', 'number.in' => 'Choose T1 to T7.', 'internal_moderator_id.required' => 'Choose an internal moderator.']);
         $a = $workflow->create($request->user(), $data, $this->meta($request));
 
         return redirect()->route('assessments.show', $a);

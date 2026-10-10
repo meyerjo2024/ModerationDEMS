@@ -135,7 +135,7 @@ class LifecycleTest extends TestCase
         return $this->actingAs($u);
     }
 
-    private function newAssessment(bool $withExternal = true, ?Subject $subject = null, string $number = 'Test 1'): Assessment
+    private function newAssessment(bool $withExternal = true, ?Subject $subject = null, string $number = 'T1'): Assessment
     {
         $subject ??= $this->subject;
         $this->as($this->examiner)->post('/assessments', [
@@ -459,6 +459,16 @@ class LifecycleTest extends TestCase
         $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'MEMO', 'file' => $fake], ['Accept' => 'application/json'])->assertStatus(400);
     }
 
+    public function test_assessment_number_is_one_of_t1_to_t7(): void
+    {
+        $this->as($this->examiner)->get('/assessments/create')->assertOk()->assertSee('Matches the T column')->assertSee('>T7<', false);
+        foreach (['Test 1', 'T8', 't1', ''] as $bad) {
+            $this->as($this->examiner)->post('/assessments', ['subject_id' => $this->subject->id, 'number' => $bad, 'internal_moderator_id' => $this->internal->id])->assertSessionHasErrors('number');
+        }
+        $this->as($this->examiner)->post('/assessments', ['subject_id' => $this->subject->id, 'number' => 'T7', 'internal_moderator_id' => $this->internal->id])->assertRedirect();
+        $this->assertSame('CSC101 · T7', Assessment::firstOrFail()->title());
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');
@@ -493,7 +503,7 @@ class LifecycleTest extends TestCase
         $phe = Subject::create(['code' => 'PHE261S', 'name' => 'Pre-hospital care 2', 'hod_id' => $this->hod->id]);
         $this->responsible($this->examiner, $phe, Role::Examiner);
         $this->responsible($this->internal, $phe, Role::InternalModerator);
-        $a = $this->newAssessment(false, $phe, 'Test 2');
+        $a = $this->newAssessment(false, $phe, 'T2');
         $this->submitSection1($a);
         $this->approveGate1($a);
 

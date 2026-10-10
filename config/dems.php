@@ -17,6 +17,9 @@ return [
 
     'max_marks_rows' => 20000,
 
+    // The assessment number is one of these; it is linked to the column of the same name in the marks sheet (class list).
+    'assessment_numbers' => ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+
     // Moderation windows around the assessment date.
     'pre_moderation_days' => 14,   // pre-moderation must be finished this many days BEFORE the assessment
     'post_moderation_days' => 14,  // post-moderation must be finished this many days AFTER it

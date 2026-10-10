@@ -6,6 +6,7 @@ How a record moves through Moderation DEMS, who can act at each step, and what t
 
 - **Subject list:** `php artisan dems:import-subjects [file]` (also run by the seeder, and available as *Admin → Import subject list*). Columns: Qualification, Subject Code, Subject Name. A code offered in several qualifications is one subject listing all of them.
 - **My subjects:** examiners and internal moderators choose their subjects (`subject_user`, one set per role). An examiner can only create an assessment for a chosen subject; if any internal moderators registered for the subject, one of them must be picked (otherwise anyone may be).
+- **Assessment number:** a dropdown, `T1`–`T7` (`config/dems.php` → `assessment_numbers`). At post-moderation the marks sheet column with the same header is selected automatically and locked; if the sheet has no such column with marks, the examiner is warned and may pick another.
 - **Assessment date:** entered when creating the assessment (or in Section 1). Pre-moderation (Section 1 through Gate 1) is due `assessment date − 14 days`; post-moderation (Section 2 through final sign-off) is due `assessment date + 14 days`. Deadlines are shown, never block work.
 - **Reminders:** `dems:deadlines` (scheduled daily, and also run the first time anyone opens the dashboard each day, since the free host has no scheduler) notifies whoever the record is waiting on when it is due within 3 days or overdue; the HOD is added once it is overdue. One reminder per person and record per day.
 

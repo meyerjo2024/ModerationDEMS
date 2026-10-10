@@ -4,7 +4,7 @@ You own an assessment from the first draft to the final signed report. You act i
 
 ## Before you start: choose your subjects
 
-Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, choose the **assessment number** (T1–T7: it is linked to the column of the same name in the marks sheet you upload later) and enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
 
 ![My subjects](../screenshots/my-subjects.png)
 
@@ -24,7 +24,7 @@ Open **My subjects**, tick the subjects you are responsible for and save. You ca
 
 ## Before you start: choose your subjects
 
-Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, choose the **assessment number** (T1–T7: it is linked to the column of the same name in the marks sheet you upload later) and enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
 
 ![My subjects](../screenshots/my-subjects.png)
 
@@ -43,7 +43,7 @@ Status becomes **Pending Pre-Moderation Review** and the internal moderator is n
 
 ## Before you start: choose your subjects
 
-Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, choose the **assessment number** (T1–T7: it is linked to the column of the same name in the marks sheet you upload later) and enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
 
 ![My subjects](../screenshots/my-subjects.png)
 
@@ -55,7 +55,7 @@ The record returns to **Revision Requested** with the moderator's feedback at th
 
 ## Before you start: choose your subjects
 
-Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, choose the **assessment number** (T1–T7: it is linked to the column of the same name in the marks sheet you upload later) and enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
 
 ![My subjects](../screenshots/my-subjects.png)
 
@@ -84,7 +84,7 @@ The app checks the file against your assessment and warns you (without blocking)
 
 ## Before you start: choose your subjects
 
-Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, choose the **assessment number** (T1–T7: it is linked to the column of the same name in the marks sheet you upload later) and enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
 
 ![My subjects](../screenshots/my-subjects.png)
 
@@ -98,7 +98,7 @@ A moderator can send the results back with feedback. The record returns to **Rea
 
 ## Before you start: choose your subjects
 
-Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, choose the **assessment number** (T1–T7: it is linked to the column of the same name in the marks sheet you upload later) and enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
 
 ![My subjects](../screenshots/my-subjects.png)
 
@@ -110,7 +110,7 @@ When all signatures are in, the record shows **Moderation complete** and you can
 
 ## Before you start: choose your subjects
 
-Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
+Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, choose the **assessment number** (T1–T7: it is linked to the column of the same name in the marks sheet you upload later) and enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
 
 ![My subjects](../screenshots/my-subjects.png)
 
