@@ -9,16 +9,14 @@ $headline = [$S::PendingPreModeration, $S::RevisionRequested, $S::ReadyForPostMo
 $tabs = ['ALL' => ['All', $items->count()], 'ACTION' => ['Needs my action', $actionCount], 'DRAFT' => ['Drafts', $counts['DRAFT'] ?? 0], 'FINAL' => ['Final review', ($counts['PENDING_FINAL_MODERATION'] ?? 0) + ($counts['PENDING_EXTERNAL_MODERATION'] ?? 0) + ($counts['PENDING_SECTION3_SIGNOFF'] ?? 0)]];
 @endphp
 <div x-data="dashboard(@js($meta))" class="space-y-8">
-  <div class="hero-plate relative overflow-hidden bg-navy p-8 text-white sm:p-10">
-    <div class="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-brand/30 blur-3xl"></div>
-    <div class="pointer-events-none absolute inset-0 opacity-[.06]" style="background-image:radial-gradient(#fff 1px,transparent 1px);background-size:22px 22px"></div>
+  <div class="hero-plate relative overflow-hidden p-8 sm:p-12">
     <div class="relative flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p class="text-[11px] font-semibold uppercase tracking-[.16em] text-brand">Overview</p>
+        <p class="text-xs font-semibold text-accent dark:text-accent-dark">Overview</p>
         <h1 class="mt-1 text-3xl font-semibold sm:text-4xl">Welcome back, {{ $first }}.</h1>
-        <p class="mt-1 text-white/70">{{ $actionCount ? $actionCount.' '.\Illuminate\Support\Str::plural('record', $actionCount).' waiting on you.' : 'Nothing is waiting on you right now.' }}</p>
+        <p class="mt-1 text-[var(--ink-2)]">{{ $actionCount ? $actionCount.' '.\Illuminate\Support\Str::plural('record', $actionCount).' waiting on you.' : 'Nothing is waiting on you right now.' }}</p>
       </div>
-      @if ($user->hasRole(\App\Enums\Role::Examiner))<a href="{{ route('assessments.create') }}" class="btn-brand"><x-icon name="file-plus" /> New assessment</a>@endif
+      @if ($user->hasRole(\App\Enums\Role::Examiner))<a href="{{ route('assessments.create') }}" class="btn-primary"><x-icon name="file-plus" /> New assessment</a>@endif
     </div>
   </div>
 

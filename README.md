@@ -22,7 +22,7 @@
 
 ## Design
 
-A tactile, **skeuomorphic** interface in the official CPUT colours — Dark Blue `#006699`, Mid Blue `#0099CC`, Sea Blue `#66CCCC`: paper-sheet cards on a woven desk, brushed-metal header, raised keys that press down, debossed inputs, glossy progress beads; light and dark modes. All colours live in one place (`resources/css/app.css`, the `@theme` block) so they can be changed centrally.
+A clean, flat interface in the official **CPUT colours** (Dark Blue `#006699`, Mid Blue `#0099CC`, Sea Blue `#66CCCC`), following the DJI-style design spec: white canvas, pale grey bands, one blue pill for every action with 1px outline pills for secondary actions, Open Sans with tight tracking, 8px flat cards with no shadows, a white navigation bar; light and dark themes. See [`docs/design.md`](docs/design.md). All colours live in one place (`resources/css/app.css`).
 
 ## Workflow
 

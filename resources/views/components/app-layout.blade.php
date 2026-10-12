@@ -12,14 +12,14 @@
 </head>
 <body class="min-h-screen">
   @auth
-    @php $u = auth()->user(); $link = 'whitespace-nowrap rounded-full px-3 py-1.5 hover:bg-white/10 hover:text-white'; @endphp
+    @php $u = auth()->user(); $link = 'whitespace-nowrap rounded-full px-3 py-1.5 hover:bg-[var(--fog)] hover:text-accent dark:hover:text-accent-dark'; @endphp
     <header class="glass-header">
-      <div class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+      <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
         <div class="flex items-center gap-6">
-          <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 font-semibold tracking-tight">
-            <span class="grid h-7 w-7 place-items-center rounded-lg bg-brand text-white shadow-sm"><x-icon name="shield" /></span><span class="hidden sm:inline">Moderation DEMS</span>
+          <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 font-semibold">
+            <span class="grid h-8 w-8 place-items-center rounded-lg bg-accent text-white"><x-icon name="shield" /></span><span class="hidden sm:inline">Moderation DEMS</span>
           </a>
-          <nav class="flex items-center gap-1 text-sm font-medium text-white/80">
+          <nav class="flex items-center gap-1 text-sm text-[#303233] dark:text-zinc-300">
             <a href="{{ route('dashboard') }}" class="{{ $link }}">Dashboard</a>
             @if ($u->hasRole(\App\Enums\Role::Examiner))<a href="{{ route('assessments.create') }}" class="{{ $link }}">New assessment</a>@endif
             @if ($u->hasRole(\App\Enums\Role::Examiner, \App\Enums\Role::InternalModerator))<a href="{{ route('my-subjects') }}" class="{{ $link }}">My subjects</a>@endif
@@ -28,10 +28,10 @@
         </div>
         <div class="flex items-center gap-2">
           <div class="relative" x-data="notifs" @click.outside="open = false">
-            <button type="button" @click="toggle()" class="relative rounded-full p-2 text-white/80 hover:bg-white/10" :aria-label="'Notifications' + (unread ? ' (' + unread + ' unread)' : '')">
-              <x-icon name="bell" class="h-[18px] w-[18px]" /><span x-show="unread > 0" x-cloak class="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-navy"></span>
+            <button type="button" @click="toggle()" class="relative rounded-full p-2 text-[#303233] hover:bg-[var(--fog)] dark:text-zinc-300" :aria-label="'Notifications' + (unread ? ' (' + unread + ' unread)' : '')">
+              <x-icon name="bell" class="h-[18px] w-[18px]" /><span x-show="unread > 0" x-cloak class="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></span>
             </button>
-            <div x-show="open" x-cloak x-transition class="card absolute right-0 mt-2 w-80 overflow-hidden !bg-white/95 p-1.5 text-slate-900 shadow-lift dark:!bg-zinc-900/95 dark:text-zinc-100">
+            <div x-show="open" x-cloak x-transition class="card absolute right-0 mt-2 w-80 overflow-hidden !bg-[var(--canvas)] p-1.5 shadow-lift">
               <p class="kicker px-3 pb-1 pt-2">Notifications</p>
               <p x-show="!items.length" class="px-3 py-6 text-sm text-slate-500">You’re all caught up.</p>
               <ul class="max-h-80 overflow-y-auto"><template x-for="n in items" :key="n.id"><li>
@@ -39,8 +39,8 @@
               </li></template></ul>
             </div>
           </div>
-          <div class="hidden text-right leading-tight sm:block"><p class="text-[13px] font-semibold">{{ $u->name }}</p><p class="text-[11px] text-white/60">{{ $u->roleLabels() }}</p></div>
-          <form method="POST" action="{{ route('logout') }}">@csrf<button class="rounded-full p-2 text-white/80 hover:bg-white/10" aria-label="Sign out"><x-icon name="logout" class="h-[18px] w-[18px]" /></button></form>
+          <div class="hidden text-right leading-tight sm:block"><p class="text-[13px] font-semibold">{{ $u->name }}</p><p class="text-[11px] text-[var(--ink-3)]">{{ $u->roleLabels() }}</p></div>
+          <form method="POST" action="{{ route('logout') }}">@csrf<button class="rounded-full p-2 text-[#303233] hover:bg-[var(--fog)] dark:text-zinc-300" aria-label="Sign out"><x-icon name="logout" class="h-[18px] w-[18px]" /></button></form>
         </div>
       </div>
     </header>

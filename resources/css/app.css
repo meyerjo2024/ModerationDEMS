@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/open-sans';
 
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -6,50 +7,48 @@
 @source '../../app/Enums/*.php';
 
 @theme {
-    --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, 'Segoe UI', Roboto, sans-serif;
-    --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --font-sans: 'Open Sans Variable', 'Open Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-display: 'Open Sans Variable', 'Open Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-    /* CPUT palette — change the values here to restyle the whole platform */
-    --color-accent: #006699;
-    --color-accent-dark: #66cccc;
-    --color-brand: #0099cc;
+    /* CPUT palette (Dark Blue / Mid Blue / Sea Blue) applied to the DJI-style system in docs/design.md.
+       Change the values here to restyle the whole platform. */
+    --color-accent: #006699;       /* the single action colour: pills, active states, links */
+    --color-accent-dark: #66cccc;  /* action colour on dark surfaces */
+    --color-brand: #0099cc;        /* Mid Blue: secondary highlights, icons, tinted links */
     --color-brand-soft: #e6f6fb;
     --color-navy: #00334d;
 
-    --shadow-card: 0 1px 0 #fff inset, 0 1px 1px rgba(0, 51, 77, .12), 0 6px 14px -4px rgba(0, 51, 77, .22), 0 18px 32px -14px rgba(0, 51, 77, .28);
-    --shadow-lift: 0 1px 0 #fff inset, 0 2px 3px rgba(0, 51, 77, .16), 0 14px 26px -6px rgba(0, 51, 77, .3), 0 30px 44px -18px rgba(0, 51, 77, .34);
-
-    --animate-pulse-ring: pulse-ring 2s ease-out infinite;
-    @keyframes pulse-ring {
-        0% { box-shadow: 0 0 0 0 currentColor; }
-        70% { box-shadow: 0 0 0 6px transparent; }
-        100% { box-shadow: 0 0 0 0 transparent; }
-    }
+    --shadow-card: none;
+    --shadow-lift: 0 8px 16px rgba(0, 0, 0, .1); /* only for things that genuinely float: menus, drawers */
 }
 
-/* ── Skeuomorphic surface tokens ─────────────────────────────────────────── */
+/* ── Design tokens (see docs/design.md) ──────────────────────────────────── */
 :root {
-    --desk: #c6d9e4;
-    --desk-grain: rgba(0, 51, 77, .035);
-    --paper-hi: #ffffff;
-    --paper-lo: #f1f3f7;
-    --paper-edge: #b1c7d4;
-    --well-hi: #dfe4ed;
-    --well-lo: #f4f6fa;
-    --ink: #0b2433;
-    --emboss: 0 1px 0 rgba(255, 255, 255, .9);
+    --canvas: #ffffff;
+    --canvas-soft: #f7f9fa;
+    --fog: #f5f5f5;
+    --ink: #262626;
+    --ink-2: #595959;
+    --ink-3: #8c8c8c;
+    --divider: #e8e8e8;
+    --card-border: #d9d9d9;
+    --control-border: #cccccc;
+    --input-border: #d4d7d9;
+    --tint: #e0eff6;   /* accent at ~13% on white (the "Add to Cart" fill) */
 }
 @media (prefers-color-scheme: dark) {
     :root {
-        --desk: #0d1117;
-        --desk-grain: rgba(255, 255, 255, .025);
-        --paper-hi: #2a3243;
-        --paper-lo: #1d2432;
-        --paper-edge: #0a0e16;
-        --well-hi: #0b0f17;
-        --well-lo: #1a2130;
-        --ink: #e8ecf5;
-        --emboss: 0 -1px 0 rgba(0, 0, 0, .7);
+        --canvas: #121416;
+        --canvas-soft: #1a1d20;
+        --fog: #1f2327;
+        --ink: #f0f1f2;
+        --ink-2: #b3b8bd;
+        --ink-3: #8a9097;
+        --divider: #2c3135;
+        --card-border: #3a4046;
+        --control-border: #4a5258;
+        --input-border: #3a4046;
+        --tint: #123a4a;
     }
 }
 
@@ -59,130 +58,90 @@
     body {
         @apply font-sans text-[15px] leading-relaxed;
         color: var(--ink);
-        background-color: var(--desk);
-        /* a woven desk surface: fine crossed lines over a soft vignette */
-        background-image:
-            repeating-linear-gradient(45deg, var(--desk-grain) 0 1px, transparent 1px 4px),
-            repeating-linear-gradient(-45deg, var(--desk-grain) 0 1px, transparent 1px 4px),
-            radial-gradient(70rem 36rem at 50% -8%, rgba(255, 255, 255, .45), transparent 65%),
-            radial-gradient(60rem 30rem at 50% 115%, rgba(0, 51, 77, .22), transparent 70%);
-        background-attachment: fixed;
+        background: var(--canvas);
+        letter-spacing: -0.02em;
     }
-    ::selection { background: rgba(0, 153, 204, 0.3); }
-    h1, h2, h3 { @apply font-display tracking-tight; text-shadow: var(--emboss); }
+    ::selection { background: rgba(0, 153, 204, 0.25); }
+    h1, h2, h3 { font-weight: 600; letter-spacing: -0.03em; line-height: 1.2; }
     button:not(:disabled), [role='button'] { cursor: pointer; }
-    :focus-visible { @apply outline-none; box-shadow: 0 0 0 3px rgba(0, 153, 204, .55), 0 0 0 5px rgba(0, 153, 204, .2); }
+    :focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
     [x-cloak] { display: none !important; }
 }
 
-/* A sheet of paper resting on the desk, with a stitched-in highlight and a stacked-sheet edge. */
+/* Flat surfaces: a 1px rule, an 8px corner, no drop shadow. */
 @utility card {
-    @apply rounded-2xl;
-    border: 1px solid var(--paper-edge);
-    background: linear-gradient(180deg, var(--paper-hi), var(--paper-lo));
-    box-shadow: var(--shadow-card), 3px 3px 0 -1px var(--paper-lo), 3px 3px 0 0 var(--paper-edge);
+    border-radius: 8px;
+    border: 1px solid var(--divider);
+    background: var(--canvas);
 }
-/* A recessed tray / well inside a sheet. */
+/* A pale panel, e.g. the benefits panel / In the Box tile. */
 @utility card-soft {
-    @apply rounded-xl;
-    border: 1px solid var(--paper-edge);
-    background: linear-gradient(180deg, var(--well-hi), var(--well-lo));
-    box-shadow: inset 0 2px 4px rgba(0, 51, 77, .16), inset 0 -1px 0 rgba(255, 255, 255, .6);
+    border-radius: 8px;
+    background: var(--canvas-soft);
+    border: 1px solid transparent;
 }
-/* Brushed-navy rail with an orange binding along the bottom edge. */
+/* White navigation bar, 64px, hairline underneath. */
 @utility glass-header {
-    @apply sticky top-0 z-40 text-white;
-    background:
-        repeating-linear-gradient(90deg, rgba(255, 255, 255, .035) 0 1px, transparent 1px 3px),
-        linear-gradient(180deg, #0d6a94 0%, #00476b 45%, #00334d 100%);
-    border-bottom: 3px solid var(--color-brand);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), 0 4px 10px rgba(5, 15, 40, .45), 0 1px 0 #005f80;
-}
-/* Debossed input: it looks pressed into the page. */
-@utility field {
-    @apply w-full rounded-lg px-3.5 py-2.5 text-[15px] outline-none transition disabled:opacity-60;
+    @apply sticky top-0 z-40;
+    background: var(--canvas);
     color: var(--ink);
-    border: 1px solid var(--paper-edge);
-    border-bottom-color: rgba(255, 255, 255, .8);
-    background: linear-gradient(180deg, var(--well-hi), var(--well-lo));
-    box-shadow: inset 0 2px 5px rgba(0, 51, 77, .22), inset 0 0 0 1px rgba(0, 51, 77, .05);
-    &::placeholder { color: #8591a8; }
-    &:focus { border-color: var(--color-brand); box-shadow: inset 0 2px 5px rgba(0, 51, 77, .22), 0 0 0 3px rgba(0, 153, 204, .35); }
+    border-bottom: 1px solid var(--divider);
 }
-/* Engraved label text. */
-@utility label { @apply mb-1.5 block text-[11px] font-bold uppercase tracking-wider; color: #4a5875; text-shadow: var(--emboss); }
-@utility kicker { @apply text-[11px] font-bold uppercase tracking-[.14em]; color: #4a5875; text-shadow: var(--emboss); }
-@media (prefers-color-scheme: dark) {
-    .label, .kicker { color: #9aa7c2; }
+@utility field {
+    @apply w-full px-3.5 py-2.5 text-[15px] outline-none transition disabled:opacity-60;
+    color: var(--ink);
+    background: var(--canvas);
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    &::placeholder { color: var(--ink-3); }
+    &:focus { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); }
 }
+@utility label { @apply mb-1.5 block text-xs font-semibold; color: var(--ink-2); text-transform: none !important; letter-spacing: -0.01em !important; }
+@utility kicker { @apply text-xs font-semibold; color: var(--ink-3); text-transform: none !important; letter-spacing: -0.01em !important; }
 
-/* Raised keys: gradient face, bevelled top edge, a darker lip underneath that "presses" flat when clicked. */
+/* Every action is a pill. One action colour; secondary actions are 1px ink outlines. */
 @utility btn {
-    @apply inline-flex select-none items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold transition-[transform,box-shadow,filter] disabled:pointer-events-none disabled:opacity-50;
-    letter-spacing: .01em;
-    transform: translateY(0);
-    &:active { transform: translateY(2px); }
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm transition disabled:pointer-events-none disabled:opacity-50;
+    font-weight: 500;
+    letter-spacing: -0.02em;
 }
 @utility btn-primary {
-    @apply btn text-white;
-    text-shadow: 0 -1px 0 rgba(0, 0, 0, .45);
-    background: linear-gradient(180deg, #1a85b8 0%, #006699 52%, #004d73 100%);
-    border: 1px solid #003c59;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), inset 0 -1px 0 rgba(0, 0, 0, .25), 0 3px 0 #003c59, 0 6px 10px rgba(0, 60, 89, .4);
-    &:hover { filter: brightness(1.08); }
-    &:active { box-shadow: inset 0 2px 5px rgba(0, 0, 0, .45), 0 1px 0 #003c59; }
+    @apply btn;
+    background: var(--color-accent); color: #fff; border: 1px solid var(--color-accent);
+    &:hover { filter: brightness(1.12); }
 }
-@utility btn-brand {
-    @apply btn text-white;
-    text-shadow: 0 -1px 0 rgba(0, 60, 90, .55);
-    background: linear-gradient(180deg, #33b5e0 0%, #0099cc 52%, #0083ad 100%);
-    border: 1px solid #006b8f;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -1px 0 rgba(0, 60, 90, .25), 0 3px 0 #006b8f, 0 6px 10px rgba(0, 107, 143, .4);
-    &:hover { filter: brightness(1.06); }
-    &:active { box-shadow: inset 0 2px 5px rgba(0, 50, 80, .5), 0 1px 0 #006b8f; }
+@utility btn-brand {  /* the tinted companion ("Add to Cart") */
+    @apply btn;
+    background: var(--tint); color: var(--color-accent); border: 1px solid transparent;
+    &:hover { filter: brightness(.97); }
 }
 @utility btn-secondary {
     @apply btn;
-    color: #1b2a4a;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, .9);
-    background: linear-gradient(180deg, #ffffff 0%, #e6eaf2 55%, #d3d9e6 100%);
-    border: 1px solid #98a4bb;
-    box-shadow: inset 0 1px 0 #fff, 0 3px 0 #98a4bb, 0 6px 9px rgba(0, 51, 77, .22);
-    &:hover { filter: brightness(1.03); }
-    &:active { box-shadow: inset 0 2px 4px rgba(0, 51, 77, .3), 0 1px 0 #98a4bb; }
+    background: transparent; color: var(--ink); border: 1px solid var(--ink);
+    &:hover { background: var(--fog); }
 }
 @utility btn-danger {
     @apply btn;
-    color: #8c1d33;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, .8);
-    background: linear-gradient(180deg, #fff1f3 0%, #fbd3da 100%);
-    border: 1px solid #d98a99;
-    box-shadow: inset 0 1px 0 #fff, 0 3px 0 #d98a99, 0 6px 9px rgba(140, 29, 51, .2);
-    &:active { box-shadow: inset 0 2px 4px rgba(140, 29, 51, .35), 0 1px 0 #d98a99; }
+    background: transparent; color: #f5222d; border: 1px solid #f5222d;
+    &:hover { background: rgba(245, 34, 45, .06); }
 }
 @media (prefers-color-scheme: dark) {
-    .btn-secondary { color: #e8ecf5; text-shadow: 0 -1px 0 rgba(0, 0, 0, .6); background: linear-gradient(180deg, #3a4560, #2a3349 55%, #212a3d); border-color: #0a0e16; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 3px 0 #0a0e16, 0 6px 9px rgba(0, 0, 0, .5); }
-    .btn-danger { color: #ffb4c0; text-shadow: 0 -1px 0 rgba(0, 0, 0, .6); background: linear-gradient(180deg, #4a2530, #381a24); border-color: #14080c; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 3px 0 #14080c; }
-    .btn-primary { background: linear-gradient(180deg, #4fb8d6 0%, #2a9bc4 52%, #1d84aa 100%); }
+    .btn-primary { background: #0a86b4; border-color: #0a86b4; }
+    .btn-brand { color: #66cccc; }
 }
 
-/* Navy leather-look plate with a stitched inner border, used for the dashboard hero. */
-.hero-plate {
-    border-radius: 1rem;
-    border: 1px solid #001a26;
-    background: linear-gradient(180deg, #0e5c80 0%, #00334d 55%, #002233 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), inset 0 0 0 7px rgba(255, 255, 255, .03), var(--shadow-lift), 0 0 0 1px rgba(255, 255, 255, .04);
-}
-.hero-plate::after { content: ''; position: absolute; inset: 9px; border: 1.5px dashed rgba(0, 153, 204, .45); border-radius: .6rem; pointer-events: none; }
+/* Stepper beads, filter tabs, chips: flat. */
+ol[aria-label='Moderation progress'] li > div > span.rounded-full { box-shadow: none; --tw-ring-shadow: 0 0 #0000; }
 
-/* Progress stepper: domed, glossy beads. */
-ol[aria-label='Moderation progress'] li > div > span.rounded-full {
-    box-shadow: inset 0 2px 2px rgba(255, 255, 255, .55), inset 0 -3px 4px rgba(0, 0, 0, .28), 0 2px 3px rgba(0, 51, 77, .4);
-    --tw-ring-shadow: 0 0 #0000;
-}
-/* Status pills and filter chips get the same raised-lozenge treatment. */
-.rounded-3xl { border-radius: 1rem; }
-.rounded-4xl { border-radius: 1rem; }
+/* Corners: pills and 8px; nothing in between. */
+.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-4xl { border-radius: 8px; }
+/* Shadows only for things that float. */
+.shadow-sm, .shadow-card, .shadow-inner { box-shadow: none; }
+.shadow-lift { box-shadow: 0 8px 16px rgba(0, 0, 0, .1); }
+.backdrop-blur-xl, .backdrop-blur-2xl, .backdrop-blur-md, .backdrop-blur { backdrop-filter: none; }
+
+/* Hero band on the dashboard: a pale tile, big tight heading, one blue pill. */
+.hero-plate { border-radius: 8px; background: var(--fog); color: var(--ink); }
 
 /* Word document review */
 .doc-body { font-family: Georgia, 'Times New Roman', serif; line-height: 1.6; font-size: 15px; }
