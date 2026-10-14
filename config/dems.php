@@ -23,7 +23,8 @@ return [
     // Moderation windows around the assessment date.
     'pre_moderation_days' => 14,   // pre-moderation must be finished this many days BEFORE the assessment
     'post_moderation_days' => 14,  // post-moderation must be finished this many days AFTER it
-    'deadline_warn_days' => 3,     // reminders start this many days before a due date
+    'deadline_warn_days' => 3,
+    'assessment_reminder_days' => 3, // examiners are reminded of a planned assessment from this many days before it     // reminders start this many days before a due date
 
     'gates' => [
         ['key' => 'setup', 'title' => 'Pre-Assessment', 'sub' => 'Examiner · Section 1'],
@@ -42,6 +43,7 @@ return [
         'USER_APPROVED' => 'Registration approved',
         'USER_REJECTED' => 'Registration rejected',
         'SUBJECTS_IMPORTED' => 'Subject list imported',
+        'ASSESSMENTS_PLANNED' => 'Assessment dates planned',
         'SUBJECTS_CHOSEN' => 'Subjects chosen',
         'USER_ROLES_CHANGED' => 'User roles changed',
         'DOCUMENT_COMMENTED' => 'Comment added to a document',

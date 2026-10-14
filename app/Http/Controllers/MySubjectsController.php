@@ -22,6 +22,7 @@ class MySubjectsController extends Controller
         return view('my-subjects', [
             'roles' => $roles,
             'chosen' => $chosen,
+            'plans' => \App\Models\AssessmentPlan::where('user_id', $user->id)->get()->groupBy('subject_id')->map(fn ($g) => $g->mapWithKeys(fn ($p) => [$p->number => $p->assessment_date->toDateString()])->all())->all(),
             'subjects' => Subject::orderBy('qualification')->orderBy('code')->get()->groupBy(fn ($s) => $s->qualification ?: 'Other'),
         ]);
     }
@@ -29,7 +30,8 @@ class MySubjectsController extends Controller
     public function update(Request $request, Audit $audit)
     {
         $user = $request->user();
-        $d = $request->validate(['subjects' => ['nullable', 'array'], 'subjects.*' => ['array'], 'subjects.*.*' => ['integer', 'exists:subjects,id']]);
+        $d = $request->validate(['subjects' => ['nullable', 'array'], 'subjects.*' => ['array'], 'subjects.*.*' => ['integer', 'exists:subjects,id'],
+            'plans' => ['nullable', 'array'], 'plans.*' => ['array'], 'plans.*.*' => ['nullable', 'date']]);
         DB::transaction(function () use ($user, $d) {
             foreach (self::ROLES as $role) {
                 if (! $user->hasRole($role)) {
@@ -41,8 +43,23 @@ class MySubjectsController extends Controller
                 }
             }
         });
+        // the examiner's test calendar: only for subjects they are an examiner of, only the configured tests, only real dates
+        if ($user->hasRole(Role::Examiner)) {
+            $mine = DB::table('subject_user')->where('user_id', $user->id)->where('role', Role::Examiner->value)->pluck('subject_id')->all();
+            DB::transaction(function () use ($user, $d, $mine) {
+                \App\Models\AssessmentPlan::where('user_id', $user->id)->delete();
+                foreach ($d['plans'] ?? [] as $sid => $tests) {
+                    foreach ($tests as $number => $date) {
+                        if ($date && in_array((int) $sid, $mine, true) && in_array($number, config('dems.assessment_numbers'), true)) {
+                            \App\Models\AssessmentPlan::create(['user_id' => $user->id, 'subject_id' => (int) $sid, 'number' => $number, 'assessment_date' => $date]);
+                        }
+                    }
+                }
+            });
+            $audit->log('ASSESSMENTS_PLANNED', null, $user->id, ['count' => \App\Models\AssessmentPlan::where('user_id', $user->id)->count()], $request->ip());
+        }
         $audit->log('SUBJECTS_CHOSEN', null, $user->id, ['count' => DB::table('subject_user')->where('user_id', $user->id)->count()], $request->ip());
 
-        return back()->with('status', 'Your subjects are saved.');
+        return back()->with('status', 'Your subjects and assessment dates are saved.');
     }
 }

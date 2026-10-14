@@ -24,6 +24,10 @@
 
 A clean, flat interface in the official **CPUT colours** (Dark Blue `#006699`, Mid Blue `#0099CC`, Sea Blue `#66CCCC`), following the DJI-style design spec: white canvas, pale grey bands, one blue pill for every action with 1px outline pills for secondary actions, Open Sans with tight tracking, 8px flat cards with no shadows, a white navigation bar; light and dark themes. See [`docs/design.md`](docs/design.md). All colours live in one place (`resources/css/app.css`).
 
+## Later stage
+
+- [AI check of the question paper — plan](docs/ai-paper-analysis.md)
+
 ## Workflow
 
 | # | Phase / Gate | Actor | Status after |
@@ -76,6 +80,7 @@ Troubleshooting table (wrong branch, payment prompt, password errors, Supabase c
 - Row-locked state machine: a record cannot be advanced twice.
 - Statistics are **recomputed server-side** from the source marks; the browser never supplies them.
 - **Subjects and responsibilities:** the CPUT subject list (`database/data/Subjects.xlsx`, 75 subjects) is imported automatically on deploy (and from Admin → *Import subject list*). Examiners and internal moderators tick the subjects they are responsible for under **My subjects**; examiners can only start assessments for those, and internal moderators are offered per subject.
+- **Test calendar and reminders:** examiners enter the date of each test (T1–T7) per subject on *My subjects*; they are reminded from 3 days before, and the dashboard lists upcoming assessments.
 - **Deadlines:** give an assessment its date and pre-moderation must be finished **14 days before** it and post-moderation **14 days after** it (`config/dems.php`). Cards and records show the due date (amber when ≤ 3 days, red when overdue) and people get daily in-app reminders.
 - Word (`.docx`) papers and memoranda are reviewed **in the browser**: moderators highlight passages and comment; the comments return to the examiner with the revision request. (Older `.doc` files are download-only.)
 - Hash-chained, append-only audit log per record (tamper-evident; the PDF shows the chain head).

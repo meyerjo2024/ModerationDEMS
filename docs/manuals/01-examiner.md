@@ -6,7 +6,11 @@ You own an assessment from the first draft to the final signed report. You act i
 
 Open **My subjects**, tick the subjects you are responsible for and save. You can only start assessments for those. When you create an assessment, choose the **year level** (Y0–Y4) and the **assessment number** (T1–T7: it is linked to the column of the same name in the marks sheet you upload later) and enter the **assessment date**: pre-moderation must be finished 14 days before it and post-moderation 14 days after it; the due dates show on your dashboard and you get reminders.
 
+Under each subject you tick, a small calendar lets you enter the **date of each test (T1–T7)**. The system then reminds you in the app (bell icon) every day from **3 days before** a test until the day itself, and the dashboard lists your **upcoming assessments** for the next 45 days, with a *Start in the system* link for any you have not started. When you create an assessment for a subject and test, the date from your calendar is filled in automatically.
+
 ![My subjects](../screenshots/my-subjects.png)
+
+![Upcoming assessments](../screenshots/upcoming-assessments.png)
 
 > **Password-protected papers.** You may upload a Word file (`.docx`, saved in Word 2010 or later) or PDF that is protected with a password. Tell your moderator the password directly (not through the system): they are asked for it when they open the document, and it is never stored. Moderators can read and comment on unlocked Word files in the browser; protected `.doc` (old format) files can only be downloaded.
 

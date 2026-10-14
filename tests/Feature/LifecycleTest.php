@@ -539,6 +539,32 @@ class LifecycleTest extends TestCase
         $this->assertNotNull(Subject::find($sample->id));
     }
 
+    public function test_examiner_plans_test_dates_and_is_reminded_three_days_before(): void
+    {
+        $other = Subject::create(['code' => 'OTH101', 'name' => 'Not mine', 'hod_id' => $this->hod->id]);
+        $d = fn (int $n) => now('UTC')->addDays($n)->toDateString();
+        $this->as($this->examiner)->put('/my-subjects', [
+            'subjects' => ['EXAMINER' => [$this->subject->id]],
+            'plans' => [$this->subject->id => ['T1' => $d(10), 'T2' => $d(3), 'T3' => $d(1), 'T9' => $d(2), 'T4' => ''], $other->id => ['T1' => $d(2)]],
+        ])->assertRedirect();
+        // only real tests of subjects they examine, with a date
+        $this->assertSame(['T1', 'T2', 'T3'], \App\Models\AssessmentPlan::where('user_id', $this->examiner->id)->orderBy('number')->pluck('number')->all());
+        // T2 (3 days) and T3 (tomorrow) are inside the window; T1 (10 days) is not
+        $this->assertSame(2, app(\App\Services\DeadlineReminders::class)->run());
+        $msgs = \App\Models\Notification::where('user_id', $this->examiner->id)->pluck('message')->implode(' | ');
+        $this->assertStringContainsString('CSC101 T2 is written in 3 days', $msgs);
+        $this->assertStringContainsString('CSC101 T3 is written tomorrow', $msgs);
+        $this->assertStringContainsString('not been started', $msgs);
+        $this->assertStringNotContainsString('T1', $msgs);
+        $this->assertSame(0, app(\App\Services\DeadlineReminders::class)->run()); // once a day
+        // the planned date flows into the assessment and the dashboard lists what is coming
+        $this->as($this->examiner)->get('/assessments/create')->assertOk();
+        $this->as($this->examiner)->post('/assessments', ['year_level' => 'Y1', 'subject_id' => $this->subject->id, 'number' => 'T2', 'internal_moderator_id' => $this->internal->id])->assertRedirect();
+        $this->assertSame($d(3), \Carbon\Carbon::parse(Assessment::firstOrFail()->assessment_date)->toDateString());
+        $this->as($this->examiner)->get('/')->assertOk()->assertSee('Upcoming assessments')->assertSee('CSC101 · T1')->assertSee('Start in the system');
+        $this->as($this->external)->put('/my-subjects', [])->assertForbidden();
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');

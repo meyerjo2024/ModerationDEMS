@@ -5,7 +5,10 @@
   @if ($subjects->isEmpty())<x-notice tone="warn" title="Choose your subjects first">You can only start assessments for subjects you are responsible for. <a href="{{ route('my-subjects') }}" class="font-semibold underline">Pick them in My subjects</a>.</x-notice>@endif
   @if ($errors->any())<x-notice tone="error">{{ $errors->first() }}</x-notice>@endif
   @php $mods = $internals->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'subjects' => $u->subjects->where('pivot.role', 'INTERNAL_MODERATOR')->pluck('id')->values()])->values(); @endphp
-  <div x-data="{ subject: @js((string) old('subject_id')), mods: @js($mods), date: @js(old('assessment_date', '')), internal: @js((string) old('internal_moderator_id')),
+  <div x-data="{ plans: @js($plans), number: @js((string) old('number', request('number'))), planned: false,
+    init() { this.$watch('subject', () => this.fill()); this.$watch('number', () => this.fill()); },
+    fill() { const p = (this.plans[this.subject] || {})[this.number]; if (p && (!this.date || this.planned)) { this.date = p; this.planned = true; } },
+    subject: @js((string) old('subject_id', request('subject'))), mods: @js($mods), date: @js(old('assessment_date', '')), internal: @js((string) old('internal_moderator_id')),
     get options() { const m = this.mods.filter(u => u.subjects.includes(Number(this.subject))); return m.length ? m : this.mods; },
     get registered() { return this.mods.some(u => u.subjects.includes(Number(this.subject))); },
     fmt(d) { return d.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' }); },
@@ -13,13 +16,13 @@
   <div class="grid gap-5 sm:grid-cols-2">
     <div><label class="label" for="subject">Subject</label>
       <select id="subject" name="subject_id" required class="field" x-model="subject" @change="internal = ''"><option value="">Select…</option>@foreach ($subjects as $s)<option value="{{ $s->id }}">{{ $s->code }} — {{ $s->name }}</option>@endforeach</select></div>
-    <div><label class="label" for="number">Assessment number</label><select id="number" name="number" required class="field"><option value="">Select…</option>@foreach (config('dems.assessment_numbers') as $n)<option value="{{ $n }}" @selected(old('number') === $n)>{{ $n }}</option>@endforeach</select>
+    <div><label class="label" for="number">Assessment number</label><select id="number" name="number" required class="field" x-model="number"><option value="">Select…</option>@foreach (config('dems.assessment_numbers') as $n)<option value="{{ $n }}">{{ $n }}</option>@endforeach</select>
       <p class="mt-1 text-xs text-slate-400">Matches the T column in the marks sheet.</p></div>
   </div>
   <div class="grid gap-5 sm:grid-cols-2"><div><label class="label" for="year_level">Year level</label>
     <select id="year_level" name="year_level" required class="field"><option value="">Select…</option>@foreach (config('moderation_form.levels') as $l)<option value="{{ $l }}" @selected(old('year_level') === $l)>{{ $l }}</option>@endforeach</select></div></div>
-  <div><label class="label" for="adate">Assessment date <span class="normal-case tracking-normal text-slate-400">(optional, sets the deadlines)</span></label>
-    <input id="adate" name="assessment_date" type="date" class="field max-w-[220px]" x-model="date">
+  <div><label class="label" for="adate">Assessment date <span class="normal-case tracking-normal text-slate-400">(optional, sets the deadlines; filled in from your test calendar)</span></label>
+    <input id="adate" name="assessment_date" type="date" class="field max-w-[220px]" x-model="date" @input="planned = false">
     <p class="mt-1.5 text-xs text-slate-500 dark:text-zinc-400" x-show="date" x-cloak>Pre-moderation must be finished by <b x-text="shift(-{{ (int) config('dems.pre_moderation_days') }})"></b>; post-moderation by <b x-text="shift({{ (int) config('dems.post_moderation_days') }})"></b>.</p></div>
   <div><label class="label" for="internal">Internal moderator</label>
     <select id="internal" name="internal_moderator_id" required class="field" x-model="internal"><option value="">Select…</option><template x-for="u in options" :key="u.id"><option :value="u.id" x-text="u.name"></option></template></select>

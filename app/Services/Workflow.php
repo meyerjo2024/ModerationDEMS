@@ -55,6 +55,9 @@ class Workflow
         if (! $user->isResponsibleFor($subject, Role::Examiner)) {
             throw new WorkflowException("Add {$subject->code} to My subjects first — you can only start assessments for subjects you are responsible for.");
         }
+        if (empty($in['assessment_date'])) { // fall back to the date in the examiner's own test calendar
+            $in['assessment_date'] = \App\Models\AssessmentPlan::where('user_id', $user->id)->where('subject_id', $subject->id)->where('number', $in['number'] ?? '')->first()?->assessment_date?->toDateString();
+        }
         if (! empty($in['assessment_date']) && ! strtotime((string) $in['assessment_date'])) {
             throw new WorkflowException('Enter a valid assessment date.');
         }

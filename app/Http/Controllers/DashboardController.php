@@ -21,6 +21,9 @@ class DashboardController extends Controller
         $items = Assessment::with(['subject', 'examiner', 'internalModerator'])
             ->visibleTo($user)->orderByDesc('updated_at')->get();
 
-        return view('dashboard', ['items' => $items, 'user' => $user]);
+        $upcoming = \App\Models\AssessmentPlan::with('subject')->where('user_id', $user->id)
+            ->whereDate('assessment_date', '>=', now('UTC')->toDateString())->whereDate('assessment_date', '<=', now('UTC')->addDays(45)->toDateString())->orderBy('assessment_date')->get();
+
+        return view('dashboard', ['items' => $items, 'user' => $user, 'upcoming' => $upcoming]);
     }
 }
