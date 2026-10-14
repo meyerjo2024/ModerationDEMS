@@ -474,6 +474,12 @@ class LifecycleTest extends TestCase
         $this->as($this->examiner)->get('/assessments/'.Assessment::firstOrFail()->id)->assertOk()->assertSee('Year level');
     }
 
+    public function test_a_hidden_record_shows_a_helpful_404(): void
+    {
+        $a = $this->newAssessment();
+        $this->as($this->external)->get("/assessments/{$a->id}")->assertNotFound()->assertSee('Xena External')->assertSee('not visible to');
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');
