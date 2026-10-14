@@ -12,14 +12,7 @@ class AuthController extends Controller
 {
     public function show()
     {
-        // Demo accounts are only advertised when the database was seeded with DEMS_DEMO_DATA=true.
-        $demo = config('dems.demo') ? [
-            'password' => (string) env('DEMS_SEED_PASSWORD'),
-            'accounts' => User::whereIn('email', ['hod@example.edu', 'examiner@example.edu', 'moderator@example.edu', 'external@example.edu', 'dual@example.edu'])
-                ->orderBy('id')->get(['name', 'email', 'role', 'extra_roles'])->map(fn ($u) => ['role' => $u->roleLabels(), 'email' => $u->email])->all(),
-        ] : null;
-
-        return view('auth.login', ['demo' => $demo]);
+        return view('auth.login');
     }
 
     public function login(Request $request, Audit $audit)
@@ -29,6 +22,10 @@ class AuthController extends Controller
         $key = 'login|'.$request->ip().'|'.$email;
         if (RateLimiter::tooManyAttempts($key, 8)) {
             return back()->withInput($request->only('email'))->with('error', 'Too many attempts. Please wait a few minutes and try again.');
+        }
+        $pending = User::where('email', $email)->where('approval_status', 'pending')->first();
+        if ($pending && \Illuminate\Support\Facades\Hash::check($data['password'], $pending->password)) {
+            return back()->withInput($request->only('email'))->with('error', 'Your registration is still waiting for approval by the Head of Department.');
         }
         if (! Auth::attempt(['email' => $email, 'password' => $data['password'], 'active' => true])) {
             RateLimiter::hit($key, 900);

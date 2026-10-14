@@ -54,12 +54,12 @@ cp .env.example .env
 composer install
 npm install && npm run build
 php artisan key:generate
-# set DEMS_SEED_PASSWORD (10+ chars) and DEMS_DEMO_DATA=true in .env, point DB_* at Postgres, then:
+# set DEMS_SEED_PASSWORD (10+ chars) in .env, point DB_* at Postgres, then:
 php artisan migrate
 php artisan db:seed
 ```
 
-Open `http://moderation-dems.test`. With demo data the login page lists `hod@`, `examiner@`, `moderator@` and `external@example.edu` — click one to fill it in. Full steps: [deployment guide](docs/deployment.md).
+Open `http://moderation-dems.test` and sign in with the first HOD account (`DEMS_SEED_EMAIL` / `DEMS_SEED_PASSWORD`). Staff create their own accounts with **Register** on the sign-in page; the HOD approves them in Admin. Full steps: [deployment guide](docs/deployment.md).
 
 ## Deploy (Render + Supabase, free)
 

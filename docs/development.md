@@ -73,4 +73,4 @@ Deployments are done by Render, which rebuilds the Docker image when the linked 
 
 ## Regenerating the screenshots
 
-The images in `docs/screenshots` were captured from a seeded demo database with Playwright driving a real browser through the whole lifecycle (including drawing the signatures). Re-run that script after UI changes and replace the files.
+The images in `docs/screenshots` were captured from a test database seeded with sample users with Playwright driving a real browser through the whole lifecycle (including drawing the signatures). Re-run that script after UI changes and replace the files.

@@ -12,8 +12,8 @@ return [
     'disk' => env('DEMS_DISK', 'local'),
     'max_upload_mb' => (int) env('DEMS_MAX_UPLOAD_MB', 15),
 
-    // Advertise demo logins on the sign-in page (only when seeded with DEMS_DEMO_DATA=true).
-    'demo' => (bool) env('DEMS_DEMO_DATA', false),
+    // Comma-separated e-mail domains allowed to self-register (empty = any). e.g. cput.ac.za
+    'register_domains' => env('DEMS_REGISTER_DOMAINS', ''),
 
     'max_marks_rows' => 20000,
 
@@ -38,6 +38,9 @@ return [
         'ASSESSMENT_CREATED' => 'Assessment created',
         'SECTION1_SAVED' => 'Section 1 draft saved',
         'FILE_UPLOADED' => 'File uploaded',
+        'USER_REGISTERED' => 'Staff registration received',
+        'USER_APPROVED' => 'Registration approved',
+        'USER_REJECTED' => 'Registration rejected',
         'SUBJECTS_IMPORTED' => 'Subject list imported',
         'SUBJECTS_CHOSEN' => 'Subjects chosen',
         'USER_ROLES_CHANGED' => 'User roles changed',

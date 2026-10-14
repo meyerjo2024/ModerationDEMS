@@ -14,7 +14,8 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         return view('admin.index', [
-            'users' => User::orderBy('role')->orderBy('name')->get(),
+            'users' => User::where('approval_status', 'approved')->orderBy('role')->orderBy('name')->get(),
+            'pending' => User::where('approval_status', 'pending')->orderBy('created_at')->get(),
             'subjects' => Subject::with('hod')->orderBy('code')->get(),
             'hods' => User::withRole(Role::Hod)->where('active', true)->orderBy('name')->get(),
         ]);
@@ -57,6 +58,26 @@ class AdminController extends Controller
         $ordered = array_values(array_filter(array_map(fn (Role $r) => $r->value, Role::cases()), fn ($v) => in_array($v, $roles, true)));
 
         return [$ordered[0], count($ordered) > 1 ? implode(',', array_slice($ordered, 1)) : null];
+    }
+
+    public function approve(Request $request, User $user, Audit $audit)
+    {
+        abort_unless($user->approval_status === 'pending', 404);
+        $d = $request->validate(['roles' => ['required', 'array', 'min:1'], 'roles.*' => [Rule::enum(Role::class)]], ['roles.required' => 'Choose at least one role.']);
+        [$primary, $extra] = $this->splitRoles($d['roles']);
+        $user->update(['role' => $primary, 'extra_roles' => $extra, 'active' => true, 'approval_status' => 'approved']);
+        $audit->log('USER_APPROVED', null, $request->user()->id, ['email' => $user->email, 'roles' => $user->roleValues()], $request->ip());
+
+        return back()->with('status', "{$user->name} was approved and can now sign in.");
+    }
+
+    public function reject(Request $request, User $user, Audit $audit)
+    {
+        abort_unless($user->approval_status === 'pending', 404);
+        $audit->log('USER_REJECTED', null, $request->user()->id, ['email' => $user->email], $request->ip());
+        $user->delete();
+
+        return back()->with('status', 'Registration rejected and removed.');
     }
 
     public function importSubjects(Request $request, Audit $audit, \App\Services\SubjectImporter $importer)

@@ -28,21 +28,12 @@
         @csrf
         <div><label class="label" for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="username" required class="field" placeholder="you@institution.edu" x-model="email"></div>
         <div><label class="label" for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required class="field" x-model="password"></div>
+        @if (session('status'))<x-notice tone="success">{{ session('status') }}</x-notice>@endif
         @if (session('error'))<x-notice tone="error">{{ session('error') }}</x-notice>@endif
         @error('email')<x-notice tone="error">{{ $message }}</x-notice>@enderror
-        <button type="submit" class="btn-brand w-full">Sign in <x-icon name="arrow-right" /></button>
+        <button type="submit" class="btn-primary w-full">Sign in <x-icon name="arrow-right" /></button>
       </form>
-      @if ($demo)
-        <div class="mt-6 rounded-lg bg-[var(--canvas-soft)] p-5">
-          <p class="kicker">Demo accounts · click to fill</p>
-          <ul class="mt-3 space-y-1.5">
-            @foreach ($demo['accounts'] as $acc)
-              <li><button type="button" @click="email = @js($acc['email']); password = @js($demo['password'])" class="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-white/80 dark:hover:bg-white/10"><span class="font-medium">{{ $acc['role'] }}</span><span class="truncate text-slate-500 dark:text-zinc-400">{{ $acc['email'] }}</span></button></li>
-            @endforeach
-          </ul>
-          <p class="mt-3 border-t border-[var(--divider)] pt-3 text-xs text-slate-600 dark:text-zinc-300">Password for all demo accounts: <code class="rounded bg-white/80 px-1.5 py-0.5 font-mono font-semibold dark:bg-white/10">{{ $demo['password'] }}</code></p>
-        </div>
-      @endif
+      <p class="mt-6 text-center text-sm text-[var(--ink-2)]">New member of staff? <a href="{{ route('register') }}" class="font-semibold text-accent dark:text-accent-dark">Register for an account</a></p>
     </div>
   </section>
 </main>

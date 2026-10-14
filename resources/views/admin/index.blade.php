@@ -2,6 +2,16 @@
 <div class="space-y-8">
   <div><p class="kicker">Administration</p><h1 class="mt-1 text-3xl font-semibold">People & subjects</h1></div>
   @if ($errors->any())<x-notice tone="error">{{ $errors->first() }}</x-notice>@endif
+  @if ($pending->isNotEmpty())
+    <section class="card border-accent p-6" style="border-color: var(--color-accent)"><p class="kicker mb-3">Registrations waiting for approval · {{ $pending->count() }}</p>
+      <ul class="divide-y divide-[var(--divider)] text-sm">@foreach ($pending as $u)
+        <li class="py-4"><div class="flex flex-wrap items-start justify-between gap-3"><div><p class="font-semibold">{{ $u->name }}</p><p class="text-[var(--ink-3)]">{{ $u->email }}@if ($u->department) · {{ $u->department }}@endif · registered {{ $u->created_at->diffForHumans() }}</p></div>
+          <form method="POST" action="{{ route('admin.reject', $u) }}" onsubmit="return confirm('Reject and remove this registration?')">@csrf @method('DELETE')<button class="btn-danger !py-1.5 text-xs">Reject</button></form></div>
+          <form method="POST" action="{{ route('admin.approve', $u) }}" class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">@csrf
+            @foreach (\App\Enums\Role::cases() as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="h-4 w-4 rounded accent-[#006699]" @checked(in_array($r->value, explode(',', (string) $u->requested_roles), true))> {{ $r->label() }}</label>@endforeach
+            <button class="btn-primary !py-1.5 text-xs">Approve</button></form></li>
+      @endforeach</ul></section>
+  @endif
   <div class="grid gap-6 lg:grid-cols-2">
     <form method="POST" action="{{ route('admin.users') }}" class="card space-y-4 p-6">@csrf
       <p class="kicker flex items-center gap-1.5"><x-icon name="user-plus" class="h-3.5 w-3.5" /> Add user</p>
@@ -25,9 +35,7 @@
       <div class="grid gap-4 sm:grid-cols-2">
         <div><label class="label">Subject code</label><input name="code" required class="field uppercase" placeholder="CSC101" value="{{ old('code') }}"></div>
         <div><label class="label">Subject name</label><input name="name" required class="field"></div>
-        <div class="sm:col-span-2"><label class="label">Also acts as <span class="font-normal text-slate-400">(optional — e.g. a Head of Department who also examines or moderates)</span></label>
-          <div class="mt-1 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">@foreach (\App\Enums\Role::cases() as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="extra_roles[]" value="{{ $r->value }}" @checked(in_array($r->value, old('extra_roles', []), true))> {{ $r->label() }}</label>@endforeach</div></div>
-        <div><label class="label">Department</label><input name="department" class="field"></div>
+                <div><label class="label">Department</label><input name="department" class="field"></div>
         <div><label class="label">Head of Department</label><select name="hod_id" class="field">@foreach ($hods as $h)<option value="{{ $h->id }}" @selected($h->id === auth()->id())>{{ $h->name }}</option>@endforeach</select></div>
       </div>
       <button class="btn-primary">Create subject</button>

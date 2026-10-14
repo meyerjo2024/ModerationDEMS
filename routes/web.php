@@ -26,6 +26,8 @@ Route::get('/health', function () {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'show'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [\App\Http\Controllers\RegisterController::class, 'show'])->name('register');
+    Route::post('/register', [\App\Http\Controllers\RegisterController::class, 'store'])->middleware('throttle:6,10');
 });
 
 Route::middleware('auth')->group(function () {
@@ -62,6 +64,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('admin');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users');
         Route::patch('/users/{user}/roles', [AdminController::class, 'updateRoles'])->name('admin.roles');
+        Route::post('/registrations/{user}/approve', [AdminController::class, 'approve'])->name('admin.approve');
+        Route::delete('/registrations/{user}', [AdminController::class, 'reject'])->name('admin.reject');
         Route::post('/subjects/import', [AdminController::class, 'importSubjects'])->name('admin.subjects.import');
         Route::post('/subjects', [AdminController::class, 'storeSubject'])->name('admin.subjects');
     });

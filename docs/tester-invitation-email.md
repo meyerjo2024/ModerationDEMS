@@ -5,16 +5,7 @@ Dear colleague,
 We are trialling a new online system that replaces the paper moderation process and produces the official CPUT *Appendix 2: Comprehensive Moderation Report* as a signed PDF. Please test it with the practice accounts below. Nothing you enter is real, and no real students or marks are involved.
 
 **Test site:** `[PASTE THE RENDER URL HERE]`
-**Practice password for every account:** `[PASTE THE DEMO PASSWORD HERE]`
-
-| Order | Role | Sign-in e-mail |
-|---|---|---|
-| 1 | Examiner | `examiner@example.edu` |
-| 2 | Internal moderator | `moderator@example.edu` |
-| 3 | External moderator | `external@example.edu` |
-| 4 | Head of Department | `dual@example.edu` (HOD of PHE261S; this account also holds the examiner and internal moderator roles) |
-
-(Tip: the sign-in page lists these accounts. Click one to fill in the e-mail and password.) Use a separate browser window, or a private window, for each role, so you can stay signed in as several people at once. When you sign off, the system asks for your password again and a drawn signature; use the mouse, finger or stylus.
+**Your account:** open the site and click **Register for an account**. Choose the role(s) you want to test (try Examiner and Internal Moderator), enter your staff e-mail and a password of at least 10 characters. The Head of Department approves your registration; you will be able to sign in once that is done. If you have both roles you can test the whole process alone, using a separate or private browser window for each role. When you sign off, the system asks for your password again and a drawn signature (mouse, finger or stylus).
 
 **Please follow the process in this order**
 

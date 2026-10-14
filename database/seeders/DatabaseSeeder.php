@@ -30,29 +30,6 @@ class DatabaseSeeder extends Seeder
         $this->command?->info("✔ HOD account ready: {$hod->email}");
 
         $this->importSubjects();
-
-        if (! config('dems.demo')) {
-            return;
-        }
-        $this->user('Dr Amara Okafor', 'examiner@example.edu', Role::Examiner, $password, 'Computer Science');
-        $this->user('Prof Liam van der Merwe', 'moderator@example.edu', Role::InternalModerator, $password, 'Computer Science');
-        $this->user('Dr Priya Naidoo', 'external@example.edu', Role::ExternalModerator, $password, 'External');
-        // One person, several roles: Head of Department of MAT101 who also examines and moderates other subjects.
-        $dual = $this->user('Prof Thandi Mokoena', 'dual@example.edu', Role::Hod, $password, 'Mathematics');
-        $dual->update(['extra_roles' => 'EXAMINER,INTERNAL_MODERATOR']);
-        Subject::firstOrCreate(['code' => 'MAT101'], ['name' => 'Mathematics I', 'department' => 'Mathematics', 'hod_id' => $dual->id]);
-        Subject::firstOrCreate(['code' => 'CSC101'], ['name' => 'Introduction to Programming', 'department' => 'Computer Science', 'hod_id' => $hod->id]);
-        Subject::firstOrCreate(['code' => 'INF202'], ['name' => 'Information Systems II', 'department' => 'Computer Science', 'hod_id' => $hod->id]);
-        // demo examiner / moderator already take responsibility for a few subjects
-        foreach (['examiner@example.edu' => 'EXAMINER', 'moderator@example.edu' => 'INTERNAL_MODERATOR'] as $mail => $role) {
-            $uid = User::where('email', $mail)->value('id');
-            foreach (['CSC101', 'INF202', 'PHE261S', 'PHE262S', 'PHE263S'] as $code) {
-                if ($sid = Subject::where('code', $code)->value('id')) {
-                    \Illuminate\Support\Facades\DB::table('subject_user')->insertOrIgnore(['user_id' => $uid, 'subject_id' => $sid, 'role' => $role]);
-                }
-            }
-        }
-        $this->command?->info('✔ Demo users and subjects ready (password = DEMS_SEED_PASSWORD).');
     }
 
     private function importSubjects(): void

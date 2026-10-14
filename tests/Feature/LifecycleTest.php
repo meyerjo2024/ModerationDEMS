@@ -480,6 +480,65 @@ class LifecycleTest extends TestCase
         $this->as($this->external)->get("/assessments/{$a->id}")->assertNotFound()->assertSee('Xena External')->assertSee('not visible to');
     }
 
+    public function test_staff_register_and_the_hod_approves(): void
+    {
+        $this->get('/register')->assertOk()->assertSee('Register for an account')->assertDontSee('Head of Department</b>', false);
+        $this->get('/login')->assertOk()->assertSee('Register for an account');
+        $good = ['name' => 'Nia New', 'email' => 'Nia@t.test', 'department' => 'EMC', 'roles' => ['EXAMINER', 'INTERNAL_MODERATOR'], 'password' => 'long-enough-pw', 'password_confirmation' => 'long-enough-pw'];
+        // head of department can never be self-requested; weak or mismatched passwords are refused
+        $this->post('/register', ['roles' => ['HOD']] + $good)->assertSessionHasErrors('roles.0');
+        $this->post('/register', ['password' => 'short', 'password_confirmation' => 'short'] + $good)->assertSessionHasErrors('password');
+        $this->post('/register', ['password_confirmation' => 'different-one'] + $good)->assertSessionHasErrors('password');
+        $this->post('/register', $good)->assertRedirect('/login');
+        $u = User::where('email', 'nia@t.test')->firstOrFail();
+        $this->assertFalse($u->active);
+        $this->assertSame('pending', $u->approval_status);
+        $this->assertSame('Examiner · Internal Moderator', $u->roleLabels());
+        $this->assertTrue(\App\Models\Notification::where('user_id', $this->hod->id)->where('message', 'like', '%Nia New%')->exists());
+        $this->post('/register', $good)->assertSessionHasErrors('email'); // no duplicates
+        // cannot sign in yet, and is told why
+        $this->post('/login', ['email' => 'nia@t.test', 'password' => 'long-enough-pw'])->assertSessionHas('error', fn ($m) => str_contains($m, 'waiting for approval'));
+        $this->assertGuest();
+        // only the HOD sees and decides; an examiner cannot
+        $this->as($this->examiner)->post("/admin/registrations/{$u->id}/approve", ['roles' => ['EXAMINER']])->assertForbidden();
+        $this->as($this->hod)->get('/admin')->assertOk()->assertSee('Registrations waiting for approval')->assertSee('Nia New');
+        $this->as($this->hod)->post("/admin/registrations/{$u->id}/approve", [])->assertSessionHasErrors('roles');
+        $this->as($this->hod)->post("/admin/registrations/{$u->id}/approve", ['roles' => ['EXAMINER']])->assertRedirect();
+        $u->refresh();
+        $this->assertTrue($u->active);
+        $this->assertSame('approved', $u->approval_status);
+        $this->assertSame('Examiner', $u->roleLabels()); // the HOD may change what was asked for
+        $this->app['auth']->forgetGuards();
+        $this->post('/login', ['email' => 'nia@t.test', 'password' => 'long-enough-pw'])->assertRedirect('/');
+        $this->assertAuthenticatedAs($u);
+    }
+
+    public function test_a_rejected_registration_is_removed_and_domains_can_be_restricted(): void
+    {
+        config(['dems.register_domains' => 'cput.ac.za']);
+        $base = ['name' => 'Ray Reject', 'roles' => ['EXAMINER'], 'password' => 'long-enough-pw', 'password_confirmation' => 'long-enough-pw'];
+        $this->post('/register', ['email' => 'ray@gmail.com'] + $base)->assertSessionHasErrors('email');
+        $this->post('/register', ['email' => 'ray@cput.ac.za'] + $base)->assertRedirect('/login');
+        $u = User::where('email', 'ray@cput.ac.za')->firstOrFail();
+        $this->as($this->hod)->delete("/admin/registrations/{$u->id}")->assertRedirect();
+        $this->assertNull(User::where('email', 'ray@cput.ac.za')->first());
+        $this->as($this->hod)->delete("/admin/registrations/{$this->examiner->id}")->assertNotFound(); // only pending ones
+    }
+
+    public function test_purge_removes_only_the_demo_accounts_and_their_records(): void
+    {
+        $demo = User::create(['name' => 'Demo Examiner', 'email' => 'examiner@example.edu', 'role' => Role::Examiner, 'password' => self::PW]);
+        $this->responsible($demo, $this->subject, Role::Examiner);
+        $sample = Subject::create(['code' => 'CSC101X', 'name' => 'keep', 'hod_id' => $this->hod->id]);
+        $this->as($demo)->post('/assessments', ['year_level' => 'Y1', 'subject_id' => $this->subject->id, 'number' => 'T1', 'internal_moderator_id' => $this->internal->id]);
+        $this->assertSame(1, Assessment::count());
+        $this->artisan('dems:purge-demo', ['--force' => true])->assertSuccessful();
+        $this->assertNull(User::where('email', 'examiner@example.edu')->first());
+        $this->assertSame(0, Assessment::count());
+        $this->assertNotNull(User::find($this->examiner->id)); // real staff untouched
+        $this->assertNotNull(Subject::find($sample->id));
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');

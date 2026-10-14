@@ -34,7 +34,8 @@ DB_DATABASE=dems
 DB_USERNAME=root          # whatever Herd shows for the Postgres service
 DB_PASSWORD=
 DEMS_SEED_PASSWORD=choose-a-password-10+chars
-DEMS_DEMO_DATA=true       # demo accounts on the login page (development only)
+DEMS_PURGE_DEMO=true      # ONE deploy only: removes the old sample accounts, then delete this line
+DEMS_REGISTER_DOMAINS=    # optional: e.g. cput.ac.za — only these e-mail domains may register
 ```
 
 5. Create tables and accounts:
@@ -82,7 +83,8 @@ Template: [`.env.render.example`](../.env.render.example).
 | `APP_URL` | `https://<your-service>.onrender.com` |
 | `DB_URL` | the Supabase Session pooler string (step 2) |
 | `DEMS_SEED_EMAIL` / `DEMS_SEED_PASSWORD` | first login (HOD) — password 10+ characters |
-| `DEMS_DEMO_DATA` | `true` for demo accounts on the login page; **remove for real use** |
+| `DEMS_PURGE_DEMO` | `true` for one deploy deletes the sample accounts (examiner@, moderator@, external@, dual@example.edu), their assessments and the sample subjects; then remove it |
+| `DEMS_REGISTER_DOMAINS` | optional, comma-separated e-mail domains allowed to self-register (empty = any) |
 | `INSTITUTION_NAME` | shown on the login page and the PDF |
 | fixed values | `APP_ENV=production`, `APP_DEBUG=false`, `PORT=8080`, `LOG_CHANNEL=stderr`, `DB_CONNECTION=pgsql`, `DB_SSLMODE=require`, `SESSION_DRIVER=database`, `SESSION_SECURE_COOKIE=true`, `CACHE_STORE=file`, `QUEUE_CONNECTION=sync`, `MAIL_MAILER=log` |
 
@@ -146,7 +148,7 @@ Uploaded files and generated PDFs are stored in the database (`DEMS_STORAGE=db`)
 | `ECIRCUITBREAKER too many authentication failures` | Supabase blocked the server after repeated bad logins | Suspend the service, fix the password, wait 10–15 min, redeploy |
 | `Unsupported cipher or incorrect key length` | `APP_KEY` missing or malformed | `echo "base64:$(openssl rand -base64 32)"` |
 | `No open ports detected` | The app never started (usually the database error above) | Fix the database first; `PORT` must be `8080` |
-| Login page has no demo box | `DEMS_DEMO_DATA` is not `true` (or seeding ran before it was set) | Set it and redeploy |
+| A new member of staff cannot sign in | Their registration is waiting for approval | HOD: Admin → Registrations waiting for approval → Approve |
 | `psql: … socket /tmp/.s.PGSQL.5432` on your Mac | You ran `psql` without a connection string | Quote the full URL: `psql "postgresql://…" -c "select 1"` (straight quotes!) |
 
 **Security reminders:** never paste connection strings, passwords or screenshots of the *Environment* tab (the eye icon reveals values) into chats or tickets; if you did, reset the password. Switch demo data off for real use.
