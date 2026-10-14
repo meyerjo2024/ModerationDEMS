@@ -14,7 +14,7 @@ $kv = fn ($k, $v) => '<div><dt class="kicker">'.e($k).'</dt><dd class="mt-0.5 fo
   <p class="kicker">Section 1 · Pre-assessment</p><h2 class="mt-1 text-xl font-semibold">Assessment details & types of questions</h2>
   <dl class="mt-4 grid gap-4 text-sm sm:grid-cols-3">
     {!! $kv('Assessment', ($f['periods'][$s1e['period'] ?? ''] ?? '').' '.($s1e['year'] ?? '')) !!}
-    {!! $kv('Assessment no.', $a->number) !!}
+    {!! $kv('Assessment no.', $a->number_label.($a->label !== '' ? ' ('.$a->label.')' : '')) !!}
     {!! $kv('Assessment date', ! empty($s1e['assessment_date']) ? \Illuminate\Support\Carbon::parse($s1e['assessment_date'])->format('d/m/Y') : null) !!}
     {!! $kv('HEQF level of subject', $s1e['heqf_level'] ?? null) !!}
     {!! $kv('Level of subject', $s1e['subject_level'] ?? null) !!}

@@ -43,7 +43,7 @@ class ReportService
             'generatedAt' => now('UTC'),
             'form' => config('moderation_form'),
             'subject' => $a->subject,
-            'number' => $a->number,
+            'number' => $a->number_label,
             'names' => ['examiner' => $a->examiner->name, 'internal' => $a->internalModerator->name, 'external' => $a->externalModerator?->name, 'hod' => $a->subject->hod->name],
             'hasExternal' => (bool) $a->external_moderator_id,
             's1e' => $s1e,

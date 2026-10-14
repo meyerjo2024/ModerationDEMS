@@ -33,7 +33,7 @@ class WorkbookReader
                 for ($c = 0; $c < min(count($header), 200); $c++) {
                     $h = $this->cell($header[$c] ?? null);
                     $label = ($h === null) ? '' : trim((string) $h);
-                    if ($layout['format'] === 'class-list' && ! preg_match('/^T\d+$/i', $label)) {
+                    if ($layout['format'] === 'class-list' && ! preg_match((string) config('dems.marks_column_pattern'), $label)) {
                         continue; // only test columns
                     }
                     $nonBlank = 0;

@@ -29,7 +29,7 @@ $feedback = $a->records->where('stage', ModerationStage::PreModeration)->where('
     <p class="mt-1 text-sm text-slate-500 dark:text-zinc-400">These fields appear on the official moderation report. Subject, assessment number and moderators are taken from the record.</p>
     <dl class="card-soft mt-5 grid gap-x-6 gap-y-2 p-4 text-sm sm:grid-cols-3">
       <div><dt class="kicker">Subject</dt><dd class="font-medium">{{ $a->subject->code }} — {{ $a->subject->name }}</dd></div>
-      <div><dt class="kicker">Assessment no.</dt><dd class="font-medium">{{ $a->number }}</dd></div>
+      <div><dt class="kicker">Assessment no.</dt><dd class="font-medium">{{ $a->number_label }}{{ $a->label !== '' ? ' ('.$a->label.')' : '' }}</dd></div>
       <div><dt class="kicker">Examiner</dt><dd class="font-medium">{{ $a->examiner->name }}</dd></div>
       <div><dt class="kicker">Internal moderator</dt><dd class="font-medium">{{ $a->internalModerator->name }}</dd></div>
       <div><dt class="kicker">External moderator</dt><dd class="font-medium">{{ $a->externalModerator?->name ?? 'Not required' }}</dd></div>

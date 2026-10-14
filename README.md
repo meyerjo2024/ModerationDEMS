@@ -80,6 +80,7 @@ Troubleshooting table (wrong branch, payment prompt, password errors, Supabase c
 - Row-locked state machine: a record cannot be advanced twice.
 - Statistics are **recomputed server-side** from the source marks; the browser never supplies them.
 - **Subjects and responsibilities:** the CPUT subject list (`database/data/Subjects.xlsx`, 75 subjects) is imported automatically on deploy (and from Admin → *Import subject list*). Examiners and internal moderators tick the subjects they are responsible for under **My subjects**; examiners can only start assessments for those, and internal moderators are offered per subject.
+- **Supplementary and special assessments** are created from the same form (with academic year and an optional note), follow the full moderation workflow and link to their own marks-sheet column.
 - **Test calendar and reminders:** examiners enter the date of each test (T1–T7) per subject on *My subjects*; they are reminded from 3 days before, and the dashboard lists upcoming assessments.
 - **Deadlines:** give an assessment its date and pre-moderation must be finished **14 days before** it and post-moderation **14 days after** it (`config/dems.php`). Cards and records show the due date (amber when ≤ 3 days, red when overdue) and people get daily in-app reminders.
 - Word (`.docx`) papers and memoranda are reviewed **in the browser**: moderators highlight passages and comment; the comments return to the examiner with the revision request. (Older `.doc` files are download-only.)

@@ -70,13 +70,16 @@ class Workflow
         }
         $external = $ext ? (User::where('id', $ext)->withRole(Role::ExternalModerator)->where('active', true)->first()
             ?? throw new WorkflowException('Choose a valid external moderator.')) : null;
-        if (Assessment::where('subject_id', $subject->id)->where('number', $in['number'])->exists()) {
-            throw WorkflowException::conflict("{$subject->code} already has an assessment called “{$in['number']}”.");
+        $year = (int) ($in['academic_year'] ?? 0) ?: (int) substr((string) ($in['assessment_date'] ?? ''), 0, 4) ?: (int) date('Y');
+        $label = trim((string) ($in['label'] ?? ''));
+        if (Assessment::where('subject_id', $subject->id)->where('number', $in['number'])->where('academic_year', $year)->where('label', $label)->exists()) {
+            $name = config('dems.assessment_labels.'.$in['number'], $in['number']);
+            throw WorkflowException::conflict("{$subject->code} already has {$name}".($label !== '' ? " ({$label})" : '')." for {$year}. For another group or sitting, add a note to tell them apart.");
         }
 
-        return DB::transaction(function () use ($user, $subject, $internal, $external, $in, $meta) {
+        return DB::transaction(function () use ($user, $subject, $internal, $external, $in, $meta, $year, $label) {
             $a = Assessment::create([
-                'subject_id' => $subject->id, 'number' => $in['number'], 'examiner_id' => $user->id,
+                'subject_id' => $subject->id, 'number' => $in['number'], 'academic_year' => $year, 'label' => $label, 'examiner_id' => $user->id,
                 'internal_moderator_id' => $internal->id, 'external_moderator_id' => $external?->id, 'assessment_date' => ! empty($in['assessment_date']) ? $in['assessment_date'] : null, 'year_level' => $in['year_level'] ?? null,
                 'status' => S::Draft,
             ]);

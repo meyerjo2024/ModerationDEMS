@@ -24,7 +24,7 @@ $tabs = ['ALL' => ['All', $items->count()], 'ACTION' => ['Needs my action', $act
     <section class="card p-6"><p class="kicker mb-3">Upcoming assessments · next 45 days</p>
       <ul class="divide-y divide-[var(--divider)] text-sm">@foreach ($upcoming as $p)
         @php $days = (int) now('UTC')->startOfDay()->diffInDays($p->assessment_date->copy()->startOfDay(), false); $soon = $days <= (int) config('dems.assessment_reminder_days'); $started = $p->started(); @endphp
-        <li class="flex flex-wrap items-center justify-between gap-3 py-2.5"><span><span class="font-semibold">{{ $p->subject->code }} · {{ $p->number }}</span> <span class="text-[var(--ink-2)]">{{ $p->subject->name }}</span></span>
+        <li class="flex flex-wrap items-center justify-between gap-3 py-2.5"><span><span class="font-semibold">{{ $p->subject->code }} · {{ $p->number_label }}</span> <span class="text-[var(--ink-2)]">{{ $p->subject->name }}</span></span>
           <span class="flex items-center gap-3"><span class="rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $soon ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'bg-[var(--fog)] text-[var(--ink-2)]' }}">{{ $p->assessment_date->format('j M Y') }} · {{ $days === 0 ? 'today' : ($days === 1 ? 'tomorrow' : 'in '.$days.' days') }}</span>
             @if ($started)<span class="text-xs text-emerald-600">Started</span>@else<a href="{{ route('assessments.create', ['subject' => $p->subject_id, 'number' => $p->number]) }}" class="text-xs font-semibold text-accent dark:text-accent-dark">Start in the system →</a>@endif</span></li>
       @endforeach</ul></section>
@@ -71,7 +71,7 @@ $tabs = ['ALL' => ['All', $items->count()], 'ACTION' => ['Needs my action', $act
           class="card group relative block overflow-hidden p-6 transition hover:-translate-y-1 hover:shadow-lift {{ $mine ? 'ring-2 '.$t['ring'] : '' }}">
           <span class="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b {{ $t['wash'] }} to-transparent"></span>
           <div class="relative flex items-start justify-between gap-3"><x-status-badge :status="$a->status" /><x-icon name="arrow-up-right" class="h-5 w-5 text-slate-300 transition group-hover:text-accent" /></div>
-          <div class="relative mt-5"><p class="text-3xl font-semibold tracking-tight">{{ $a->subject->code }}</p><p class="mt-0.5 text-sm font-medium text-slate-700 dark:text-zinc-200">{{ $a->number }}</p><p class="truncate text-sm text-slate-500 dark:text-zinc-400">{{ $a->subject->name }}</p></div>
+          <div class="relative mt-5"><p class="text-3xl font-semibold tracking-tight">{{ $a->subject->code }}</p><p class="mt-0.5 text-sm font-medium text-slate-700 dark:text-zinc-200">{{ $a->number_label }}@if ($a->label !== '') <span class="font-normal text-[var(--ink-3)]">({{ $a->label }})</span>@endif</p><p class="truncate text-sm text-slate-500 dark:text-zinc-400">{{ $a->subject->name }}</p></div>
           <div class="relative mt-3"><x-deadline :a="$a" /></div>
           @if ($a->pass_rate !== null)
             <div class="relative mt-4 flex gap-6 text-sm"><span><span class="kicker block">Pass rate</span><span class="font-semibold tabular-nums">{{ number_format($a->pass_rate, 1) }}%</span></span><span><span class="kicker block">Candidates</span><span class="font-semibold tabular-nums">{{ $a->candidate_count }}</span></span></div>

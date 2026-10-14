@@ -461,7 +461,7 @@ class LifecycleTest extends TestCase
 
     public function test_assessment_number_is_one_of_t1_to_t7(): void
     {
-        $this->as($this->examiner)->get('/assessments/create')->assertOk()->assertSee('Matches the T column')->assertSee('>T7<', false);
+        $this->as($this->examiner)->get('/assessments/create')->assertOk()->assertSee('Tests match their T column')->assertSee('>T7<', false);
         foreach (['Test 1', 'T8', 't1', ''] as $bad) {
             $this->as($this->examiner)->post('/assessments', ['year_level' => 'Y1', 'subject_id' => $this->subject->id, 'number' => $bad, 'internal_moderator_id' => $this->internal->id])->assertSessionHasErrors('number');
         }
@@ -576,6 +576,35 @@ class LifecycleTest extends TestCase
         $this->assertSame($ok->id, (int) \Illuminate\Support\Facades\DB::table('subject_user')->where('user_id', $this->examiner->id)->where('role', 'EXAMINER')->value('default_internal_moderator_id'));
         $this->as($this->examiner)->get('/my-subjects')->assertOk()->assertSee('Internal moderator for this subject')->assertSee($ok->name);
         $this->as($this->examiner)->get('/assessments/create')->assertOk()->assertSee('\\u0022'.$this->subject->id.'\\u0022:'.$ok->id, false);
+    }
+
+    public function test_supplementary_and_special_assessments_and_yearly_repeats(): void
+    {
+        $base = ['year_level' => 'Y1', 'subject_id' => $this->subject->id, 'internal_moderator_id' => $this->internal->id];
+        $go = fn (array $x) => $this->as($this->examiner)->post('/assessments', $base + $x);
+        $this->as($this->examiner)->get('/assessments/create')->assertOk()->assertSee('Supplementary assessment')->assertSee('Special assessment');
+        $go(['number' => 'T1', 'academic_year' => 2026])->assertRedirect();
+        // the same test may run again in another academic year, but not twice in one
+        $go(['number' => 'T1', 'academic_year' => 2027])->assertRedirect();
+        $go(['number' => 'T1', 'academic_year' => 2026])->assertSessionHas('error');
+        // supplementary and special sittings, with a note to tell several sittings apart
+        $go(['number' => 'SUPP', 'academic_year' => 2026])->assertRedirect();
+        $go(['number' => 'SUPP', 'academic_year' => 2026])->assertSessionHas('error');
+        $go(['number' => 'SPEC', 'academic_year' => 2026, 'label' => 'Aegrotat group A'])->assertRedirect();
+        $go(['number' => 'SPEC', 'academic_year' => 2026, 'label' => 'Aegrotat group B'])->assertRedirect();
+        $go(['number' => 'SPEC', 'academic_year' => 2026, 'label' => 'Aegrotat group B'])->assertSessionHas('error');
+        $go(['number' => 'T9'])->assertSessionHasErrors('number');
+        $supp = Assessment::where('number', 'SUPP')->firstOrFail();
+        $this->assertSame('CSC101 · Supplementary', $supp->title());
+        $this->assertSame('CSC101 · Special (Aegrotat group A)', Assessment::where('label', 'Aegrotat group A')->firstOrFail()->title());
+        $this->assertSame(['T3'], Assessment::make(['number' => 'T3'])->marksHeaders());
+        $this->assertContains('SUPPLEMENTARY', $supp->marksHeaders());
+        $this->as($this->examiner)->get("/assessments/{$supp->id}")->assertOk()->assertSee('Supplementary');
+        // the class-list reader offers supplementary / special columns next to T1…
+        foreach (['T1', 'T7', 'SUPP', 'Supplementary', 'SPEC', 'Special assessment'] as $h) {
+            $this->assertSame(1, preg_match(config('dems.marks_column_pattern'), $h), $h);
+        }
+        $this->assertSame(0, preg_match(config('dems.marks_column_pattern'), 'S_NAME'));
     }
 
     public function test_login_and_pages_render_for_every_stage(): void

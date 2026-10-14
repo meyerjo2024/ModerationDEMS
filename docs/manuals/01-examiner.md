@@ -14,6 +14,15 @@ Under each subject you tick you can also pick your usual **internal moderator** 
 
 > **Password-protected papers.** You may upload a Word file (`.docx`, saved in Word 2010 or later) or PDF that is protected with a password. Tell your moderator the password directly (not through the system): they are asked for it when they open the document, and it is never stored. Moderators can read and comment on unlocked Word files in the browser; protected `.doc` (old format) files can only be downloaded.
 
+## Supplementary and special assessments
+
+Choose **Supplementary assessment** or **Special assessment** in the *Assessment* dropdown (under *Additional*), next to the tests T1–T7. They are moderated exactly like a test: the same Section 1, Gate 1, Section 2, Gate 2 (and external review if assigned), with their own marks.
+
+- **Academic year:** pick the year; the same test or assessment can be created again in another year.
+- **Note:** for a second sitting in the same year (for example two aegrotat groups) add a short note such as *Aegrotat group B*; it appears in the title and on the report.
+- **Marks sheet:** the class-list column is matched by its heading (`SUPP` / `Supplementary` for supplementary, `SPEC` / `Special` for special). If your sheet uses another heading, pick the column yourself; the page tells you when it could not find one.
+- **Dates and reminders:** the supplementary / special dates can be entered in your test calendar on *My subjects* like any test.
+
 ## A. Start a new assessment
 
 1. Click **New assessment** (header or dashboard banner).

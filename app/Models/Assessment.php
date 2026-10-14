@@ -164,8 +164,19 @@ class Assessment extends Model
             ->contains(fn ($s) => ! $approvedAt || $s->signed_at->greaterThanOrEqualTo($approvedAt));
     }
 
+    public function getNumberLabelAttribute(): string
+    {
+        return config('dems.assessment_labels.'.$this->number, $this->number);
+    }
+
+    /** Marks-sheet headings that belong to this assessment (T3 → [T3]; supplementary → SUPP, SUPPLEMENTARY …). */
+    public function marksHeaders(): array
+    {
+        return config('dems.marks_aliases.'.$this->number, [mb_strtoupper($this->number)]);
+    }
+
     public function title(): string
     {
-        return $this->subject->code.' · '.$this->number;
+        return $this->subject->code.' · '.$this->number_label.($this->label !== '' ? ' ('.$this->label.')' : '');
     }
 }

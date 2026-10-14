@@ -241,12 +241,12 @@ Alpine.data('section2', (cfg) => ({
         return this.current?.columns ?? [];
     },
     /** Pre-select the test that matches the assessment number ("Test 2" → T2) when it has marks. */
-    linked: /^T[1-9]\d*$/i.test(cfg.number) ? cfg.number.toUpperCase() : null, // assessment number = marks-sheet column
+    linked: cfg.linkedHeaders && cfg.linkedHeaders.length ? cfg.number : null, // the assessment's own marks-sheet column
     linkedFound: false,
     autoPick() {
         this.column = 0;
         const only = this.cols.filter((c) => c.nonBlank > 0);
-        const hit = this.linked ? this.cols.find((c) => c.header.trim().toUpperCase() === this.linked && c.nonBlank > 0) : null;
+        const hit = this.linked ? this.cols.find((c) => cfg.linkedHeaders.includes(c.header.trim().toUpperCase()) && c.nonBlank > 0) : null;
         this.linkedFound = !!hit;
         this.column = hit ? hit.index : this.linked ? 0 : only.length === 1 ? only[0].index : 0;
     },

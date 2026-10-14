@@ -5,7 +5,7 @@ $marks = $a->latestAttachment($AK::Marks);
 $samples = $a->attachmentsOf($AK::SampleScript)->map(fn ($s) => ['id' => $s->id, 'filename' => $s->filename])->all();
 $feedback = $a->records->where('decision', 'REVISION_REQUESTED')->where('stage', '!=', $MS::PreModeration)->last();
 @endphp
-<div x-data="section2(@js(['id' => $a->id, 'number' => $a->number, 'subjectCode' => $a->subject->code, 'form' => $a->s2_examiner ?? ['registered' => null, 'type_of_assessment' => '', 'answers' => collect(config('moderation_form.s2_examiner_questions'))->map(fn () => '')->all()], 'marksId' => $marks?->id, 'marksName' => $marks?->filename, 'samples' => $samples]))" @signed="sig = $event.detail" class="space-y-6">
+<div x-data="section2(@js(['id' => $a->id, 'number' => $a->number_label, 'linkedHeaders' => $a->marksHeaders(), 'subjectCode' => $a->subject->code, 'form' => $a->s2_examiner ?? ['registered' => null, 'type_of_assessment' => '', 'answers' => collect(config('moderation_form.s2_examiner_questions'))->map(fn () => '')->all()], 'marksId' => $marks?->id, 'marksName' => $marks?->filename, 'samples' => $samples]))" @signed="sig = $event.detail" class="space-y-6">
   @if ($feedback)
     <x-notice tone="warn" title="Returned by {{ $feedback->reviewer->name }}"><p class="whitespace-pre-wrap">{{ $feedback->comments }}</p><p class="mt-1 text-xs opacity-70">{{ $feedback->created_at->utc()->format('j M Y, H:i') }} UTC</p></x-notice>
   @endif

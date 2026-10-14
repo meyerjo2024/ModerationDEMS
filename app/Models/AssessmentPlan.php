@@ -24,6 +24,11 @@ class AssessmentPlan extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function getNumberLabelAttribute(): string
+    {
+        return config('dems.assessment_labels.'.$this->number, $this->number);
+    }
+
     /** Has the examiner already started this test in the system? */
     public function started(): bool
     {

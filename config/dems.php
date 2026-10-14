@@ -18,7 +18,13 @@ return [
     'max_marks_rows' => 20000,
 
     // The assessment number is one of these; it is linked to the column of the same name in the marks sheet (class list).
-    'assessment_numbers' => ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+    'assessment_numbers' => ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'SUPP', 'SPEC'],
+    // Supplementary and special assessments are moderated exactly like tests; they just carry a different name.
+    'assessment_labels' => ['SUPP' => 'Supplementary', 'SPEC' => 'Special'],
+    // Column headings in the marks sheet that belong to each assessment (T3 → "T3"; the others may use any of these).
+    'marks_aliases' => ['SUPP' => ['SUPP', 'SUPPLEMENTARY', 'SUP'], 'SPEC' => ['SPEC', 'SPECIAL', 'SPECIAL ASSESSMENT']],
+    // Headings the class-list reader offers as mark columns.
+    'marks_column_pattern' => '/^(T\d+|SUPP\w*|SUP\d*|SPEC\w*|SPECIAL.*)$/i',
 
     // Moderation windows around the assessment date.
     'pre_moderation_days' => 14,   // pre-moderation must be finished this many days BEFORE the assessment
