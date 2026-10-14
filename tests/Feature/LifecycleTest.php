@@ -565,6 +565,19 @@ class LifecycleTest extends TestCase
         $this->as($this->external)->put('/my-subjects', [])->assertForbidden();
     }
 
+    public function test_examiner_can_set_a_default_internal_moderator_per_subject(): void
+    {
+        $ok = $this->internal;
+        $stranger = User::create(['name' => 'Not Registered', 'email' => 'nr@t.test', 'role' => Role::InternalModerator, 'password' => self::PW]);
+        // a moderator is registered for the subject, so only they may be the default; an examiner is never their own moderator
+        $this->as($this->examiner)->put('/my-subjects', ['subjects' => ['EXAMINER' => [$this->subject->id]], 'moderators' => [$this->subject->id => $stranger->id]])->assertRedirect();
+        $this->assertNull(\Illuminate\Support\Facades\DB::table('subject_user')->where('user_id', $this->examiner->id)->where('role', 'EXAMINER')->value('default_internal_moderator_id'));
+        $this->as($this->examiner)->put('/my-subjects', ['subjects' => ['EXAMINER' => [$this->subject->id]], 'moderators' => [$this->subject->id => $ok->id]])->assertRedirect();
+        $this->assertSame($ok->id, (int) \Illuminate\Support\Facades\DB::table('subject_user')->where('user_id', $this->examiner->id)->where('role', 'EXAMINER')->value('default_internal_moderator_id'));
+        $this->as($this->examiner)->get('/my-subjects')->assertOk()->assertSee('Internal moderator for this subject')->assertSee($ok->name);
+        $this->as($this->examiner)->get('/assessments/create')->assertOk()->assertSee('\\u0022'.$this->subject->id.'\\u0022:'.$ok->id, false);
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');

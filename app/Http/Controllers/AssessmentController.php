@@ -14,6 +14,7 @@ class AssessmentController extends Controller
     public function create(Request $request)
     {
         return view('assessments.create', [
+            'defaults' => \Illuminate\Support\Facades\DB::table('subject_user')->where('user_id', $request->user()->id)->where('role', Role::Examiner->value)->whereNotNull('default_internal_moderator_id')->pluck('default_internal_moderator_id', 'subject_id')->all(),
             'plans' => \App\Models\AssessmentPlan::where('user_id', $request->user()->id)->get()->groupBy('subject_id')->map(fn ($g) => $g->mapWithKeys(fn ($p) => [$p->number => $p->assessment_date->toDateString()])->all())->all(),
             'subjects' => $request->user()->subjects()->wherePivot('role', Role::Examiner->value)->orderBy('code')->get(),
             'internals' => User::withRole(Role::InternalModerator)->where('active', true)->where('id', '!=', $request->user()->id)->with('subjects')->orderBy('name')->get(),

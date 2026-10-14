@@ -24,6 +24,10 @@
                     </label>
                     @if ($isEx)
                       <div x-show="on" x-cloak class="ml-9 mt-1 rounded-lg bg-[var(--canvas-soft)] p-3">
+                        @php $regIds = $moderators->filter(fn ($m) => $m->subjects->contains(fn ($x) => $x->id === $s->id && $x->pivot->role === 'INTERNAL_MODERATOR'))->pluck('id'); $opts = $regIds->isEmpty() ? $moderators : $moderators->whereIn('id', $regIds); @endphp
+                        <div class="mb-3 max-w-sm"><label class="text-xs font-semibold text-[var(--ink-2)]" for="mod-{{ $s->id }}">Internal moderator for this subject</label>
+                          <select id="mod-{{ $s->id }}" name="moderators[{{ $s->id }}]" class="field mt-0.5 !py-1.5 text-sm"><option value="">No default</option>@foreach ($opts as $m)<option value="{{ $m->id }}" @selected(($defaults[$s->id] ?? null) == $m->id)>{{ $m->name }}@if ($m->department) · {{ $m->department }}@endif</option>@endforeach</select>
+                          <p class="mt-1 text-[11px] text-[var(--ink-3)]">@if ($regIds->isEmpty())No moderator has registered for this subject yet, so everyone is listed. @endif Pre-selected when you start an assessment. Not listed? Ask them to <a href="{{ route('register') }}" class="underline">register</a> as an Internal Moderator.</p></div>
                         <p class="mb-2 text-xs text-[var(--ink-2)]">Date each test is written. You are reminded {{ (int) config('dems.assessment_reminder_days') }} days before.</p>
                         <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                           @foreach (config('dems.assessment_numbers') as $n)
