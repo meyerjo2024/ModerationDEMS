@@ -624,6 +624,17 @@ class LifecycleTest extends TestCase
         unset($_ENV['DEMS_SEED_EMAIL'], $_SERVER['DEMS_SEED_EMAIL']); unset($_ENV['DEMS_SEED_PASSWORD'], $_SERVER['DEMS_SEED_PASSWORD']); unset($_ENV['DEMS_SEED_RESET_PASSWORD'], $_SERVER['DEMS_SEED_RESET_PASSWORD']);
     }
 
+    public function test_accounts_with_capitals_in_the_email_can_sign_in(): void
+    {
+        $this->as($this->hod)->post('/admin/users', ['name' => 'John', 'email' => ' Meyerjo@CPUT.ac.za ', 'roles' => ['HOD'], 'password' => 'a-long-password-1'])->assertRedirect();
+        $this->assertSame('meyerjo@cput.ac.za', User::where('name', 'John')->value('email'));
+        $this->app['auth']->forgetGuards();
+        $this->post('/login', ['email' => 'Meyerjo@cput.ac.za', 'password' => 'a-long-password-1'])->assertRedirect('/');
+        $this->app['auth']->forgetGuards();
+        // a duplicate that differs only by case is refused
+        $this->as($this->hod)->post('/admin/users', ['name' => 'Jon', 'email' => 'MEYERJO@cput.ac.za', 'roles' => ['EXAMINER'], 'password' => 'a-long-password-1'])->assertSessionHasErrors('email');
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');

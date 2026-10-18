@@ -16,6 +16,12 @@ class User extends Authenticatable
         return ['password' => 'hashed', 'role' => Role::class, 'active' => 'boolean'];
     }
 
+    /** E-mail addresses are always stored trimmed and in lower case, because sign-in compares them that way. */
+    public function setEmailAttribute($value): void
+    {
+        $this->attributes['email'] = mb_strtolower(trim((string) $value));
+    }
+
     public function hasRole(Role ...$roles): bool
     {
         return count(array_intersect(array_map(fn (Role $r) => $r->value, $roles), $this->roleValues())) > 0;

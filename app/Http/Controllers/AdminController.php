@@ -23,6 +23,7 @@ class AdminController extends Controller
 
     public function storeUser(Request $request, Audit $audit)
     {
+        $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
         $d = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
