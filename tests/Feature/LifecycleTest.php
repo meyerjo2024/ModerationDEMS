@@ -607,6 +607,23 @@ class LifecycleTest extends TestCase
         $this->assertSame(0, preg_match(config('dems.marks_column_pattern'), 'S_NAME'));
     }
 
+    public function test_seeder_creates_the_hod_and_can_reset_a_forgotten_password(): void
+    {
+        $_ENV['DEMS_SEED_EMAIL'] = $_SERVER['DEMS_SEED_EMAIL'] = 'boss@t.test'; $_ENV['DEMS_SEED_PASSWORD'] = $_SERVER['DEMS_SEED_PASSWORD'] = 'first-password-1';
+        $this->artisan('db:seed', ['--force' => true])->assertSuccessful();
+        $boss = User::where('email', 'boss@t.test')->firstOrFail();
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('first-password-1', $boss->password));
+        // changing the variable alone does not change an existing account…
+        $_ENV['DEMS_SEED_PASSWORD'] = $_SERVER['DEMS_SEED_PASSWORD'] = 'second-password-2';
+        $this->artisan('db:seed', ['--force' => true])->assertSuccessful();
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('first-password-1', $boss->fresh()->password));
+        // …the reset switch does
+        $_ENV['DEMS_SEED_RESET_PASSWORD'] = $_SERVER['DEMS_SEED_RESET_PASSWORD'] = 'true';
+        $this->artisan('db:seed', ['--force' => true])->assertSuccessful();
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('second-password-2', $boss->fresh()->password));
+        unset($_ENV['DEMS_SEED_EMAIL'], $_SERVER['DEMS_SEED_EMAIL']); unset($_ENV['DEMS_SEED_PASSWORD'], $_SERVER['DEMS_SEED_PASSWORD']); unset($_ENV['DEMS_SEED_RESET_PASSWORD'], $_SERVER['DEMS_SEED_RESET_PASSWORD']);
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');

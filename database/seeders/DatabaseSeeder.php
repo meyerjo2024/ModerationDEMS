@@ -27,6 +27,11 @@ class DatabaseSeeder extends Seeder
         }
 
         $hod = $this->user(env('DEMS_SEED_NAME', 'Head of Department'), $email, Role::Hod, $password, 'Administration');
+        if (filter_var(env('DEMS_SEED_RESET_PASSWORD', false), FILTER_VALIDATE_BOOLEAN)) {
+            // forgotten password: set DEMS_SEED_RESET_PASSWORD=true for one deploy, then remove it
+            $hod->update(['password' => $password, 'active' => true]);
+            $this->command?->info("✔ Password reset for {$hod->email}");
+        }
         $this->command?->info("✔ HOD account ready: {$hod->email}");
 
         $this->importSubjects();

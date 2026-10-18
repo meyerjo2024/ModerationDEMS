@@ -84,6 +84,7 @@ Template: [`.env.render.example`](../.env.render.example).
 | `DB_URL` | the Supabase Session pooler string (step 2) |
 | `DEMS_SEED_EMAIL` / `DEMS_SEED_PASSWORD` | first login (HOD) — password 10+ characters |
 | `DEMS_PURGE_DEMO` | `true` for one deploy deletes the sample accounts (examiner@, moderator@, external@, dual@example.edu), their assessments and the sample subjects; then remove it |
+| `DEMS_SEED_RESET_PASSWORD` | `true` for one deploy resets the HOD (`DEMS_SEED_EMAIL`) password to the current `DEMS_SEED_PASSWORD`; then remove it |
 | `DEMS_REGISTER_DOMAINS` | optional, comma-separated e-mail domains allowed to self-register (empty = any) |
 | `INSTITUTION_NAME` | shown on the login page and the PDF |
 | fixed values | `APP_ENV=production`, `APP_DEBUG=false`, `PORT=8080`, `LOG_CHANNEL=stderr`, `DB_CONNECTION=pgsql`, `DB_SSLMODE=require`, `SESSION_DRIVER=database`, `SESSION_SECURE_COOKIE=true`, `CACHE_STORE=file`, `QUEUE_CONNECTION=sync`, `MAIL_MAILER=log` |
