@@ -39,7 +39,7 @@
               </li></template></ul>
             </div>
           </div>
-          <div class="hidden text-right leading-tight sm:block"><p class="text-[13px] font-semibold">{{ $u->name }}</p><p class="text-[11px] text-[var(--ink-3)]">{{ $u->roleLabels() }}</p></div>
+          <a href="{{ route('account.password') }}" title="Change password" class="hidden rounded-lg px-2 py-1 text-right leading-tight hover:bg-[var(--fog)] sm:block"><p class="text-[13px] font-semibold">{{ $u->name }}</p><p class="text-[11px] text-[var(--ink-3)]">{{ $u->roleLabels() }}</p></a>
           <form method="POST" action="{{ route('logout') }}">@csrf<button class="rounded-full p-2 text-[#303233] hover:bg-[var(--fog)] dark:text-zinc-300" aria-label="Sign out"><x-icon name="logout" class="h-[18px] w-[18px]" /></button></form>
         </div>
       </div>

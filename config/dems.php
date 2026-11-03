@@ -48,6 +48,8 @@ return [
         'USER_REGISTERED' => 'Staff registration received',
         'USER_APPROVED' => 'Registration approved',
         'USER_REJECTED' => 'Registration rejected',
+        'PASSWORD_CHANGED' => 'Password changed',
+        'PASSWORD_CHANGE_FAILED' => 'Password change refused (wrong current password)',
         'SUBJECTS_IMPORTED' => 'Subject list imported',
         'ASSESSMENTS_PLANNED' => 'Assessment dates planned',
         'SUBJECTS_CHOSEN' => 'Subjects chosen',

@@ -635,6 +635,26 @@ class LifecycleTest extends TestCase
         $this->as($this->hod)->post('/admin/users', ['name' => 'Jon', 'email' => 'MEYERJO@cput.ac.za', 'roles' => ['EXAMINER'], 'password' => 'a-long-password-1'])->assertSessionHasErrors('email');
     }
 
+    public function test_a_signed_in_person_can_change_their_password(): void
+    {
+        $this->get('/account/password')->assertRedirect('/login'); // not for visitors
+        $url = '/account/password';
+        $this->as($this->examiner)->get($url)->assertOk()->assertSee('Change password');
+        $ok = ['current_password' => self::PW, 'password' => 'brand-new-pass-1', 'password_confirmation' => 'brand-new-pass-1'];
+        $this->as($this->examiner)->post($url, ['current_password' => 'wrong'] + $ok)->assertSessionHasErrors('current_password');
+        $this->as($this->examiner)->post($url, ['password' => 'short', 'password_confirmation' => 'short'] + $ok)->assertSessionHasErrors('password');
+        $this->as($this->examiner)->post($url, ['password_confirmation' => 'different-one'] + $ok)->assertSessionHasErrors('password');
+        $this->as($this->examiner)->post($url, ['password' => self::PW, 'password_confirmation' => self::PW] + $ok)->assertSessionHasErrors('password'); // must differ
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check(self::PW, $this->examiner->fresh()->password));
+        $this->as($this->examiner)->post($url, $ok)->assertRedirect($url)->assertSessionHas('status');
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('brand-new-pass-1', $this->examiner->fresh()->password));
+        $this->assertTrue(\App\Models\AuditLog::where('action', 'PASSWORD_CHANGED')->where('user_id', $this->examiner->id)->exists());
+        // the old password no longer signs in, the new one does
+        $this->app['auth']->forgetGuards();
+        $this->post('/login', ['email' => $this->examiner->email, 'password' => self::PW])->assertSessionHas('error');
+        $this->post('/login', ['email' => $this->examiner->email, 'password' => 'brand-new-pass-1'])->assertRedirect(); // back to the page they first asked for
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');

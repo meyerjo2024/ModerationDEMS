@@ -32,6 +32,8 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/account/password', [\App\Http\Controllers\AccountController::class, 'show'])->name('account.password');
+    Route::post('/account/password', [\App\Http\Controllers\AccountController::class, 'update'])->name('account.password.update');
     Route::get('/', DashboardController::class)->name('dashboard');
 
     Route::get('/my-subjects', [MySubjectsController::class, 'index'])->name('my-subjects');
