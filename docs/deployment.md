@@ -83,7 +83,7 @@ Template: [`.env.render.example`](../.env.render.example).
 | `APP_URL` | `https://<your-service>.onrender.com` |
 | `DB_URL` | the Supabase Session pooler string (step 2) |
 | `DEMS_SEED_EMAIL` / `DEMS_SEED_PASSWORD` | first login (HOD) — password 10+ characters |
-| `DEMS_PURGE_DEMO` | `true` for one deploy deletes the sample accounts (examiner@, moderator@, external@, dual@example.edu), their assessments and the sample subjects; then remove it |
+| `DEMS_PURGE_DEMO` | `true` for one deploy deletes every sample account (examiner@, moderator@, external@, dual@ and the sample HOD hod@example.edu), their assessments and the sample subjects CSC101, INF202, MAT101; subjects owned by the sample HOD are handed to your real HOD first, and the sample HOD is only removed once a real HOD exists. Then remove the variable |
 | `DEMS_SEED_RESET_PASSWORD` (only if you are locked out; signed-in people change their own password at **your name → Change password**) | `true` for one deploy resets the HOD (`DEMS_SEED_EMAIL`) password to the current `DEMS_SEED_PASSWORD`; then remove it |
 | `DEMS_REGISTER_DOMAINS` | optional, comma-separated e-mail domains allowed to self-register (empty = any) |
 | `INSTITUTION_NAME` | shown on the login page and the PDF |

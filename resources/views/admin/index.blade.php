@@ -33,7 +33,7 @@
     <form method="POST" action="{{ route('admin.subjects') }}" class="card space-y-4 p-6">@csrf
       <p class="kicker flex items-center gap-1.5"><x-icon name="book-plus" class="h-3.5 w-3.5" /> Add subject</p>
       <div class="grid gap-4 sm:grid-cols-2">
-        <div><label class="label">Subject code</label><input name="code" required class="field uppercase" placeholder="CSC101" value="{{ old('code') }}"></div>
+        <div><label class="label">Subject code</label><input name="code" required class="field uppercase" placeholder="e.g. PEC150S" value="{{ old('code') }}"></div>
         <div><label class="label">Subject name</label><input name="name" required class="field"></div>
                 <div><label class="label">Department</label><input name="department" class="field"></div>
         <div><label class="label">Head of Department</label><select name="hod_id" class="field">@foreach ($hods as $h)<option value="{{ $h->id }}" @selected($h->id === auth()->id())>{{ $h->name }}</option>@endforeach</select></div>

@@ -655,6 +655,20 @@ class LifecycleTest extends TestCase
         $this->post('/login', ['email' => $this->examiner->email, 'password' => 'brand-new-pass-1'])->assertRedirect(); // back to the page they first asked for
     }
 
+    public function test_purge_also_removes_the_sample_hod_once_a_real_one_exists(): void
+    {
+        $sample = User::create(['name' => 'Head of Department', 'email' => 'hod@example.edu', 'role' => Role::Hod, 'password' => self::PW]);
+        $mine = Subject::create(['code' => 'IMP100', 'name' => 'Imported under the sample HOD', 'hod_id' => $sample->id]);
+        $this->artisan('dems:purge-demo', ['--force' => true])->assertSuccessful();
+        $this->assertNull(User::where('email', 'hod@example.edu')->first());
+        $this->assertSame($this->hod->id, $mine->fresh()->hod_id); // handed to the real HOD
+        // with no other HOD the sample one is left alone
+        $only = User::create(['name' => 'Head of Department', 'email' => 'hod@example.edu', 'role' => Role::Hod, 'password' => self::PW]);
+        User::where('id', $this->hod->id)->update(['active' => false]);
+        $this->artisan('dems:purge-demo', ['--force' => true])->assertSuccessful();
+        $this->assertNotNull(User::find($only->id));
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');

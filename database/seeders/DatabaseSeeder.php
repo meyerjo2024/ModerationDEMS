@@ -13,17 +13,17 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $email = mb_strtolower((string) env('DEMS_SEED_EMAIL', 'hod@example.edu'));
+        $email = mb_strtolower(trim((string) env('DEMS_SEED_EMAIL', '')));
         $password = (string) env('DEMS_SEED_PASSWORD', '');
 
-        if (strlen($password) < 10) {
+        if ($email === '' || strlen($password) < 10) {
             if (User::where('role', Role::Hod->value)->exists()) {
-                $this->command?->info('DEMS_SEED_PASSWORD not set — an HOD already exists, skipping seed.');
+                $this->command?->info('DEMS_SEED_EMAIL / DEMS_SEED_PASSWORD not set — an HOD already exists, skipping account seed.');
                 $this->importSubjects();
 
                 return;
             }
-            throw new RuntimeException('Set DEMS_SEED_PASSWORD (min 10 characters) so the first HOD account can be created.');
+            throw new RuntimeException('Set DEMS_SEED_EMAIL and DEMS_SEED_PASSWORD (min 10 characters) so the first HOD account can be created.');
         }
 
         $hod = $this->user(env('DEMS_SEED_NAME', 'Head of Department'), $email, Role::Hod, $password, 'Administration');
