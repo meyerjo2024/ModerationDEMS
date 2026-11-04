@@ -15,14 +15,18 @@
 | ![Dashboard](docs/screenshots/dashboard-examiner.png) **Dashboard** — status tiles, filters and wallet-style cards | ![Section 1](docs/screenshots/section1-form.png) **Phase 1** — assessment details, weightings, documents, signature |
 | ![Gate 1](docs/screenshots/gate1-review.png) **Gate 1** — document viewer and decision | ![Section 2](docs/screenshots/section2-marks-and-results.png) **Phase 3** — marks to automatic statistics |
 | ![Gate 2](docs/screenshots/gate2-final-review.png) **Gate 2** — Section 2 questions, adjustments and signature | ![Completed](docs/screenshots/record-completed.png) **Completed** — archived record and PDF |
-| ![Section 3](docs/screenshots/section3-signoff.png) **Section 3 sign-off** — examiner and HOD | ![Multi-role](docs/screenshots/dual-role-dashboard.png) **One person, several roles** (HOD who also examines/moderates) |
+| ![Section 3](docs/screenshots/section3-signoff.png) **Section 3 sign-off** — examiner and HOD | ![Multi-role](docs/screenshots/register.png) **Staff register** for one or more roles; the HOD approves |
 | ![My subjects](docs/screenshots/my-subjects.png) **My subjects** — choose the subjects you are responsible for | ![Word review](docs/screenshots/word-review-moderator.png) **Word papers reviewed in the browser** with comments |
-| ![Password](docs/screenshots/word-password-prompt.png) **Password-protected papers** unlock in the browser | ![Dates](docs/screenshots/key-dates-and-deadline.png) **Assessment dates and deadlines** |
+| ![Password](docs/screenshots/word-password-prompt.png) **Password-protected papers** unlock in the browser | ![Dates](docs/screenshots/new-assessment.png) **Assessment dates and deadlines** |
 | ![Report](docs/screenshots/report-page-1.png) **Signed PDF report** ([sample](docs/sample-report.pdf)) | ![Dark](docs/screenshots/dark-dashboard.png) **Dark mode** (and fully responsive) |
 
 ## Design
 
 A clean, flat interface in the official **CPUT colours** (Dark Blue `#006699`, Mid Blue `#0099CC`, Sea Blue `#66CCCC`), following the DJI-style design spec: white canvas, pale grey bands, one blue pill for every action with 1px outline pills for secondary actions, Open Sans with tight tracking, 8px flat cards with no shadows, a white navigation bar; light and dark themes. See [`docs/design.md`](docs/design.md). All colours live in one place (`resources/css/app.css`).
+
+## Presentation for staff
+
+[Staff briefing deck (PowerPoint)](docs/presentation/Moderation-Platform-Staff-Presentation.pptx) · [PDF copy](docs/presentation/Moderation-Platform-Staff-Presentation.pdf) — 20 slides with speaker notes; fill in the presenter, date, site address and support contact on slides 1 and 20.
 
 ## Later stage
 

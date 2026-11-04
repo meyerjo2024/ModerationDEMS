@@ -10,7 +10,7 @@ Under each subject you tick you can also pick your usual **internal moderator** 
 
 ![My subjects](../screenshots/my-subjects.png)
 
-![Upcoming assessments](../screenshots/upcoming-assessments.png)
+![Upcoming assessments](../screenshots/dashboard-examiner.png)
 
 > **Password-protected papers.** You may upload a Word file (`.docx`, saved in Word 2010 or later) or PDF that is protected with a password. Tell your moderator the password directly (not through the system): they are asked for it when they open the document, and it is never stored. Moderators can read and comment on unlocked Word files in the browser; protected `.doc` (old format) files can only be downloaded.
 

@@ -30,7 +30,7 @@ Dark mode follows your device setting.
 
 Click a card to open the record.
 
-![Record page](../screenshots/record-waiting.png)
+![Record page](../screenshots/dashboard-examiner.png)
 
 1. **Header** – subject, assessment, current status.
 2. **Journey bar** – Pre-Assessment → Gate 1 → Post-Assessment → Gate 2 → Gate 3 (if assigned) → Archive.
@@ -44,7 +44,7 @@ Every sign-off asks for two things:
 1. **Draw your signature** in the pad (mouse, finger or Apple Pencil). *Clear* starts over.
 2. **Enter your password.** This confirms it is really you.
 
-![Signature pad](../screenshots/gate1-approve.png)
+![Signature pad](../screenshots/gate1-review.png)
 
 The signature is stamped with the time, your account and what you attested to. It cannot be edited later.
 

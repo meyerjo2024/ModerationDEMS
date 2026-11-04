@@ -39,7 +39,7 @@ Open **My subjects** and tick the subjects you moderate. Examiners are then offe
 ## Request revision
 Click **Request revision**, write specific feedback (at least a few words) and send it. The examiner is notified and the status becomes **Revision Requested**.
 
-![Request revision](../screenshots/gate1-request-revision.png)
+![Request revision](../screenshots/word-review-examiner.png)
 
 ### Before you start: choose your subjects
 
@@ -51,7 +51,7 @@ Open **My subjects** and tick the subjects you moderate. Examiners are then offe
 3. Tick **Consensus reached with the examiner**.
 4. Sign (drawing + password) and click **Sign & approve**.
 
-![Approve](../screenshots/gate1-approve.png)
+![Approve](../screenshots/gate1-review.png)
 
 The status becomes **Ready for Post-Moderation**.
 
