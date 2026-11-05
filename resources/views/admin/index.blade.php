@@ -49,7 +49,7 @@
         <details class="mt-1"><summary class="cursor-pointer select-none text-xs font-medium text-accent dark:text-accent-dark">Edit roles</summary>
           <form method="POST" action="{{ route('admin.roles', $u) }}" class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">@csrf @method('PATCH')
             @foreach (\App\Enums\Role::cases() as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="h-4 w-4 rounded accent-[#006699]" @checked($u->hasRole($r))> {{ $r->label() }}</label>@endforeach
-            <button class="btn-secondary !py-1 text-xs">Save</button></form></details></li>@endforeach</ul></section>
+            <button class="btn-secondary !py-1 text-xs">Save</button></form><form method="POST" action="{{ route('admin.active', $u) }}" class="mt-2">@csrf @method('PATCH')<button class="text-xs font-semibold {{ $u->active ? 'text-rose-600' : 'text-accent' }}" @if ($u->active) onclick="return confirm('Switch this account off? They will be signed out and can no longer be chosen.')" @endif>{{ $u->active ? 'Switch account off' : 'Switch account on' }}</button></form></details></li>@endforeach</ul></section>
   </div>
 </div>
 </x-app-layout>

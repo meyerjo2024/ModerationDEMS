@@ -50,6 +50,9 @@ Open **Admin** in the header.
 
 - Leftover sample accounts (`…@example.edu`) are removed automatically on every deploy. Real users register themselves (below).
 
+### Switching an account off
+Under **Admin → Users**, open *Edit roles* next to a person and use **Switch account off** to stop someone signing in (they are signed out everywhere and no longer offered as a moderator). Their history stays. You cannot switch off your own account or the last active Head of Department. **Switch account on** reverses it.
+
 ### Approving staff registrations
 Staff open **Register for an account** on the sign-in page, choose the role(s) they need (Examiner, Internal Moderator, External Moderator) and set a password. You are notified in the app, and the request appears at the top of **Admin → Registrations waiting for approval**. Tick the roles you want them to have (you can change what they asked for) and click **Approve**, or **Reject**. They cannot sign in until you approve. Head of Department access is only ever granted by you, from Admin.
 - Use unique, strong passwords; there is no self-service reset yet, so an administrator sets them.

@@ -7,6 +7,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Services\Audit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
@@ -59,6 +60,25 @@ class AdminController extends Controller
         $ordered = array_values(array_filter(array_map(fn (Role $r) => $r->value, Role::cases()), fn ($v) => in_array($v, $roles, true)));
 
         return [$ordered[0], count($ordered) > 1 ? implode(',', array_slice($ordered, 1)) : null];
+    }
+
+    /** Switch an account off (or back on): it keeps its history but can no longer sign in or be chosen. */
+    public function toggleActive(Request $request, User $user, Audit $audit)
+    {
+        abort_unless($user->approval_status === 'approved', 404);
+        if ($user->id === $request->user()->id) {
+            return back()->with('error', 'You cannot switch off your own account.');
+        }
+        if ($user->active && $user->hasRole(Role::Hod) && User::withRole(Role::Hod)->where('active', true)->where('id', '!=', $user->id)->doesntExist()) {
+            return back()->with('error', 'There must be at least one active Head of Department.');
+        }
+        $user->update(['active' => ! $user->active]);
+        if (! $user->active) {
+            DB::table('sessions')->where('user_id', $user->id)->delete(); // sign them out everywhere
+        }
+        $audit->log($user->active ? 'USER_ACTIVATED' : 'USER_DEACTIVATED', null, $request->user()->id, ['email' => $user->email], $request->ip());
+
+        return back()->with('status', $user->active ? "{$user->name} can sign in again." : "{$user->name} was switched off.");
     }
 
     public function approve(Request $request, User $user, Audit $audit)

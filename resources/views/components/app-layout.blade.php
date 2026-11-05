@@ -15,18 +15,18 @@
     @php $u = auth()->user(); $link = 'whitespace-nowrap rounded-full px-3 py-1.5 hover:bg-[var(--fog)] hover:text-accent dark:hover:text-accent-dark'; @endphp
     <header class="glass-header">
       <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
-        <div class="flex items-center gap-6">
+        <div class="flex min-w-0 items-center gap-3 sm:gap-6">
           <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 font-semibold">
             <span class="grid h-8 w-8 place-items-center rounded-lg bg-accent text-white"><x-icon name="shield" /></span><span class="hidden sm:inline">Moderation DEMS</span>
           </a>
-          <nav class="flex items-center gap-1 text-sm text-[#303233] dark:text-zinc-300">
+          <nav class="flex min-w-0 items-center gap-1 overflow-x-auto text-sm text-[#303233] dark:text-zinc-300">
             <a href="{{ route('dashboard') }}" class="{{ $link }}">Dashboard</a>
             @if ($u->hasRole(\App\Enums\Role::Examiner))<a href="{{ route('assessments.create') }}" class="{{ $link }}">New assessment</a>@endif
             @if ($u->hasRole(\App\Enums\Role::Examiner, \App\Enums\Role::InternalModerator))<a href="{{ route('my-subjects') }}" class="{{ $link }}">My subjects</a>@endif
             @if ($u->hasRole(\App\Enums\Role::Hod))<a href="{{ route('admin') }}" class="{{ $link }}">Admin</a>@endif
           </nav>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex shrink-0 items-center gap-1 sm:gap-2">
           <div class="relative" x-data="notifs" @click.outside="open = false">
             <button type="button" @click="toggle()" class="relative rounded-full p-2 text-[#303233] hover:bg-[var(--fog)] dark:text-zinc-300" :aria-label="'Notifications' + (unread ? ' (' + unread + ' unread)' : '')">
               <x-icon name="bell" class="h-[18px] w-[18px]" /><span x-show="unread > 0" x-cloak class="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></span>

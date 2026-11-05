@@ -683,6 +683,26 @@ class LifecycleTest extends TestCase
         $this->assertSame(1, Assessment::count());
     }
 
+    public function test_the_hod_can_switch_an_account_off_and_on(): void
+    {
+        $this->as($this->hod)->get('/admin')->assertOk()->assertSee('Switch account off');
+        $this->as($this->hod)->patch("/admin/users/{$this->internal->id}/active")->assertRedirect()->assertSessionHas('status');
+        $this->assertFalse((bool) $this->internal->fresh()->active);
+        // switched off: cannot sign in, and is no longer offered as a moderator
+        $this->app['auth']->forgetGuards();
+        $this->post('/login', ['email' => $this->internal->email, 'password' => self::PW])->assertSessionHas('error');
+        $this->as($this->examiner)->get('/assessments/create')->assertOk()->assertDontSee($this->internal->name);
+        $this->as($this->hod)->patch("/admin/users/{$this->internal->id}/active")->assertRedirect();
+        $this->assertTrue((bool) $this->internal->fresh()->active);
+        // guard rails: not yourself, not the last HOD, and only the HOD may do it
+        $this->as($this->hod)->patch("/admin/users/{$this->hod->id}/active")->assertSessionHas('error');
+        $this->assertTrue((bool) $this->hod->fresh()->active);
+        $this->as($this->examiner)->patch("/admin/users/{$this->internal->id}/active")->assertForbidden();
+        $second = User::create(['name' => 'Second HOD', 'email' => 'h2@t.test', 'role' => Role::Hod, 'password' => self::PW]);
+        $this->as($second)->patch("/admin/users/{$this->hod->id}/active")->assertSessionHas('status'); // fine: another HOD remains
+        $this->as($this->hod)->patch("/admin/users/{$second->id}/active")->assertSessionHas('error'); // …but the last active HOD is protected
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');

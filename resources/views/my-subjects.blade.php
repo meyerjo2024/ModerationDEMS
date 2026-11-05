@@ -29,9 +29,9 @@
                           <select id="mod-{{ $s->id }}" name="moderators[{{ $s->id }}]" class="field mt-0.5 !py-1.5 text-sm"><option value="">No default</option>@foreach ($opts as $m)<option value="{{ $m->id }}" @selected(($defaults[$s->id] ?? null) == $m->id)>{{ $m->name }}@if ($m->department) · {{ $m->department }}@endif</option>@endforeach</select>
                           <p class="mt-1 text-[11px] text-[var(--ink-3)]">@if ($regIds->isEmpty())No moderator has registered for this subject yet, so everyone is listed. @endif Pre-selected when you start an assessment. Not listed? Ask them to <a href="{{ route('register') }}" class="underline">register</a> as an Internal Moderator.</p></div>
                         <p class="mb-2 text-xs text-[var(--ink-2)]">Date each test or supplementary / special assessment is written. You are reminded {{ (int) config('dems.assessment_reminder_days') }} days before.</p>
-                        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <div class="grid grid-cols-1 gap-2 min-[440px]:grid-cols-2 sm:grid-cols-4">
                           @foreach (config('dems.assessment_numbers') as $n)
-                            <label class="text-xs font-semibold text-[var(--ink-2)]">{{ config('dems.assessment_labels.'.$n, $n) }}<input type="date" name="plans[{{ $s->id }}][{{ $n }}]" value="{{ $plans[$s->id][$n] ?? '' }}" class="field mt-0.5 !px-2 !py-1.5 text-xs"></label>
+                            <label class="min-w-0 text-xs font-semibold text-[var(--ink-2)]">{{ config('dems.assessment_labels.'.$n, $n) }}<input type="date" name="plans[{{ $s->id }}][{{ $n }}]" value="{{ $plans[$s->id][$n] ?? '' }}" class="field mt-0.5 w-full min-w-0 max-w-full !px-2 !py-1.5 text-xs"></label>
                           @endforeach
                         </div>
                       </div>

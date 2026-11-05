@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('admin');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users');
         Route::patch('/users/{user}/roles', [AdminController::class, 'updateRoles'])->name('admin.roles');
+        Route::patch('/users/{user}/active', [AdminController::class, 'toggleActive'])->name('admin.active');
         Route::post('/registrations/{user}/approve', [AdminController::class, 'approve'])->name('admin.approve');
         Route::delete('/registrations/{user}', [AdminController::class, 'reject'])->name('admin.reject');
         Route::post('/subjects/import', [AdminController::class, 'importSubjects'])->name('admin.subjects.import');
