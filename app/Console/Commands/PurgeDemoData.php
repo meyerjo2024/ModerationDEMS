@@ -33,9 +33,15 @@ class PurgeDemoData extends Command
         }
         $users = User::whereIn('email', $emails)->when($keep, fn ($q) => $q->where('email', '!=', $keep))->get();
         $ids = $users->pluck('id');
-        $assessments = Assessment::whereIn('examiner_id', $ids)->orWhereIn('internal_moderator_id', $ids)->orWhereIn('external_moderator_id', $ids)->pluck('id');
-        $this->info("Demo accounts: {$users->count()} · their assessments: {$assessments->count()}");
-        if (! $users->count() && ! $assessments->count() && ! Subject::whereIn('code', self::SUBJECTS)->exists()) {
+        // assessments started by a sample examiner are sample data; assessments of real examiners are never deleted
+        $assessments = Assessment::whereIn('examiner_id', $ids)->pluck('id');
+        // a sample moderator still named on a real examiner's assessment cannot be deleted: it is switched off instead
+        $kept = Assessment::whereNotIn('id', $assessments)->where(fn ($q) => $q->whereIn('internal_moderator_id', $ids)->orWhereIn('external_moderator_id', $ids))->get(['internal_moderator_id', 'external_moderator_id']);
+        $blocked = $kept->pluck('internal_moderator_id')->merge($kept->pluck('external_moderator_id'))->filter()->unique()->intersect($ids)->values();
+        $delete = $ids->diff($blocked)->values();
+        $activeBlocked = User::whereIn('id', $blocked)->where('active', true)->count();
+        $this->info("Sample accounts: {$delete->count()} to delete, {$blocked->count()} kept but switched off · their assessments: {$assessments->count()}");
+        if (! $delete->count() && ! $assessments->count() && ! $activeBlocked && ! Subject::whereIn('code', self::SUBJECTS)->exists()) {
             $this->info('Nothing to remove.');
 
             return self::SUCCESS;
@@ -43,21 +49,22 @@ class PurgeDemoData extends Command
         if (! $this->option('force') && ! $this->confirm('Permanently delete these?')) {
             return self::FAILURE;
         }
-        DB::transaction(function () use ($ids, $assessments, $realHod) {
+        DB::transaction(function () use ($delete, $blocked, $assessments, $realHod) {
             if ($realHod) { // subjects imported under the sample HOD move to the real one
-                Subject::whereIn('hod_id', $ids)->update(['hod_id' => $realHod->id]);
+                Subject::whereIn('hod_id', $delete)->update(['hod_id' => $realHod->id]);
             }
+            User::whereIn('id', $blocked)->update(['active' => false]);
             // children first; the audit log keeps no foreign key to users so history stays intact
             Assessment::whereIn('id', $assessments)->each(fn (Assessment $a) => $a->delete());
-            DB::table('subject_user')->whereIn('user_id', $ids)->delete();
-            DB::table('notifications')->whereIn('user_id', $ids)->delete();
-            DB::table('sessions')->whereIn('user_id', $ids)->delete();
-            DB::table('signatures')->whereIn('user_id', $ids)->delete();
-            DB::table('moderation_records')->whereIn('reviewer_id', $ids)->delete();
-            DB::table('audit_logs')->whereIn('user_id', $ids)->delete(); // sign-ins etc.; assessment trails went with the assessments
-            DB::table('document_comments')->whereIn('user_id', $ids)->delete();
+            DB::table('subject_user')->whereIn('user_id', $delete)->delete();
+            DB::table('notifications')->whereIn('user_id', $delete)->delete();
+            DB::table('sessions')->whereIn('user_id', $delete)->delete();
+            DB::table('signatures')->whereIn('user_id', $delete)->delete();
+            DB::table('moderation_records')->whereIn('reviewer_id', $delete)->delete();
+            DB::table('audit_logs')->whereIn('user_id', $delete)->delete(); // sign-ins etc.; assessment trails went with the assessments
+            DB::table('document_comments')->whereIn('user_id', $delete)->delete();
             Subject::whereIn('code', self::SUBJECTS)->whereDoesntHave('assessments')->each(fn (Subject $s) => $s->delete());
-            User::whereIn('id', $ids)->delete();
+            User::whereIn('id', $delete)->delete();
         });
         $this->info('Demo data removed.');
 

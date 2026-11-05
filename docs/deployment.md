@@ -34,7 +34,6 @@ DB_DATABASE=dems
 DB_USERNAME=root          # whatever Herd shows for the Postgres service
 DB_PASSWORD=
 DEMS_SEED_PASSWORD=choose-a-password-10+chars
-DEMS_PURGE_DEMO=true      # ONE deploy only: removes the old sample accounts, then delete this line
 DEMS_REGISTER_DOMAINS=    # optional: e.g. cput.ac.za — only these e-mail domains may register
 ```
 
@@ -45,7 +44,7 @@ php artisan migrate
 php artisan db:seed
 ```
 
-6. Open `http://moderation-dems.test`. Demo logins: `hod@`, `examiner@`, `moderator@`, `external@example.edu` (all use `DEMS_SEED_PASSWORD`).
+6. Open `http://moderation-dems.test` and sign in with `DEMS_SEED_EMAIL` / `DEMS_SEED_PASSWORD`. Staff then register themselves and you approve them in Admin.
 
 > **zsh tip:** don't paste lines with `# comments (like this)` into a macOS terminal — zsh treats `( )` specially. Paste only the commands.
 
@@ -83,7 +82,7 @@ Template: [`.env.render.example`](../.env.render.example).
 | `APP_URL` | `https://<your-service>.onrender.com` |
 | `DB_URL` | the Supabase Session pooler string (step 2) |
 | `DEMS_SEED_EMAIL` / `DEMS_SEED_PASSWORD` | first login (HOD) — password 10+ characters |
-| `DEMS_PURGE_DEMO` | `true` for one deploy deletes every sample account (examiner@, moderator@, external@, dual@ and the sample HOD hod@example.edu), their assessments and the sample subjects CSC101, INF202, MAT101; subjects owned by the sample HOD are handed to your real HOD first, and the sample HOD is only removed once a real HOD exists. Then remove the variable |
+| *(automatic)* | Every deploy removes leftover sample accounts (`examiner@`, `moderator@`, `external@`, `dual@example.edu`, and the sample HOD `hod@example.edu` once a real HOD exists) and the sample subjects CSC101, INF202, MAT101. A real examiner's assessments are never deleted: a sample moderator still named on one is only switched off, so it disappears from the pickers. Subjects owned by the sample HOD move to your real HOD. |
 | `DEMS_SEED_RESET_PASSWORD` (only if you are locked out; signed-in people change their own password at **your name → Change password**) | `true` for one deploy resets the HOD (`DEMS_SEED_EMAIL`) password to the current `DEMS_SEED_PASSWORD`; then remove it |
 | `DEMS_REGISTER_DOMAINS` | optional, comma-separated e-mail domains allowed to self-register (empty = any) |
 | `INSTITUTION_NAME` | shown on the login page and the PDF |

@@ -34,10 +34,10 @@ class LifecycleTest extends TestCase
     {
         parent::setUp();
         $mk = fn ($n, $r) => User::create(['name' => $n, 'email' => strtolower($r->value).'@t.test', 'role' => $r, 'password' => self::PW]);
-        $this->examiner = $mk('Eve Examiner', Role::Examiner);
-        $this->internal = $mk('Ian Internal', Role::InternalModerator);
-        $this->external = $mk('Xena External', Role::ExternalModerator);
-        $this->hod = $mk('Hana Head', Role::Hod);
+        $this->examiner = $mk('Test Examiner', Role::Examiner);
+        $this->internal = $mk('Test Internal Moderator', Role::InternalModerator);
+        $this->external = $mk('Test External Moderator', Role::ExternalModerator);
+        $this->hod = $mk('Test Head of Department', Role::Hod);
         $this->subject = Subject::create(['code' => 'CSC101', 'name' => 'Intro', 'hod_id' => $this->hod->id]);
         $this->responsible($this->examiner, $this->subject, Role::Examiner);
         $this->responsible($this->internal, $this->subject, Role::InternalModerator);
@@ -477,7 +477,7 @@ class LifecycleTest extends TestCase
     public function test_a_hidden_record_shows_a_helpful_404(): void
     {
         $a = $this->newAssessment();
-        $this->as($this->external)->get("/assessments/{$a->id}")->assertNotFound()->assertSee('Xena External')->assertSee('not visible to');
+        $this->as($this->external)->get("/assessments/{$a->id}")->assertNotFound()->assertSee('Test External Moderator')->assertSee('not visible to');
     }
 
     public function test_staff_register_and_the_hod_approves(): void
@@ -527,7 +527,7 @@ class LifecycleTest extends TestCase
 
     public function test_purge_removes_only_the_demo_accounts_and_their_records(): void
     {
-        $demo = User::create(['name' => 'Demo Examiner', 'email' => 'examiner@example.edu', 'role' => Role::Examiner, 'password' => self::PW]);
+        $demo = User::create(['name' => 'Sample Examiner', 'email' => 'examiner@example.edu', 'role' => Role::Examiner, 'password' => self::PW]);
         $this->responsible($demo, $this->subject, Role::Examiner);
         $sample = Subject::create(['code' => 'CSC101X', 'name' => 'keep', 'hod_id' => $this->hod->id]);
         $this->as($demo)->post('/assessments', ['year_level' => 'Y1', 'subject_id' => $this->subject->id, 'number' => 'T1', 'internal_moderator_id' => $this->internal->id]);
@@ -669,12 +669,26 @@ class LifecycleTest extends TestCase
         $this->assertNotNull(User::find($only->id));
     }
 
+    public function test_purge_never_deletes_a_real_examiners_assessment(): void
+    {
+        $demoMod = User::create(['name' => 'Sample Moderator', 'email' => 'moderator@example.edu', 'role' => Role::InternalModerator, 'password' => self::PW]);
+        $this->responsible($demoMod, $this->subject, Role::InternalModerator);
+        $this->as($this->examiner)->post('/assessments', ['year_level' => 'Y1', 'subject_id' => $this->subject->id, 'number' => 'T1', 'internal_moderator_id' => $demoMod->id]);
+        $this->assertSame(1, Assessment::count());
+        $this->artisan('dems:purge-demo', ['--force' => true])->assertSuccessful();
+        $this->assertSame(1, Assessment::count()); // the real examiner's record is untouched
+        $this->assertFalse((bool) $demoMod->fresh()->active); // the sample moderator is switched off, so it no longer appears in pickers
+        $this->as($this->examiner)->get('/assessments/create')->assertOk()->assertDontSee('Sample Moderator');
+        $this->artisan('dems:purge-demo', ['--force' => true])->assertSuccessful(); // safe to run on every deploy
+        $this->assertSame(1, Assessment::count());
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');
         $this->post('/login', ['email' => 'examiner@t.test', 'password' => 'bad'])->assertRedirect()->assertSessionHas('error');
         $this->post('/login', ['email' => 'examiner@t.test', 'password' => self::PW])->assertRedirect('/');
-        $this->get('/')->assertOk()->assertSee('Welcome back, Eve');
+        $this->get('/')->assertOk()->assertSee('Welcome back, Test');
         $a = $this->newAssessment();
         $this->get("/assessments/{$a->id}")->assertOk()->assertSee('Assessment details')->assertSee('Simple recall');
         $this->get('/assessments/create')->assertOk();

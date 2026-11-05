@@ -48,7 +48,7 @@ Open **Admin** in the header.
 
 ## Responsibilities for production use
 
-- Sample accounts from earlier test deployments are removed with `DEMS_PURGE_DEMO=true` for one deploy (then delete the variable). Real users register themselves (below).
+- Leftover sample accounts (`…@example.edu`) are removed automatically on every deploy. Real users register themselves (below).
 
 ### Approving staff registrations
 Staff open **Register for an account** on the sign-in page, choose the role(s) they need (Examiner, Internal Moderator, External Moderator) and set a password. You are notified in the app, and the request appears at the top of **Admin → Registrations waiting for approval**. Tick the roles you want them to have (you can change what they asked for) and click **Approve**, or **Reject**. They cannot sign in until you approve. Head of Department access is only ever granted by you, from Admin.
