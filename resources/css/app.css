@@ -156,3 +156,9 @@ ol[aria-label='Moderation progress'] li > div > span.rounded-full { box-shadow: 
 .doc-body img { max-width: 100%; height: auto; }
 .doc-mark { background: rgb(250 204 21 / .45); border-radius: 2px; cursor: pointer; }
 .doc-mark-done { background: rgb(52 211 153 / .3); }
+
+/* Installed on a phone (standalone): keep content clear of the notch and home bar. */
+@supports (padding: env(safe-area-inset-top)) {
+    .glass-header { padding-top: env(safe-area-inset-top); }
+    body { padding-bottom: env(safe-area-inset-bottom); }
+}

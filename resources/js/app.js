@@ -2,6 +2,9 @@ import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
 
+// installable app: the service worker only adds an offline page
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 /** JSON/multipart request to the app. Throws Error(message) with the server's friendly text. */

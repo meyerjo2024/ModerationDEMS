@@ -703,6 +703,22 @@ class LifecycleTest extends TestCase
         $this->as($this->hod)->patch("/admin/users/{$second->id}/active")->assertSessionHas('error'); // …but the last active HOD is protected
     }
 
+    public function test_the_site_is_installable_as_an_app(): void
+    {
+        foreach (['manifest.json', 'sw.js', 'offline.html', 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'] as $f) {
+            $this->assertFileExists(public_path($f), $f);
+        }
+        $m = json_decode(file_get_contents(public_path('manifest.json')), true);
+        $this->assertSame('standalone', $m['display']);
+        $this->assertSame('/', $m['start_url']);
+        $this->get('/login')->assertOk()->assertSee('rel="manifest"', false)->assertSee('apple-touch-icon', false)->assertSee('apple-mobile-web-app-capable', false)->assertSee('viewport-fit=cover', false);
+        $this->as($this->examiner)->get('/')->assertOk()->assertSee('rel="manifest"', false)->assertSee('apple-touch-icon', false);
+        // the service worker must never cache signed-in pages or data
+        $sw = file_get_contents(public_path('sw.js'));
+        $this->assertStringContainsString("mode !== 'navigate'", $sw);
+        $this->assertStringNotContainsString('cache.put', $sw);
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');
