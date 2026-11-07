@@ -23,6 +23,9 @@ Route::get('/health', function () {
     }
 });
 
+Route::view('/privacy', 'legal.privacy')->name('privacy');
+Route::view('/support', 'legal.support')->name('support');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'show'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -34,6 +37,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/account/password', [\App\Http\Controllers\AccountController::class, 'show'])->name('account.password');
     Route::post('/account/password', [\App\Http\Controllers\AccountController::class, 'update'])->name('account.password.update');
+    Route::delete('/account', [\App\Http\Controllers\AccountController::class, 'destroy'])->name('account.destroy');
+    Route::post('/devices', [\App\Http\Controllers\DeviceController::class, 'store'])->name('devices.store');
+    Route::delete('/devices', [\App\Http\Controllers\DeviceController::class, 'destroy']);
     Route::get('/', DashboardController::class)->name('dashboard');
 
     Route::get('/my-subjects', [MySubjectsController::class, 'index'])->name('my-subjects');

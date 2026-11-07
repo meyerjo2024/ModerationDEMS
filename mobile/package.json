@@ -1,0 +1,22 @@
+{
+  "name": "moderation-dems-ios",
+  "private": true,
+  "version": "0.1.0",
+  "description": "iPhone/iPad shell for the Moderation DEMS site (Capacitor). Build on a Mac with Xcode.",
+  "scripts": {
+    "add:ios": "cap add ios",
+    "sync": "cap sync ios",
+    "open": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/push-notifications": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0",
+    "typescript": "^5.6.0"
+  }
+}

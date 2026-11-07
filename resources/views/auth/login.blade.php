@@ -34,6 +34,7 @@
         <button type="submit" class="btn-primary w-full">Sign in <x-icon name="arrow-right" /></button>
       </form>
       <p x-data="{ ios: /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone }" x-show="ios" x-cloak class="mt-4 rounded-lg bg-[var(--canvas-soft)] p-3 text-center text-xs text-[var(--ink-2)]">On iPhone: tap <b>Share</b> (the square with an arrow), then <b>Add to Home Screen</b> to install this as an app.</p>
+      <p class="mt-3 text-center text-xs text-[var(--ink-3)]"><a href="{{ route('privacy') }}" class="underline">Privacy</a> · <a href="{{ route('support') }}" class="underline">Support</a></p>
       <p class="mt-6 text-center text-sm text-[var(--ink-2)]">New member of staff? <a href="{{ route('register') }}" class="font-semibold text-accent dark:text-accent-dark">Register for an account</a></p>
     </div>
   </section>

@@ -5,6 +5,20 @@ window.Alpine = Alpine;
 // installable app: the service worker only adds an offline page
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 
+// Inside the iPhone app (Capacitor shell): ask for permission to send reminders and tell the server this phone's address.
+(async () => {
+    const cap = window.Capacitor;
+    const push = cap?.isNativePlatform?.() ? cap.Plugins?.PushNotifications : null;
+    if (!push || !document.querySelector('meta[name="dems-auth"]')) return;
+    try {
+        const perm = await push.requestPermissions();
+        if (perm.receive !== 'granted') return;
+        push.addListener('registration', (t) => api('POST', '/devices', { token: t.value, platform: 'ios' }).catch(() => {}));
+        push.addListener('pushNotificationActionPerformed', (n) => { const u = n.notification?.data?.url; if (u && u.startsWith('/')) window.location.href = u; });
+        await push.register();
+    } catch (e) { /* not available: the site still works without push */ }
+})();
+
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 /** JSON/multipart request to the app. Throws Error(message) with the server's friendly text. */

@@ -10,5 +10,13 @@
     <div><label class="label" for="password_confirmation">Confirm new password</label><input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password" class="field"></div>
     <div class="flex justify-end gap-3"><a href="{{ route('dashboard') }}" class="btn-secondary">Cancel</a><button class="btn-primary">Change password</button></div>
   </form>
+  <form method="POST" action="{{ route('account.destroy') }}" class="card space-y-4 border-rose-300 p-6 sm:p-8" onsubmit="return confirm('Delete your account permanently? This cannot be undone.')">
+    @csrf @method('DELETE')
+    <div><p class="kicker">Danger zone</p><h2 class="mt-1 text-xl font-semibold">Delete my account</h2>
+      <p class="mt-1 text-sm text-[var(--ink-2)]">Removes your name, e-mail, subjects and settings and signs you out for good. Signed records you took part in are kept without your personal details (shown as “Former user”). You cannot delete your account while you are named on assessments that are not finished.</p></div>
+    <div><label class="label" for="del_pw">Current password</label><input id="del_pw" name="current_password" type="password" required autocomplete="current-password" class="field"></div>
+    <label class="flex items-start gap-2.5 text-sm"><input type="checkbox" name="confirm_delete" value="1" class="mt-0.5 h-4 w-4 rounded accent-[#006699]"> I understand that this cannot be undone.</label>
+    <div class="flex justify-end"><button class="btn-danger">Delete my account</button></div>
+  </form>
 </div>
 </x-app-layout>

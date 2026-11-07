@@ -719,6 +719,42 @@ class LifecycleTest extends TestCase
         $this->assertStringNotContainsString('cache.put', $sw);
     }
 
+    public function test_app_store_requirements_privacy_support_delete_account_and_push_registration(): void
+    {
+        // public pages Apple requires
+        $this->get('/privacy')->assertOk()->assertSee('Privacy notice')->assertSee('Delete my account');
+        $this->get('/support')->assertOk()->assertSee('Support');
+        $this->get('/login')->assertOk()->assertSee('Privacy')->assertSee('Support');
+        // push registration: signed-in only, one row per token, the last person to sign in on a phone owns it
+        $tok = str_repeat('ab', 32);
+        $this->postJson('/devices', ['token' => $tok])->assertUnauthorized();
+        $this->as($this->examiner)->postJson('/devices', ['token' => $tok, 'platform' => 'ios'])->assertOk();
+        $this->as($this->internal)->postJson('/devices', ['token' => $tok])->assertOk();
+        $this->assertSame(1, \Illuminate\Support\Facades\DB::table('device_tokens')->where('token', $tok)->count());
+        $this->assertSame($this->internal->id, (int) \Illuminate\Support\Facades\DB::table('device_tokens')->where('token', $tok)->value('user_id'));
+        $this->as($this->examiner)->postJson('/devices', ['token' => 'short'])->assertUnprocessable();
+        // account deletion: wrong password, unfinished work and the last HOD are refused
+        $this->as($this->examiner)->get('/account/password')->assertOk()->assertSee('Delete my account');
+        $a = $this->newAssessment();
+        $this->as($this->examiner)->delete('/account', ['current_password' => self::PW, 'confirm_delete' => 1])->assertSessionHas('error');
+        $this->as($this->hod)->delete('/account', ['current_password' => self::PW, 'confirm_delete' => 1])->assertSessionHas('error'); // last HOD
+        $this->as($this->external)->delete('/account', ['current_password' => 'wrong', 'confirm_delete' => 1])->assertSessionHasErrors('current_password');
+        $this->as($this->external)->delete('/account', ['current_password' => self::PW])->assertSessionHasErrors('confirm_delete');
+        // a person with nothing in progress can delete: anonymised, signed out, cannot sign in again
+        $spare = User::create(['name' => 'Spare Moderator', 'email' => 'spare@t.test', 'role' => Role::ExternalModerator, 'password' => self::PW]);
+        $this->as($spare)->postJson('/devices', ['token' => str_repeat('cd', 32)]);
+        $id = $spare->id; $mail = $spare->email;
+        $this->as($spare)->delete('/account', ['current_password' => self::PW, 'confirm_delete' => 1])->assertRedirect('/login');
+        $u = User::find($id);
+        $this->assertSame('Former user', $u->name);
+        $this->assertFalse((bool) $u->active);
+        $this->assertStringStartsWith('deleted-', $u->email);
+        $this->assertSame(0, \Illuminate\Support\Facades\DB::table('device_tokens')->where('user_id', $id)->count());
+        $this->assertGuest();
+        $this->post('/login', ['email' => $mail, 'password' => self::PW])->assertSessionHas('error');
+        $this->assertTrue(\App\Models\AuditLog::where('action', 'ACCOUNT_DELETED')->exists());
+    }
+
     public function test_login_and_pages_render_for_every_stage(): void
     {
         $this->get('/login')->assertOk()->assertSee('Welcome back');

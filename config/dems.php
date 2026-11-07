@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'support_email' => env('DEMS_SUPPORT_EMAIL', ''),
+    'support_phone' => env('DEMS_SUPPORT_PHONE', ''),
     'institution' => env('INSTITUTION_NAME', 'Cape Peninsula University of Technology'),
 
     // Logo printed at the top of the official moderation report (set DEMS_LOGO= to disable).
@@ -48,6 +50,7 @@ return [
         'USER_REGISTERED' => 'Staff registration received',
         'USER_APPROVED' => 'Registration approved',
         'USER_REJECTED' => 'Registration rejected',
+        'ACCOUNT_DELETED' => 'Account deleted by the user',
         'USER_DEACTIVATED' => 'User switched off',
         'USER_ACTIVATED' => 'User switched on',
         'PASSWORD_CHANGED' => 'Password changed',
