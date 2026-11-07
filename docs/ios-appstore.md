@@ -1,6 +1,25 @@
 # iOS app and the App Store — plan and checklist
 
-*Status: server-side prerequisites are built and tested; the native project (`mobile/`) is a scaffold that must be built on a Mac. Nothing has been submitted.*
+*Status: server side (push sender, device registration, delete-account, privacy/support pages) and the Face ID lock in the site are built and tested; the native project (`mobile/`) is a scaffold that must be built on a Mac. Nothing has been submitted.*
+
+## Decisions made
+
+| Question | Decision |
+|---|---|
+| Who owns the Apple Developer account? | **CPUT** (organisation); the developer is added to it as a team member |
+| Distribution | **Apple Business Manager — custom app** (staff only) |
+| Push notifications | **Yes** |
+| Face ID | **Yes** (app lock) |
+| Privacy wording | To be finalised later by the owner |
+
+### What Business Manager distribution needs
+- CPUT's Apple Developer **organisation** account and CPUT's **Apple Business Manager** account (both need CPUT's D-U-N-S number and are normally linked by the University's IT/legal contact).
+- In App Store Connect, the app's **Pricing and Availability → Distribution method = Custom App**, then enter CPUT's Business Manager organisation; the University's ABM administrator then assigns the app to devices/users (managed distribution) or via redemption codes.
+- Custom apps still go through App Review (so the review account and no-placeholder rules below still apply) but are not listed publicly.
+- The **developer** needs an App Store Connect role (App Manager or Developer) and a Certificates/Identifiers role, granted by CPUT's Account Holder.
+
+### Builds without owning a Mac
+If no Mac is available, builds can run on a hosted Mac: **Xcode Cloud** (included with the developer account, builds from the GitHub repository), **GitHub Actions macOS runners**, **Codemagic**, or a rented cloud Mac. The first build, signing and TestFlight upload are easiest on a real Mac or Xcode Cloud.
 
 ## 1. Approach
 
@@ -23,14 +42,17 @@ Alternatives considered: a fully native SwiftUI app (needs a separate API, much 
 - [x] **Delete my account** inside the app and site (Apple guideline 5.1.1(v)): *your name → Delete my account*, password confirmed, refused while named on unfinished assessments or as the last HOD; the person is anonymised (“Former user”), signed records stay.
 - [x] **Privacy notice page** `/privacy` and **Support page** `/support`, public, linked from the sign-in page. *Drafts: the University must review the wording and fill in region, retention and contact.* Set `DEMS_SUPPORT_EMAIL` and `DEMS_SUPPORT_PHONE`.
 - [x] **Device registration** for push: `POST /devices` / `DELETE /devices`, table `device_tokens`; the site registers automatically inside the app.
+- [x] **Push sender** (`PushSender`): APNs over HTTP/2 with a `.p8` key; sends after the notification is saved; never breaks the workflow if Apple is unreachable.
+- [x] **Face ID lock** switch on the Account page (inside the app only).
 - [x] Installable web app basics (manifest, icons, safe areas) that the shell reuses.
 - [x] HTTPS only (App Transport Security satisfied).
 
 ## 4. To build next
 
-1. **Push sender** (server): APNs HTTP/2 with the `.p8` key (env: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, `APNS_KEY` ), sending when the existing in-app notifications are created (revision requested, your turn, deadline reminders). Remove invalid tokens on APNs "unregistered" answers. *Needs the key from Apple; testable only on a real device.*
-2. Optional native extras: Face ID unlock, "open PDF report" in Files/Mail via the share sheet.
-3. Build, sign and test the shell on a Mac (see `mobile/README.md`).
+1. ~~Push sender~~ **built**: every in-app notification is pushed to the person's iPhones (`PushSender`, tested with a faked APNs and a verified ES256 token); invalid tokens are removed. Needs the `.p8` key from Apple and a real device to prove end to end.
+2. ~~Face ID lock~~ **built** in the site (works inside the app; tested against a stand-in for the native plugin). Needs `NSFaceIDUsageDescription` in Info.plist.
+3. Optional: "open PDF report" in Files/Mail via the share sheet.
+4. Build, sign and test the shell on a Mac or hosted Mac (see `mobile/README.md`).
 
 ## 5. App Store submission checklist
 
@@ -67,14 +89,13 @@ Alternatives considered: a fully native SwiftUI app (needs a separate API, much 
 
 Recommendation: **TestFlight pilot first, then unlisted App Store distribution.**
 
-## 7. Decisions needed
+## 7. Still open
 
-1. Who owns the Apple Developer account (CPUT organisation) and who has a Mac for builds?
-2. Public, unlisted or Business Manager distribution?
-3. Bundle identifier to register.
-4. Push notifications: yes (recommended)? Face ID unlock: yes/no?
-5. Who finalises the privacy notice (region, retention period, contact)?
-6. A staging site with fictional data for the App Review account.
+1. Bundle identifier to register (default `za.ac.cput.moderation`).
+2. Who at CPUT is the Apple **Account Holder** and ABM administrator, and can they grant the developer access?
+3. A Mac, Xcode Cloud or a hosted Mac for builds.
+4. A staging site with fictional data for the App Review account.
+5. Privacy notice wording (region, retention period, contact): to be finalised later.
 
 ## 8. Rough sequence
 

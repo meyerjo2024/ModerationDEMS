@@ -5,11 +5,18 @@ window.Alpine = Alpine;
 // installable app: the service worker only adds an offline page
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 
-// Inside the iPhone app (Capacitor shell): ask for permission to send reminders and tell the server this phone's address.
+// ── iPhone app (Capacitor shell) ────────────────────────────────────────────
+// Inside the app the native plugins are reachable through Capacitor; in a normal browser none of this runs.
+const cap = window.Capacitor;
+const inApp = !!cap?.isNativePlatform?.();
+const plugins = {};
+const nativePlugin = (name) => (inApp ? (plugins[name] ??= cap.registerPlugin ? cap.registerPlugin(name) : cap.Plugins?.[name]) : null);
+const signedIn = () => !!document.querySelector('meta[name="dems-auth"]');
+
+// Push notifications: ask permission once, then tell the server this phone's address.
 (async () => {
-    const cap = window.Capacitor;
-    const push = cap?.isNativePlatform?.() ? cap.Plugins?.PushNotifications : null;
-    if (!push || !document.querySelector('meta[name="dems-auth"]')) return;
+    const push = nativePlugin('PushNotifications');
+    if (!push || !signedIn()) return;
     try {
         const perm = await push.requestPermissions();
         if (perm.receive !== 'granted') return;
@@ -18,6 +25,34 @@ if ('serviceWorker' in navigator) window.addEventListener('load', () => navigato
         await push.register();
     } catch (e) { /* not available: the site still works without push */ }
 })();
+
+// Face ID lock: when switched on (Account page), the app asks for Face ID when it opens and when it comes back after a minute away.
+const FACE_KEY = 'dems.faceid';
+const faceOn = () => { try { return localStorage.getItem(FACE_KEY) === '1'; } catch { return false; } };
+const faceSet = (on) => { try { on ? localStorage.setItem(FACE_KEY, '1') : localStorage.removeItem(FACE_KEY); } catch { /* storage unavailable */ } };
+const faceAuth = () => nativePlugin('BiometricAuth').authenticate({ reason: 'Unlock Moderation', cancelTitle: 'Cancel', allowDeviceCredential: true });
+function showFaceLock() {
+    if (document.getElementById('faceid-lock')) return;
+    const el = document.createElement('div');
+    el.id = 'faceid-lock';
+    el.setAttribute('style', 'position:fixed;inset:0;z-index:9999;background:#fff;display:grid;place-items:center;text-align:center;padding:24px;font-family:system-ui,-apple-system,sans-serif');
+    el.innerHTML = '<div><div style="width:64px;height:64px;border-radius:16px;background:#006699;margin:0 auto 16px"></div><h1 style="margin:0 0 6px;font-size:24px;color:#262626">Moderation is locked</h1><p id="faceid-msg" style="margin:0 0 20px;color:#595959">Use Face ID to continue.</p><button id="faceid-btn" style="background:#006699;color:#fff;border:0;border-radius:999px;padding:12px 28px;font-size:17px">Unlock</button></div>';
+    document.body.appendChild(el);
+    const unlock = async () => {
+        try { await faceAuth(); el.remove(); } catch (e) { document.getElementById('faceid-msg').textContent = 'Could not verify you. Try again.'; }
+    };
+    document.getElementById('faceid-btn').addEventListener('click', unlock);
+    unlock();
+}
+if (inApp && nativePlugin('BiometricAuth')) {
+    let hiddenAt = 0;
+    const start = () => { if (signedIn() && faceOn()) showFaceLock(); };
+    document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) hiddenAt = Date.now();
+        else if (signedIn() && faceOn() && Date.now() - hiddenAt > 60000) showFaceLock();
+    });
+}
 
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
@@ -565,6 +600,23 @@ Alpine.data('wordReview', (cfg) => {
     },
   };
 });
+
+// ── Account page: Face ID switch (only shown inside the iPhone app) ──────────
+Alpine.data('faceId', () => ({
+    native: inApp && !!nativePlugin('BiometricAuth'),
+    available: false,
+    on: faceOn(),
+    msg: '',
+    async init() {
+        if (!this.native) return;
+        try { this.available = !!(await nativePlugin('BiometricAuth').checkBiometry()).isAvailable; } catch { this.available = false; }
+        if (!this.available) this.msg = 'Face ID is not set up on this iPhone (Settings → Face ID & Passcode).';
+    },
+    async toggle() {
+        if (this.on) { faceSet(false); this.on = false; this.msg = 'Face ID lock is off.'; return; }
+        try { await faceAuth(); faceSet(true); this.on = true; this.msg = 'Face ID lock is on.'; } catch (e) { this.msg = 'Face ID could not be verified, so the lock was not switched on.'; }
+    },
+}));
 
 // ── Chrome ──────────────────────────────────────────────────────────────────
 Alpine.data('docViewer', (first) => ({ tab: first }));

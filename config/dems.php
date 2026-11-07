@@ -1,6 +1,14 @@
 <?php
 
 return [
+    // Apple Push Notification service (iPhone app). Leave empty to switch push off.
+    'apns' => [
+        'key_id' => env('APNS_KEY_ID'),
+        'team_id' => env('APNS_TEAM_ID'),
+        'bundle_id' => env('APNS_BUNDLE_ID', 'za.ac.cput.moderation'),
+        'key' => env('APNS_KEY'),                      // contents of the .p8 file (newlines may be written as \n)
+        'production' => (bool) env('APNS_PRODUCTION', true), // false only for builds run from Xcode
+    ],
     'support_email' => env('DEMS_SUPPORT_EMAIL', ''),
     'support_phone' => env('DEMS_SUPPORT_PHONE', ''),
     'institution' => env('INSTITUTION_NAME', 'Cape Peninsula University of Technology'),

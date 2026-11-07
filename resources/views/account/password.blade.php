@@ -10,6 +10,12 @@
     <div><label class="label" for="password_confirmation">Confirm new password</label><input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password" class="field"></div>
     <div class="flex justify-end gap-3"><a href="{{ route('dashboard') }}" class="btn-secondary">Cancel</a><button class="btn-primary">Change password</button></div>
   </form>
+  <section x-data="faceId" x-show="native" x-cloak class="card space-y-3 p-6 sm:p-8">
+    <div><p class="kicker">iPhone app</p><h2 class="mt-1 text-xl font-semibold">Face ID lock</h2>
+      <p class="mt-1 text-sm text-[var(--ink-2)]">Ask for Face ID when the app opens and when you come back to it after a minute away. You stay signed in; this only locks the screen.</p></div>
+    <label class="flex items-center gap-3 text-sm font-medium"><input type="checkbox" class="h-5 w-5 rounded-md accent-[#006699]" :checked="on" :disabled="!available" @click.prevent="toggle()"> Lock the app with Face ID</label>
+    <p class="text-sm text-[var(--ink-2)]" x-show="msg" x-text="msg"></p>
+  </section>
   <form method="POST" action="{{ route('account.destroy') }}" class="card space-y-4 border-rose-300 p-6 sm:p-8" onsubmit="return confirm('Delete your account permanently? This cannot be undone.')">
     @csrf @method('DELETE')
     <div><p class="kicker">Danger zone</p><h2 class="mt-1 text-xl font-semibold">Delete my account</h2>

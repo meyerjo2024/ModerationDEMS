@@ -734,7 +734,7 @@ class LifecycleTest extends TestCase
         $this->assertSame($this->internal->id, (int) \Illuminate\Support\Facades\DB::table('device_tokens')->where('token', $tok)->value('user_id'));
         $this->as($this->examiner)->postJson('/devices', ['token' => 'short'])->assertUnprocessable();
         // account deletion: wrong password, unfinished work and the last HOD are refused
-        $this->as($this->examiner)->get('/account/password')->assertOk()->assertSee('Delete my account');
+        $this->as($this->examiner)->get('/account/password')->assertOk()->assertSee('Delete my account')->assertSee('Face ID lock');
         $a = $this->newAssessment();
         $this->as($this->examiner)->delete('/account', ['current_password' => self::PW, 'confirm_delete' => 1])->assertSessionHas('error');
         $this->as($this->hod)->delete('/account', ['current_password' => self::PW, 'confirm_delete' => 1])->assertSessionHas('error'); // last HOD
@@ -753,6 +753,39 @@ class LifecycleTest extends TestCase
         $this->assertGuest();
         $this->post('/login', ['email' => $mail, 'password' => self::PW])->assertSessionHas('error');
         $this->assertTrue(\App\Models\AuditLog::where('action', 'ACCOUNT_DELETED')->exists());
+    }
+
+    public function test_push_notifications_are_sent_to_the_persons_iphones(): void
+    {
+        \Illuminate\Support\Facades\Http::fake(['nothing.example/*' => \Illuminate\Support\Facades\Http::response('', 200)]);
+        $tok = str_repeat('ab', 32); $bad = str_repeat('cd', 32);
+        \Illuminate\Support\Facades\DB::table('device_tokens')->insert([['user_id' => $this->examiner->id, 'token' => $tok, 'platform' => 'ios', 'created_at' => now(), 'updated_at' => now()], ['user_id' => $this->examiner->id, 'token' => $bad, 'platform' => 'ios', 'created_at' => now(), 'updated_at' => now()]]);
+        // not configured: nothing is sent
+        \App\Models\Notification::create(['user_id' => $this->examiner->id, 'message' => 'Hello']);
+        \Illuminate\Support\Facades\Http::assertNothingSent();
+        // configured with a real P-256 key
+        $k = openssl_pkey_new(['curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC]);
+        openssl_pkey_export($k, $pem); $pub = openssl_pkey_get_details($k)['key'];
+        config(['dems.apns' => ['key_id' => 'KEY123', 'team_id' => 'TEAM456', 'bundle_id' => 'za.test.app', 'key' => $pem, 'production' => true]]);
+        \Illuminate\Support\Facades\Http::fake(['api.push.apple.com/3/device/'.$bad => \Illuminate\Support\Facades\Http::response(['reason' => 'BadDeviceToken'], 400), 'api.push.apple.com/*' => \Illuminate\Support\Facades\Http::response('', 200)]);
+        $a = $this->newAssessment();
+        \App\Models\Notification::create(['user_id' => $this->examiner->id, 'assessment_id' => $a->id, 'message' => 'Revision requested on CSC101.']);
+        \Illuminate\Support\Facades\Http::assertSent(function ($r) use ($tok, $a) {
+            return $r->url() === "https://api.push.apple.com/3/device/{$tok}" && $r->hasHeader('apns-topic', 'za.test.app') && $r->hasHeader('apns-push-type', 'alert')
+                && $r['aps']['alert']['body'] === 'Revision requested on CSC101.' && $r['url'] === '/assessments/'.$a->id && str_starts_with($r->header('authorization')[0], 'bearer ');
+        });
+        // the rejected token is removed, the good one stays
+        $this->assertSame([$tok], \Illuminate\Support\Facades\DB::table('device_tokens')->pluck('token')->all());
+        // the provider token is a valid ES256 JWT for that key
+        [$h, $c, $sig] = explode('.', app(\App\Services\PushSender::class)->jwt());
+        $dec = fn ($x) => base64_decode(strtr($x, '-_', '+/'));
+        $this->assertSame(['alg' => 'ES256', 'kid' => 'KEY123'], json_decode($dec($h), true));
+        $this->assertSame('TEAM456', json_decode($dec($c), true)['iss']);
+        $raw = $dec($sig); $this->assertSame(64, strlen($raw));
+        $int = fn (string $x) => (ord($x[0]) > 127 ? "\0" : '').ltrim($x, "\0");
+        $r = $int(substr($raw, 0, 32)); $s = $int(substr($raw, 32));
+        $der = "\x30".chr(4 + strlen($r) + strlen($s))."\x02".chr(strlen($r)).$r."\x02".chr(strlen($s)).$s;
+        $this->assertSame(1, openssl_verify("{$h}.{$c}", $der, $pub, OPENSSL_ALGO_SHA256));
     }
 
     public function test_login_and_pages_render_for_every_stage(): void
