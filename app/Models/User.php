@@ -16,6 +16,12 @@ class User extends Authenticatable
         return ['password' => 'hashed', 'role' => Role::class, 'active' => 'boolean'];
     }
 
+    /** May use the Admin area: Head of Department or System Administrator. */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(Role::Hod, Role::SystemAdmin);
+    }
+
     /** E-mail addresses are always stored trimmed and in lower case, because sign-in compares them that way. */
     public function setEmailAttribute($value): void
     {

@@ -8,6 +8,8 @@ enum Role: string
     case InternalModerator = 'INTERNAL_MODERATOR';
     case ExternalModerator = 'EXTERNAL_MODERATOR';
     case Hod = 'HOD';
+    /** Runs the platform (accounts, registrations, subjects). Takes no part in moderation and sees no assessments. */
+    case SystemAdmin = 'SYSTEM_ADMIN';
 
     public function label(): string
     {
@@ -16,6 +18,7 @@ enum Role: string
             self::InternalModerator => 'Internal Moderator',
             self::ExternalModerator => 'External Moderator',
             self::Hod => 'Head of Department',
+            self::SystemAdmin => 'System Administrator',
         };
     }
 }

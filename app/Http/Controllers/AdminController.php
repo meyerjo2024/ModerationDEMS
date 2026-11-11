@@ -19,6 +19,7 @@ class AdminController extends Controller
             'pending' => User::where('approval_status', 'pending')->orderBy('created_at')->get(),
             'subjects' => Subject::with('hod')->orderBy('code')->get(),
             'hods' => User::withRole(Role::Hod)->where('active', true)->orderBy('name')->get(),
+            'assignable' => $this->assignable($request),
         ]);
     }
 
@@ -29,7 +30,7 @@ class AdminController extends Controller
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
             'roles' => ['required', 'array', 'min:1'],
-            'roles.*' => [Rule::enum(Role::class)],
+            'roles.*' => [Rule::in($this->assignableValues($request))],
             'department' => ['nullable', 'string', 'max:120'],
             'password' => ['required', 'string', 'min:10', 'max:128'],
         ], ['password.min' => 'Use at least 10 characters.', 'email.unique' => 'A user with that e-mail already exists.']);
@@ -43,15 +44,35 @@ class AdminController extends Controller
     /** Tick any combination of roles; the first (in the order shown) becomes the primary role. */
     public function updateRoles(Request $request, User $user, Audit $audit)
     {
-        $d = $request->validate(['roles' => ['required', 'array', 'min:1'], 'roles.*' => [Rule::enum(Role::class)]], ['roles.required' => 'Choose at least one role.', 'roles.min' => 'Choose at least one role.']);
-        if ($user->id === $request->user()->id && ! in_array(Role::Hod->value, $d['roles'], true)) {
-            return back()->with('error', 'You cannot remove your own Head of Department role.');
+        $d = $request->validate(['roles' => ['required', 'array', 'min:1'], 'roles.*' => [Rule::in($this->assignableValues($request))]], ['roles.required' => 'Choose at least one role.', 'roles.min' => 'Choose at least one role.']);
+        // only a System Administrator may grant or take away the System Administrator role
+        if (! $request->user()->hasRole(Role::SystemAdmin) && $user->hasRole(Role::SystemAdmin)) {
+            return back()->with('error', 'Only a System Administrator can change the roles of a System Administrator.');
+        }
+        $keepsAdmin = array_intersect([Role::Hod->value, Role::SystemAdmin->value], $d['roles']) !== [];
+        if ($user->id === $request->user()->id && ! $keepsAdmin) {
+            return back()->with('error', 'You cannot remove your own administrator role.');
+        }
+        if ($user->hasRole(Role::Hod) && ! in_array(Role::Hod->value, $d['roles'], true) && User::withRole(Role::Hod)->where('active', true)->where('id', '!=', $user->id)->doesntExist()) {
+            return back()->with('error', 'There must be at least one active Head of Department.');
         }
         [$primary, $extra] = $this->splitRoles($d['roles']);
         $user->update(['role' => $primary, 'extra_roles' => $extra]);
         $audit->log('USER_ROLES_CHANGED', null, $request->user()->id, ['email' => $user->email, 'roles' => $user->roleValues()], $request->ip());
 
         return back()->with('status', "Roles updated for {$user->name}.");
+    }
+
+    /** Roles the signed-in person may hand out: everything except System Administrator, unless they are one themselves. @return list<Role> */
+    private function assignable(Request $request): array
+    {
+        return array_values(array_filter(Role::cases(), fn (Role $r) => $r !== Role::SystemAdmin || $request->user()->hasRole(Role::SystemAdmin)));
+    }
+
+    /** @return list<string> */
+    private function assignableValues(Request $request): array
+    {
+        return array_map(fn (Role $r) => $r->value, $this->assignable($request));
     }
 
     /** @return array{0: string, 1: ?string} */
@@ -69,6 +90,9 @@ class AdminController extends Controller
         if ($user->id === $request->user()->id) {
             return back()->with('error', 'You cannot switch off your own account.');
         }
+        if ($user->hasRole(Role::SystemAdmin) && ! $request->user()->hasRole(Role::SystemAdmin)) {
+            return back()->with('error', 'Only a System Administrator can switch a System Administrator account on or off.');
+        }
         if ($user->active && $user->hasRole(Role::Hod) && User::withRole(Role::Hod)->where('active', true)->where('id', '!=', $user->id)->doesntExist()) {
             return back()->with('error', 'There must be at least one active Head of Department.');
         }
@@ -84,7 +108,7 @@ class AdminController extends Controller
     public function approve(Request $request, User $user, Audit $audit)
     {
         abort_unless($user->approval_status === 'pending', 404);
-        $d = $request->validate(['roles' => ['required', 'array', 'min:1'], 'roles.*' => [Rule::enum(Role::class)]], ['roles.required' => 'Choose at least one role.']);
+        $d = $request->validate(['roles' => ['required', 'array', 'min:1'], 'roles.*' => [Rule::in($this->assignableValues($request))]], ['roles.required' => 'Choose at least one role.']);
         [$primary, $extra] = $this->splitRoles($d['roles']);
         $user->update(['role' => $primary, 'extra_roles' => $extra, 'active' => true, 'approval_status' => 'approved']);
         $audit->log('USER_APPROVED', null, $request->user()->id, ['email' => $user->email, 'roles' => $user->roleValues()], $request->ip());

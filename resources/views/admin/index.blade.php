@@ -8,7 +8,7 @@
         <li class="py-4"><div class="flex flex-wrap items-start justify-between gap-3"><div><p class="font-semibold">{{ $u->name }}</p><p class="text-[var(--ink-3)]">{{ $u->email }}@if ($u->department) · {{ $u->department }}@endif · registered {{ $u->created_at->diffForHumans() }}</p></div>
           <form method="POST" action="{{ route('admin.reject', $u) }}" onsubmit="return confirm('Reject and remove this registration?')">@csrf @method('DELETE')<button class="btn-danger !py-1.5 text-xs">Reject</button></form></div>
           <form method="POST" action="{{ route('admin.approve', $u) }}" class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">@csrf
-            @foreach (\App\Enums\Role::cases() as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="h-4 w-4 rounded accent-[#006699]" @checked(in_array($r->value, explode(',', (string) $u->requested_roles), true))> {{ $r->label() }}</label>@endforeach
+            @foreach ($assignable as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="h-4 w-4 rounded accent-[#006699]" @checked(in_array($r->value, explode(',', (string) $u->requested_roles), true))> {{ $r->label() }}</label>@endforeach
             <button class="btn-primary !py-1.5 text-xs">Approve</button></form></li>
       @endforeach</ul></section>
   @endif
@@ -19,7 +19,7 @@
         <div><label class="label">Full name</label><input name="name" required class="field" value="{{ old('name') }}"></div>
         <div><label class="label">E-mail</label><input name="email" type="email" required class="field" value="{{ old('email') }}"></div>
         <div class="sm:col-span-2"><label class="label">Roles <span class="font-normal text-slate-400">(tick every role this person needs)</span></label>
-          <div class="mt-1 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">@foreach (\App\Enums\Role::cases() as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="h-4 w-4 rounded accent-[#006699]" @checked(in_array($r->value, old('roles', []), true))> {{ $r->label() }}</label>@endforeach</div>
+          <div class="mt-1 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">@foreach ($assignable as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="h-4 w-4 rounded accent-[#006699]" @checked(in_array($r->value, old('roles', []), true))> {{ $r->label() }}</label>@endforeach</div>
           @error('roles')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror</div>
         <div><label class="label">Department</label><input name="department" class="field" value="{{ old('department') }}"></div>
       </div>
@@ -48,7 +48,7 @@
       <ul class="divide-y divide-slate-200/60 text-sm dark:divide-white/10">@foreach ($users as $u)<li class="py-2.5"><div class="flex justify-between gap-3"><span class="min-w-0"><span class="font-medium">{{ $u->name }}</span>@unless ($u->active) <span class="rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-semibold text-rose-700">inactive</span>@endunless <span class="truncate text-slate-400">{{ $u->email }}</span></span><span class="shrink-0 text-slate-500">{{ $u->roleLabels() }}</span></div>
         <details class="mt-1"><summary class="cursor-pointer select-none text-xs font-medium text-accent dark:text-accent-dark">Edit roles</summary>
           <form method="POST" action="{{ route('admin.roles', $u) }}" class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">@csrf @method('PATCH')
-            @foreach (\App\Enums\Role::cases() as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="h-4 w-4 rounded accent-[#006699]" @checked($u->hasRole($r))> {{ $r->label() }}</label>@endforeach
+            @foreach ($assignable as $r)<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="h-4 w-4 rounded accent-[#006699]" @checked($u->hasRole($r))> {{ $r->label() }}</label>@endforeach
             <button class="btn-secondary !py-1 text-xs">Save</button></form><form method="POST" action="{{ route('admin.active', $u) }}" class="mt-2">@csrf @method('PATCH')<button class="text-xs font-semibold {{ $u->active ? 'text-rose-600' : 'text-accent' }}" @if ($u->active) onclick="return confirm('Switch this account off? They will be signed out and can no longer be chosen.')" @endif>{{ $u->active ? 'Switch account off' : 'Switch account on' }}</button></form></details></li>@endforeach</ul></section>
   </div>
 </div>

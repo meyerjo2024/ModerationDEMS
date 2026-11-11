@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         if ($email === '' || strlen($password) < 10) {
             if (User::where('role', Role::Hod->value)->exists()) {
                 $this->command?->info('DEMS_SEED_EMAIL / DEMS_SEED_PASSWORD not set — an HOD already exists, skipping account seed.');
+                $this->systemAdmin();
                 $this->importSubjects();
 
                 return;
@@ -34,7 +35,23 @@ class DatabaseSeeder extends Seeder
         }
         $this->command?->info("✔ HOD account ready: {$hod->email}");
 
+        $this->systemAdmin();
         $this->importSubjects();
+    }
+
+    /** Optional: a System Administrator (platform management only). DEMS_ADMIN_NAME / DEMS_ADMIN_EMAIL / DEMS_ADMIN_PASSWORD. */
+    private function systemAdmin(): void
+    {
+        $email = mb_strtolower(trim((string) env('DEMS_ADMIN_EMAIL', '')));
+        $password = (string) env('DEMS_ADMIN_PASSWORD', '');
+        if ($email === '' || strlen($password) < 10) {
+            return;
+        }
+        $admin = $this->user(env('DEMS_ADMIN_NAME', 'System Administrator'), $email, Role::SystemAdmin, $password, 'IT');
+        if (filter_var(env('DEMS_SEED_RESET_PASSWORD', false), FILTER_VALIDATE_BOOLEAN)) {
+            $admin->update(['password' => $password, 'active' => true]);
+        }
+        $this->command?->info("✔ System Administrator ready: {$admin->email}");
     }
 
     private function importSubjects(): void

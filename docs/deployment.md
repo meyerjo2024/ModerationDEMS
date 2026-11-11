@@ -83,6 +83,7 @@ Template: [`.env.render.example`](../.env.render.example).
 | `DB_URL` | the Supabase Session pooler string (step 2) |
 | `DEMS_SEED_EMAIL` / `DEMS_SEED_PASSWORD` | first login (HOD) — password 10+ characters |
 | *(automatic)* | Every deploy removes leftover sample accounts (`examiner@`, `moderator@`, `external@`, `dual@example.edu`, and the sample HOD `hod@example.edu` once a real HOD exists) and the sample subjects CSC101, INF202, MAT101. A real examiner's assessments are never deleted: a sample moderator still named on one is only switched off, so it disappears from the pickers. Subjects owned by the sample HOD move to your real HOD. |
+| `DEMS_ADMIN_NAME` / `DEMS_ADMIN_EMAIL` / `DEMS_ADMIN_PASSWORD` (optional) | creates a **System Administrator** on deploy — manages accounts, registrations and subjects, but takes no part in moderation and sees no assessments. Password 10+ characters. Only a System Administrator can grant this role |
 | `DEMS_SEED_RESET_PASSWORD` (only if you are locked out; signed-in people change their own password at **your name → Change password**) | `true` for one deploy resets the HOD (`DEMS_SEED_EMAIL`) password to the current `DEMS_SEED_PASSWORD`; then remove it |
 | `DEMS_REGISTER_DOMAINS` | optional, comma-separated e-mail domains allowed to self-register (empty = any) |
 | `INSTITUTION_NAME` | shown on the login page and the PDF |
