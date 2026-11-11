@@ -873,4 +873,38 @@ class LifecycleTest extends TestCase
         $prev = $this->as($this->examiner)->postJson("/assessments/{$a->id}/calculate", ['source' => ['type' => 'excel', 'attachment_id' => $att, 'sheet' => $sheet['name'], 'column' => $sheet['columns'][0]['index']], 'total_marks' => 100])->assertOk()->json();
         $this->assertStringContainsString('This class list is for PHE261S, but this assessment belongs to CSC101', $prev['warnings'][0]);
     }
+
+    public function test_system_administrator_manages_accounts_but_sees_no_assessments(): void
+    {
+        $sa = User::create(['name' => 'Sys Admin', 'email' => 'sa@t.test', 'role' => Role::SystemAdmin, 'password' => self::PW]);
+        $a = $this->newAssessment();
+
+        $this->as($sa)->get('/dashboard')->assertRedirect('/admin');
+        $this->as($sa)->get('/admin')->assertOk()->assertSee('System Administrator');
+        $this->as($sa)->get("/assessments/{$a->id}")->assertNotFound();
+
+        // a system administrator can hand out the role; a HOD can neither see nor grant it
+        $this->as($sa)->put("/admin/users/{$this->examiner->id}/roles", ['roles' => ['EXAMINER', 'SYSTEM_ADMIN']])->assertSessionHasNoErrors();
+        $this->assertTrue($this->examiner->fresh()->hasRole(Role::SystemAdmin));
+        $this->as($this->hod)->get('/admin')->assertOk()->assertDontSee('value="SYSTEM_ADMIN"', false);
+        $this->as($this->hod)->put("/admin/users/{$this->internal->id}/roles", ['roles' => ['INTERNAL_MODERATOR', 'SYSTEM_ADMIN']])->assertSessionHasErrors('roles.1');
+        $this->assertFalse($this->internal->fresh()->hasRole(Role::SystemAdmin));
+        // ...and cannot demote one
+        $this->as($this->hod)->put("/admin/users/{$this->examiner->id}/roles", ['roles' => ['EXAMINER']])->assertSessionHas('error');
+        $this->assertTrue($this->examiner->fresh()->hasRole(Role::SystemAdmin));
+    }
+
+    public function test_seeder_creates_system_administrator_from_environment(): void
+    {
+        foreach (['DEMS_ADMIN_EMAIL' => 'Boss@T.test', 'DEMS_ADMIN_PASSWORD' => 'a-long-password', 'DEMS_ADMIN_NAME' => 'Boss'] as $k => $v) {
+            $_ENV[$k] = $_SERVER[$k] = $v;
+        }
+        $this->seed(\Database\Seeders\DatabaseSeeder::class);
+        $u = User::where('email', 'boss@t.test')->first();
+        $this->assertNotNull($u);
+        $this->assertTrue($u->hasRole(Role::SystemAdmin));
+        foreach (['DEMS_ADMIN_EMAIL', 'DEMS_ADMIN_PASSWORD', 'DEMS_ADMIN_NAME'] as $k) {
+            unset($_ENV[$k], $_SERVER[$k]);
+        }
+    }
 }

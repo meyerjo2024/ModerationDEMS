@@ -47,7 +47,7 @@ class RegisterController extends Controller
             'requested_roles' => implode(',', $ordered), 'active' => false, 'approval_status' => 'pending',
         ]);
         $audit->log('USER_REGISTERED', null, null, ['email' => $user->email, 'requested' => $ordered], $request->ip());
-        foreach (User::withRole(Role::Hod)->where('active', true)->pluck('id') as $hodId) {
+        foreach (User::where(fn ($q) => $q->withRole(Role::Hod)->orWhere(fn ($w) => $w->withRole(Role::SystemAdmin)))->where('active', true)->pluck('id') as $hodId) {
             Notification::create(['user_id' => $hodId, 'message' => "New staff registration waiting for approval: {$user->name} ({$user->email})."]);
         }
 

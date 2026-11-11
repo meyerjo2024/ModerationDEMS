@@ -10,6 +10,10 @@ class DashboardController extends Controller
     public function __invoke(Request $request)
     {
         $user = $request->user();
+        // a System Administrator has no assessments: send them straight to the Admin area
+        if ($user->hasRole(\App\Enums\Role::SystemAdmin) && ! $user->hasRole(\App\Enums\Role::Hod, \App\Enums\Role::Examiner, \App\Enums\Role::InternalModerator, \App\Enums\Role::ExternalModerator)) {
+            return redirect()->route('admin');
+        }
         // no scheduler on the free host: run the daily reminder check the first time anyone opens the dashboard each day
         if (\Illuminate\Support\Facades\Cache::add('dems.deadlines.'.now('UTC')->toDateString(), 1, now('UTC')->endOfDay())) {
             try {
