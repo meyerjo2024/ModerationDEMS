@@ -879,18 +879,18 @@ class LifecycleTest extends TestCase
         $sa = User::create(['name' => 'Sys Admin', 'email' => 'sa@t.test', 'role' => Role::SystemAdmin, 'password' => self::PW]);
         $a = $this->newAssessment();
 
-        $this->as($sa)->get('/dashboard')->assertRedirect('/admin');
+        $this->as($sa)->get('/')->assertRedirect('/admin');
         $this->as($sa)->get('/admin')->assertOk()->assertSee('System Administrator');
         $this->as($sa)->get("/assessments/{$a->id}")->assertNotFound();
 
         // a system administrator can hand out the role; a HOD can neither see nor grant it
-        $this->as($sa)->put("/admin/users/{$this->examiner->id}/roles", ['roles' => ['EXAMINER', 'SYSTEM_ADMIN']])->assertSessionHasNoErrors();
+        $this->as($sa)->patch("/admin/users/{$this->examiner->id}/roles", ['roles' => ['EXAMINER', 'SYSTEM_ADMIN']])->assertSessionHasNoErrors();
         $this->assertTrue($this->examiner->fresh()->hasRole(Role::SystemAdmin));
         $this->as($this->hod)->get('/admin')->assertOk()->assertDontSee('value="SYSTEM_ADMIN"', false);
-        $this->as($this->hod)->put("/admin/users/{$this->internal->id}/roles", ['roles' => ['INTERNAL_MODERATOR', 'SYSTEM_ADMIN']])->assertSessionHasErrors('roles.1');
+        $this->as($this->hod)->patch("/admin/users/{$this->internal->id}/roles", ['roles' => ['INTERNAL_MODERATOR', 'SYSTEM_ADMIN']])->assertSessionHasErrors('roles.1');
         $this->assertFalse($this->internal->fresh()->hasRole(Role::SystemAdmin));
         // ...and cannot demote one
-        $this->as($this->hod)->put("/admin/users/{$this->examiner->id}/roles", ['roles' => ['EXAMINER']])->assertSessionHas('error');
+        $this->as($this->hod)->patch("/admin/users/{$this->examiner->id}/roles", ['roles' => ['EXAMINER']])->assertSessionHas('error');
         $this->assertTrue($this->examiner->fresh()->hasRole(Role::SystemAdmin));
     }
 
