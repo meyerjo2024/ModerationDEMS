@@ -41,6 +41,35 @@ class AdminController extends Controller
         return back()->with('status', "User {$user->name} created.");
     }
 
+    /** Upload a spreadsheet of staff (and Heads of Department); every new account gets the same temporary password. */
+    public function importUsers(Request $request, \App\Services\StaffImporter $importer, Audit $audit)
+    {
+        $d = $request->validate(['file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:4096'], 'password' => ['required', 'string', 'min:10', 'max:128']], ['password.min' => 'Use at least 10 characters.']);
+        try {
+            $r = $importer->import($d['file']->getRealPath(), $d['password'], $this->assignable($request), fn (array $roles) => $this->splitRoles($roles));
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'That file could not be read. Upload an Excel or CSV file.');
+        }
+        foreach ($r['created'] as $u) {
+            $audit->log('USER_CREATED', null, $request->user()->id, ['email' => $u->email, 'roles' => $u->roleValues(), 'via' => 'import'], $request->ip());
+        }
+        $msg = count($r['created']).' account(s) created'.($r['skipped'] ? ', '.count($r['skipped']).' already existed (left unchanged)' : '').'.';
+
+        return back()->with($r['created'] ? 'status' : 'error', $msg)->with('import_errors', $r['errors']);
+    }
+
+    /** A ready-to-fill CSV for the staff upload. */
+    public function usersTemplate(): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        return response()->streamDownload(function () {
+            echo "Name,Email,Roles,Department\nJane Example,jane.example@your-domain,\"Examiner, Internal Moderator\",Engineering\nPat Sample,pat.sample@your-domain,HOD,Engineering\n";
+        }, 'staff-upload-template.csv', ['Content-Type' => 'text/csv']);
+    }
+
     /** Tick any combination of roles; the first (in the order shown) becomes the primary role. */
     public function updateRoles(Request $request, User $user, Audit $audit)
     {
