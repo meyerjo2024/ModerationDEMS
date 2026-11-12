@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/account/password', [\App\Http\Controllers\AccountController::class, 'show'])->name('account.password');
     Route::post('/account/password', [\App\Http\Controllers\AccountController::class, 'update'])->name('account.password.update');
+    Route::post('/account/notifications', [\App\Http\Controllers\AccountController::class, 'notifications'])->name('account.notifications');
     Route::delete('/account', [\App\Http\Controllers\AccountController::class, 'destroy'])->name('account.destroy');
     Route::post('/devices', [\App\Http\Controllers\DeviceController::class, 'store'])->name('devices.store');
     Route::delete('/devices', [\App\Http\Controllers\DeviceController::class, 'destroy']);
@@ -77,6 +78,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('admin');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users');
         Route::post('/users/import', [AdminController::class, 'importUsers'])->name('admin.users.import');
+        Route::post('/test-email', [AdminController::class, 'testEmail'])->name('admin.test-email');
         Route::get('/users/template', [AdminController::class, 'usersTemplate'])->name('admin.users.template');
         Route::patch('/users/{user}/roles', [AdminController::class, 'updateRoles'])->name('admin.roles');
         Route::patch('/users/{user}/active', [AdminController::class, 'toggleActive'])->name('admin.active');

@@ -10,6 +10,13 @@
     <div><label class="label" for="password_confirmation">Confirm new password</label><input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password" class="field"></div>
     <div class="flex justify-end gap-3"><a href="{{ route('dashboard') }}" class="btn-secondary">Cancel</a><button class="btn-primary">Change password</button></div>
   </form>
+  <form method="POST" action="{{ route('account.notifications') }}" class="card space-y-3 p-6 sm:p-8">@csrf
+    <div><p class="kicker">Notifications</p><h2 class="mt-1 text-xl font-semibold">E-mail</h2>
+      <p class="mt-1 text-sm text-[var(--ink-2)]">Get an e-mail when something is waiting on you and when a deadline or test date is close. You always see these under the bell in the platform.</p></div>
+    <input type="hidden" name="email_notifications" value="0">
+    <label class="flex items-center gap-3 text-sm font-medium"><input type="checkbox" name="email_notifications" value="1" class="h-5 w-5 rounded-md accent-[#006699]" @checked(auth()->user()->email_notifications)> Send me e-mails</label>
+    <div class="flex justify-end"><button class="btn-secondary">Save</button></div>
+  </form>
   <section x-data="faceId" x-show="native" x-cloak class="card space-y-3 p-6 sm:p-8">
     <div><p class="kicker">iPhone app</p><h2 class="mt-1 text-xl font-semibold">Face ID lock</h2>
       <p class="mt-1 text-sm text-[var(--ink-2)]">Ask for Face ID when the app opens and when you come back to it after a minute away. You stay signed in; this only locks the screen.</p></div>

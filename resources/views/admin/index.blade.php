@@ -13,6 +13,8 @@
             <button class="btn-primary !py-1.5 text-xs">Approve</button></form></li>
       @endforeach</ul></section>
   @endif
+  <section class="card flex flex-wrap items-center justify-between gap-4 p-6"><div><p class="kicker">E-mail</p><p class="mt-1 text-sm text-[var(--ink-2)]">Sending as <b>{{ config('mail.from.address') }}</b> via <b>{{ config('mail.default') }}</b>@if (config('mail.default') === 'smtp') ({{ config('mail.mailers.smtp.host') }})@endif. The test goes to your own address ({{ auth()->user()->email }}).</p></div>
+    <form method="POST" action="{{ route('admin.test-email') }}">@csrf<button class="btn-secondary">Send test e-mail</button></form></section>
   <div class="grid gap-6 lg:grid-cols-2">
     <form method="POST" action="{{ route('admin.users') }}" class="card space-y-4 p-6">@csrf
       <p class="kicker flex items-center gap-1.5"><x-icon name="user-plus" class="h-3.5 w-3.5" /> Add user</p>

@@ -26,6 +26,7 @@ class DeadlineReminders
                 $already = Notification::where('user_id', $id)->where('assessment_id', $a->id)->where('message', 'like', 'Reminder:%')->where('created_at', '>=', now('UTC')->startOfDay())->exists();
                 if (! $already) {
                     $this->notifier->inApp([$id], $a, $msg);
+                    $this->notifier->email([$id], $a, "Reminder: {$a->title()}", $msg);
                     $sent++;
                 }
             }
@@ -50,6 +51,7 @@ class DeadlineReminders
             $already = Notification::where('user_id', $p->user_id)->where('message', 'like', "Reminder: {$p->subject->code} {$p->number} is written%")->where('created_at', '>=', $today)->exists();
             if (! $already) {
                 Notification::create(['user_id' => $p->user_id, 'message' => $msg]);
+                $this->notifier->emailUsers([$p->user_id], "Reminder: {$p->subject->code} {$p->number}", $msg, $p->started() ? url('/') : route('assessments.create', ['subject' => $p->subject_id, 'number' => $p->number]));
                 $sent++;
             }
         });
