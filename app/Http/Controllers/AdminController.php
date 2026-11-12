@@ -62,6 +62,20 @@ class AdminController extends Controller
         return back()->with($r['created'] ? 'status' : 'error', $msg)->with('import_errors', $r['errors']);
     }
 
+    /** Sends a test e-mail to the signed-in person and shows the mail server's answer. */
+    public function testEmail(Request $request, \App\Services\Notifier $notifier)
+    {
+        $mailer = config('mail.default');
+        $err = $notifier->test($request->user()->email, $request->user()->name);
+        if ($mailer === 'log') {
+            return back()->with('error', 'E-mail is not set up yet: MAIL_MAILER is "log", so messages are only written to a log file. Set the MAIL_* variables in Render and redeploy.');
+        }
+
+        return $err === null
+            ? back()->with('status', "Test e-mail sent to {$request->user()->email} through ".config('mail.mailers.'.$mailer.'.host', $mailer).'. Check your inbox (and junk folder).')
+            : back()->with('error', 'The mail server refused the message: '.\Illuminate\Support\Str::limit($err, 400));
+    }
+
     /** A ready-to-fill CSV for the staff upload. */
     public function usersTemplate(): \Symfony\Component\HttpFoundation\StreamedResponse
     {

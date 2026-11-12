@@ -17,6 +17,13 @@ class AccountController extends Controller
         return view('account.password');
     }
 
+    public function notifications(Request $request)
+    {
+        $request->user()->update(['email_notifications' => $request->boolean('email_notifications')]);
+
+        return back()->with('status', $request->boolean('email_notifications') ? 'E-mail notifications are on.' : 'E-mail notifications are off. You will still see notifications in the platform.');
+    }
+
     /**
      * Delete my account. The person is anonymised, not erased, because signatures, comments and the audit trail of
      * moderated assessments must stay intact: name and e-mail are replaced and sign-in is closed for good.

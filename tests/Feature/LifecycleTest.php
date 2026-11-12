@@ -946,4 +946,24 @@ class LifecycleTest extends TestCase
         $this->assertTrue(User::where('email', 'cy@t.test')->first()->hasRole(Role::SystemAdmin));
         $this->post('/login', ['email' => 'ann@t.test', 'password' => 'temporary-pass-1'])->assertRedirect();
     }
+
+    public function test_email_notifications_respect_opt_out_and_test_button(): void
+    {
+        \Illuminate\Support\Facades\Mail::fake();
+        $n = app(\App\Services\Notifier::class);
+        $n->emailUsers([$this->examiner->id, $this->internal->id], 'Hello', 'Body', 'https://x.test');
+        \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\Notice::class, 2);
+
+        $this->as($this->internal)->post('/account/notifications', ['email_notifications' => '0'])->assertSessionHas('status');
+        $this->assertFalse($this->internal->fresh()->email_notifications);
+        \Illuminate\Support\Facades\Mail::fake();
+        $n->emailUsers([$this->examiner->id, $this->internal->id], 'Hello', 'Body');
+        \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\Notice::class, 1);
+
+        config(['mail.default' => 'smtp']);
+        $this->as($this->hod)->post('/admin/test-email')->assertSessionHas('status');
+        config(['mail.default' => 'log']);
+        $this->as($this->hod)->post('/admin/test-email')->assertSessionHas('error');
+        $this->as($this->examiner)->post('/admin/test-email')->assertForbidden();
+    }
 }

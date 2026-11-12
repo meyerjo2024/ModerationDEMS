@@ -13,7 +13,7 @@ class User extends Authenticatable
 
     protected function casts(): array
     {
-        return ['password' => 'hashed', 'role' => Role::class, 'active' => 'boolean'];
+        return ['password' => 'hashed', 'role' => Role::class, 'active' => 'boolean', 'email_notifications' => 'boolean'];
     }
 
     /** May use the Admin area: Head of Department or System Administrator. */
