@@ -1,6 +1,7 @@
 <x-app-layout title="Admin">
 <div class="space-y-8">
   <div><p class="kicker">Administration</p><h1 class="mt-1 text-3xl font-semibold">People & subjects</h1></div>
+  @if (session('import_errors'))<x-notice tone="error"><b>Some rows were not imported:</b><ul class="mt-1 list-disc pl-5">@foreach (array_slice(session('import_errors'), 0, 15) as $m)<li>{{ $m }}</li>@endforeach</ul></x-notice>@endif
   @if ($errors->any())<x-notice tone="error">{{ $errors->first() }}</x-notice>@endif
   @if ($pending->isNotEmpty())
     <section class="card border-accent p-6" style="border-color: var(--color-accent)"><p class="kicker mb-3">Registrations waiting for approval · {{ $pending->count() }}</p>
@@ -26,7 +27,13 @@
       <div><label class="label">Temporary password</label><input name="password" type="password" required minlength="10" autocomplete="new-password" class="field"><p class="mt-1 text-xs text-slate-400">At least 10 characters. Share it securely.</p></div>
       <button class="btn-primary">Create user</button>
     </form>
-    <div class="space-y-6"><form method="POST" action="{{ route('admin.subjects.import') }}" enctype="multipart/form-data" class="card space-y-3 p-6">@csrf
+    <div class="space-y-6"><form method="POST" action="{{ route('admin.users.import') }}" enctype="multipart/form-data" class="card space-y-3 p-6">@csrf
+      <p class="kicker flex items-center gap-1.5"><x-icon name="upload" class="h-3.5 w-3.5" /> Upload staff &amp; Heads of Department</p>
+      <p class="text-sm text-slate-500 dark:text-zinc-400">Excel or CSV with the columns <b>Name</b>, <b>Email</b>, <b>Roles</b> (e.g. <i>Examiner, Internal Moderator</i> or <i>HOD</i>) and optionally <b>Department</b>. Accounts that already exist are left unchanged. <a href="{{ route('admin.users.template') }}" class="font-semibold text-accent">Download a template</a>.</p>
+      <input type="file" name="file" accept=".xlsx,.xls,.csv" required class="field">
+      <div><label class="label">Temporary password for the new accounts</label><input name="password" type="password" required minlength="10" autocomplete="new-password" class="field"><p class="mt-1 text-xs text-slate-400">At least 10 characters; share it securely and ask everyone to change it (your name → Change password).</p></div>
+      <button class="btn-secondary">Upload staff</button></form>
+    <form method="POST" action="{{ route('admin.subjects.import') }}" enctype="multipart/form-data" class="card space-y-3 p-6">@csrf
       <p class="kicker flex items-center gap-1.5"><x-icon name="upload" class="h-3.5 w-3.5" /> Import subject list</p>
       <p class="text-sm text-slate-500 dark:text-zinc-400">Excel or CSV with the columns <b>Qualification</b>, <b>Subject Code</b>, <b>Subject Name</b>. Existing subjects are kept; new ones are added to you as Head of Department.</p>
       <input type="file" name="file" accept=".xlsx,.xls,.csv" required class="field"><button class="btn-secondary">Import</button></form>

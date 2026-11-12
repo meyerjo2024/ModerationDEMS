@@ -68,9 +68,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/read', [NotificationController::class, 'markRead']);
 
+    Route::middleware('role:HOD')->prefix('/overview')->group(function () {
+        Route::get('/', [\App\Http\Controllers\OverviewController::class, 'index'])->name('overview');
+        Route::get('/subjects/{subject}', [\App\Http\Controllers\OverviewController::class, 'subject'])->name('overview.subject');
+    });
+
     Route::middleware('role:HOD,SYSTEM_ADMIN')->prefix('/admin')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('admin');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users');
+        Route::post('/users/import', [AdminController::class, 'importUsers'])->name('admin.users.import');
+        Route::get('/users/template', [AdminController::class, 'usersTemplate'])->name('admin.users.template');
         Route::patch('/users/{user}/roles', [AdminController::class, 'updateRoles'])->name('admin.roles');
         Route::patch('/users/{user}/active', [AdminController::class, 'toggleActive'])->name('admin.active');
         Route::post('/registrations/{user}/approve', [AdminController::class, 'approve'])->name('admin.approve');

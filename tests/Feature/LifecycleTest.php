@@ -907,4 +907,43 @@ class LifecycleTest extends TestCase
             unset($_ENV[$k], $_SERVER[$k]);
         }
     }
+
+    public function test_hod_overview_filters_and_system_admin_has_no_access(): void
+    {
+        $this->subject->update(['qualification' => 'Diploma in Testing']);
+        $bare = Subject::create(['code' => 'BAR101', 'name' => 'Bare', 'qualification' => 'Diploma in Testing, BTech Other', 'hod_id' => $this->hod->id]);
+        $this->newAssessment();
+
+        $this->as($this->hod)->get('/overview')->assertOk()->assertSee('Diploma in Testing')->assertSee('BTech Other')->assertSee('BAR101')->assertSee('CSC101');
+        $this->as($this->hod)->get('/overview?qualification=BTech+Other')->assertOk()->assertSee('BAR101')->assertDontSee('CSC101');
+        $this->as($this->hod)->get('/overview?coverage=no_moderator')->assertOk()->assertSee('BAR101')->assertDontSee('CSC101');
+        $this->as($this->hod)->get('/overview?staff='.$this->internal->id.'&staff_role=INTERNAL_MODERATOR')->assertOk()->assertSee('CSC101')->assertDontSee('BAR101');
+        $this->as($this->hod)->get('/overview/subjects/'.$this->subject->id)->assertOk()->assertSee('Test Examiner');
+        $this->as($this->examiner)->get('/overview')->assertForbidden();
+
+        $sa = User::create(['name' => 'Sys Admin', 'email' => 'sa2@t.test', 'role' => Role::SystemAdmin, 'password' => self::PW]);
+        $this->as($sa)->get('/overview')->assertForbidden();
+        $this->as($sa)->get('/overview/subjects/'.$this->subject->id)->assertForbidden();
+    }
+
+    public function test_staff_upload_creates_accounts_and_reports_problems(): void
+    {
+        $sa = User::create(['name' => 'Sys Admin', 'email' => 'sa3@t.test', 'role' => Role::SystemAdmin, 'password' => self::PW]);
+        $csv = "Name,Email,Roles,Department\nAnn Lee,ANN@T.test,\"Examiner, Internal Moderator\",Eng\nBo Hod,bo@t.test,HOD,Eng\nCy Root,cy@t.test,System Administrator,IT\nDup,examiner@t.test,Examiner,x\nBad,bad@t.test,Wizard,x\n";
+        $file = UploadedFile::fake()->createWithContent('staff.csv', $csv);
+
+        // a HOD may upload staff and HODs but not System Administrators
+        $this->as($this->hod)->post('/admin/users/import', ['file' => $file, 'password' => 'temporary-pass-1'])->assertSessionHas('status');
+        $ann = User::where('email', 'ann@t.test')->first();
+        $this->assertTrue($ann->hasRole(Role::Examiner) && $ann->hasRole(Role::InternalModerator));
+        $this->assertTrue(User::where('email', 'bo@t.test')->first()->hasRole(Role::Hod));
+        $this->assertNull(User::where('email', 'cy@t.test')->first());
+        $this->assertNull(User::where('email', 'bad@t.test')->first());
+        $this->assertSame(2, collect(session('import_errors'))->count());
+
+        // a System Administrator may
+        $this->as($sa)->post('/admin/users/import', ['file' => UploadedFile::fake()->createWithContent('s.csv', $csv), 'password' => 'temporary-pass-1'])->assertSessionHas('status');
+        $this->assertTrue(User::where('email', 'cy@t.test')->first()->hasRole(Role::SystemAdmin));
+        $this->post('/login', ['email' => 'ann@t.test', 'password' => 'temporary-pass-1'])->assertRedirect();
+    }
 }
