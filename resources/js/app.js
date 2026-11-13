@@ -615,6 +615,206 @@ Alpine.data('wordReview', (cfg) => {
   };
 });
 
+
+// ── PDF review: pages are drawn in the browser (pdf.js) with a selectable text layer, so reviewers can comment on a passage ──
+Alpine.data('pdfReview', (cfg) => {
+  let rootEl, pdf, pdfjs, observer;
+  const rendered = new Set();
+  return {
+    url: cfg.url,
+    api: cfg.comments,
+    loading: true,
+    error: '',
+    pages: 0,
+    comments: [],
+    can: { comment: false, address: false },
+    draft: null,
+    text: '',
+    busy: false,
+    active: null,
+    async init() {
+        rootEl = this.$root;
+        try {
+            await import('pdfjs-dist/web/pdf_viewer.css');
+            pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+            const worker = (await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url')).default;
+            pdfjs.GlobalWorkerOptions.workerSrc = worker;
+            const data = new Uint8Array(await (await fetch(this.url, { credentials: 'same-origin' })).arrayBuffer());
+            pdf = await pdfjs.getDocument({ data }).promise;
+            this.pages = pdf.numPages;
+            await this.load();
+            await this.$nextTick();
+            this.layout();
+            this.$watch('comments', () => setTimeout(() => this.paintAll(), 0));
+        } catch (e) {
+            this.error = 'This PDF could not be shown in the browser. Download it to read it.';
+        } finally {
+            this.loading = false;
+        }
+    },
+    async load() {
+        const r = await api('GET', this.api);
+        this.comments = r.comments;
+        this.can = r.can;
+    },
+    layout() {
+        const holder = rootEl.querySelector('.pdf-pages');
+        holder.innerHTML = '';
+        observer = new IntersectionObserver((entries) => entries.forEach((en) => { if (en.isIntersecting) this.renderPage(+en.target.dataset.page); }), { root: holder, rootMargin: '400px' });
+        for (let n = 1; n <= this.pages; n++) {
+            const div = document.createElement('div');
+            div.className = 'pdf-page';
+            div.dataset.page = n;
+            div.style.minHeight = '480px';
+            holder.appendChild(div);
+            observer.observe(div);
+        }
+    },
+    async renderPage(n) {
+        if (rendered.has(n)) return;
+        rendered.add(n);
+        const div = rootEl.querySelector(`.pdf-page[data-page="${n}"]`);
+        const page = await pdf.getPage(n);
+        const base = page.getViewport({ scale: 1 });
+        const width = Math.max(280, Math.min(div.parentElement.clientWidth - 24, 900));
+        const viewport = page.getViewport({ scale: width / base.width });
+        div.style.minHeight = '';
+        div.style.width = viewport.width + 'px';
+        div.style.height = viewport.height + 'px';
+        div.style.setProperty('--scale-factor', viewport.scale);
+        const canvas = document.createElement('canvas');
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(viewport.width * ratio);
+        canvas.height = Math.floor(viewport.height * ratio);
+        canvas.style.width = viewport.width + 'px';
+        canvas.style.height = viewport.height + 'px';
+        div.appendChild(canvas);
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport, transform: ratio !== 1 ? [ratio, 0, 0, ratio, 0, 0] : null }).promise;
+        const layer = document.createElement('div');
+        layer.className = 'textLayer';
+        div.appendChild(layer);
+        const tl = new pdfjs.TextLayer({ textContentSource: page.streamTextContent(), container: layer, viewport });
+        await tl.render();
+        const tag = document.createElement('span');
+        tag.className = 'pdf-page-tag';
+        tag.textContent = `Page ${n} of ${this.pages}`;
+        div.appendChild(tag);
+        if (this.can.comment) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'pdf-page-btn';
+            b.textContent = '+ Comment on page';
+            b.addEventListener('click', () => { this.draft = { quote: null, offset: null, page: n }; this.text = ''; });
+            div.appendChild(b);
+        }
+        this.paintPage(n);
+    },
+    pageString(layer) {
+        return [...layer.querySelectorAll('span:not(.markedContent):not(.pdf-page-tag)')].map((s) => s.textContent).join('');
+    },
+    paintAll() {
+        rendered.forEach((n) => this.paintPage(n));
+    },
+    paintPage(n) {
+        const div = rootEl.querySelector(`.pdf-page[data-page="${n}"]`);
+        const layer = div?.querySelector('.textLayer');
+        if (!layer) return;
+        layer.querySelectorAll('mark[data-cid]').forEach((m) => m.replaceWith(...m.childNodes));
+        layer.normalize();
+        const full = this.pageString(layer);
+        this.comments.filter((c) => c.page === n && c.quote).forEach((c) => {
+            const all = [];
+            for (let i = full.indexOf(c.quote); i >= 0; i = full.indexOf(c.quote, i + 1)) all.push(i);
+            const want = c.offset || 0;
+            const at = c.offset !== null && full.substr(c.offset, c.quote.length) === c.quote ? c.offset : all.length ? all.reduce((b, i) => (Math.abs(i - want) < Math.abs(b - want) ? i : b)) : -1;
+            c.anchored = at >= 0;
+            if (at >= 0) this.mark(layer, at, at + c.quote.length, c);
+        });
+    },
+    mark(layer, from, to, c) {
+        let pos = 0;
+        for (const sp of [...layer.querySelectorAll('span:not(.markedContent):not(.pdf-page-tag)')]) {
+            const node = sp.firstChild && sp.firstChild.nodeType === 3 ? sp.firstChild : null;
+            const len = sp.textContent.length;
+            const s = Math.max(from, pos), e = Math.min(to, pos + len);
+            if (node && s < e) {
+                const r = document.createRange();
+                r.setStart(node, s - pos);
+                r.setEnd(node, e - pos);
+                const m = document.createElement('mark');
+                m.dataset.cid = c.id;
+                m.className = c.addressed ? 'doc-mark doc-mark-done' : 'doc-mark';
+                m.addEventListener('click', () => this.focus(c.id));
+                r.surroundContents(m);
+            }
+            pos += len;
+        }
+    },
+    focus(id) {
+        this.active = id;
+        this.$nextTick(() => document.getElementById('pc-' + id)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+    },
+    async goTo(c) {
+        this.active = c.id;
+        if (!c.page) return;
+        const div = rootEl.querySelector(`.pdf-page[data-page="${c.page}"]`);
+        const holder = rootEl.querySelector('.pdf-pages');
+        if (div) holder.scrollTo({ top: div.offsetTop - holder.offsetTop - 8, behavior: 'smooth' });
+    },
+    select() {
+        if (!this.can.comment) return;
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
+        const range = sel.getRangeAt(0);
+        const startEl = range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer;
+        const layer = startEl?.closest?.('.textLayer');
+        if (!layer || !rootEl.contains(layer)) return;
+        const quote = range.toString().replace(/\s+/g, ' ').trim();
+        if (!quote) return;
+        const page = +layer.closest('.pdf-page').dataset.page;
+        // offset of the selection start inside this page's text
+        let offset = 0;
+        for (const sp of layer.querySelectorAll('span:not(.markedContent):not(.pdf-page-tag)')) {
+            if (sp.contains(range.startContainer)) {
+                const pre = document.createRange();
+                pre.selectNodeContents(sp);
+                pre.setEnd(range.startContainer, range.startOffset);
+                offset += pre.toString().length;
+                break;
+            }
+            offset += sp.textContent.length;
+        }
+        this.draft = { quote: quote.slice(0, 600), offset, page };
+        this.text = '';
+    },
+    general() {
+        this.draft = { quote: null, offset: null, page: null };
+        this.text = '';
+    },
+    async save() {
+        this.busy = true;
+        try {
+            await api('POST', this.api, { body: this.text, quote: this.draft.quote, start_offset: this.draft.offset, page: this.draft.page });
+            this.draft = null;
+            window.getSelection()?.removeAllRanges();
+            await this.load();
+        } catch (e) {
+            this.error = e.message;
+        } finally {
+            this.busy = false;
+        }
+    },
+    async remove(c) {
+        await api('DELETE', `/comments/${c.id}`);
+        await this.load();
+    },
+    async toggle(c) {
+        await api('PATCH', `/comments/${c.id}`, { addressed: !c.addressed });
+        await this.load();
+    },
+  };
+});
+
 // ── Account page: Face ID switch (only shown inside the iPhone app) ──────────
 Alpine.data('faceId', () => ({
     native: inApp && !!nativePlugin('BiometricAuth'),

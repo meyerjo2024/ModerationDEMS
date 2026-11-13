@@ -19,7 +19,9 @@
     </div>
     @foreach ($docs as $i => [$label, $att])
       <div x-show="tab === {{ $i }}" @if ($i) x-cloak @endif>
-        @if ($att->isPdf())
+        @if ($att->isPdf() && in_array($att->kind, [\App\Enums\AttachmentKind::Paper, \App\Enums\AttachmentKind::Memo], true))
+          <template x-if="tab === {{ $i }}"><div><x-pdf-review :att="$att" /></div></template>
+        @elseif ($att->isPdf())
           <iframe title="{{ $label }}" x-bind:src="tab === {{ $i }} ? '{{ route('files.show', $att) }}?inline=1#view=FitH' : null" class="h-[70vh] w-full rounded-2xl border border-slate-200/70 bg-white dark:border-white/10"></iframe>
         @elseif ($att->mime_type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' && in_array($att->kind, [\App\Enums\AttachmentKind::Paper, \App\Enums\AttachmentKind::Memo], true))
           <template x-if="tab === {{ $i }}"><div><x-word-review :att="$att" /></div></template>

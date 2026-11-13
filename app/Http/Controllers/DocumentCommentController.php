@@ -10,7 +10,7 @@ use App\Models\DocumentComment;
 use App\Services\Audit;
 use Illuminate\Http\Request;
 
-/** Reviewer comments on the examiner's Word documents (paper / memorandum). */
+/** Reviewer comments on the examiner's documents (Word passages and PDF pages). */
 class DocumentCommentController extends Controller
 {
     private const KINDS = [AttachmentKind::Paper, AttachmentKind::Memo];
@@ -18,8 +18,9 @@ class DocumentCommentController extends Controller
     public function index(Request $request, Attachment $attachment)
     {
         $a = $this->scope($request, $attachment);
-        // every version of the same document, so comments survive a re-upload
-        $ids = Attachment::where('assessment_id', $a->id)->where('kind', $attachment->kind->value)->pluck('id');
+        // every version of the same document (same name), so comments survive a re-upload but stay with their own document
+        $ids = Attachment::where('assessment_id', $a->id)->where('kind', $attachment->kind->value)->get()
+            ->filter(fn (Attachment $x) => mb_strtolower($x->doc_label) === mb_strtolower($attachment->doc_label))->pluck('id');
         $comments = DocumentComment::with('author:id,name')->where('assessment_id', $a->id)->whereIn('attachment_id', $ids)->orderBy('created_at')->get();
 
         return response()->json([
@@ -36,10 +37,11 @@ class DocumentCommentController extends Controller
             'body' => ['required', 'string', 'min:2', 'max:3000'],
             'quote' => ['nullable', 'string', 'max:600'],
             'start_offset' => ['nullable', 'integer', 'min:0', 'max:5000000'],
+            'page' => ['nullable', 'integer', 'min:1', 'max:5000'],
         ]);
         $c = DocumentComment::create([
             'assessment_id' => $a->id, 'attachment_id' => $attachment->id, 'user_id' => $request->user()->id,
-            'body' => trim($d['body']), 'quote' => $d['quote'] ?? null, 'start_offset' => $d['start_offset'] ?? null,
+            'body' => trim($d['body']), 'quote' => $d['quote'] ?? null, 'start_offset' => $d['start_offset'] ?? null, 'page' => $d['page'] ?? null,
         ]);
         $audit->log('DOCUMENT_COMMENTED', $a->id, $request->user()->id, ['filename' => $attachment->filename], $request->ip());
 
@@ -93,7 +95,7 @@ class DocumentCommentController extends Controller
     {
         return [
             'id' => $c->id, 'author' => $c->author->name, 'mine' => $c->user_id === $request->user()->id,
-            'body' => $c->body, 'quote' => $c->quote, 'offset' => $c->start_offset, 'addressed' => $c->addressed, 'reply' => $c->reply,
+            'body' => $c->body, 'quote' => $c->quote, 'offset' => $c->start_offset, 'page' => $c->page, 'addressed' => $c->addressed, 'reply' => $c->reply,
             'current' => $c->attachment_id === $current->id, 'at' => $c->created_at->utc()->format('j M Y, H:i'),
         ];
     }

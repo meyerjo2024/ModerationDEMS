@@ -1024,4 +1024,23 @@ class LifecycleTest extends TestCase
         $a = $this->newAssessment();
         $this->as($this->examiner)->postJson("/assessments/{$a->id}/submit-pre", ['s1' => $this->s1(), 'signature' => $this->sig()])->assertStatus(400);
     }
+
+    public function test_pdf_comments_are_anchored_to_a_page_and_stay_with_their_document(): void
+    {
+        $a = $this->newAssessment();
+        $up = fn ($label, $file) => $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'PAPER', 'label' => $label, 'file' => $this->pdf($file)], ['Accept' => 'application/json'])->assertOk()->json('attachment.id');
+        $paper = $up('Exam paper', 'p.pdf');
+        $annex = $up('Annexure A', 'a.pdf');
+        $this->as($this->examiner)->postJson("/assessments/{$a->id}/submit-pre", ['s1' => $this->s1(), 'signature' => $this->sig()])->assertOk();
+
+        $this->as($this->internal)->postJson("/attachments/{$paper}/comments", ['body' => 'Too easy for level 6.', 'quote' => 'Explain the difference', 'start_offset' => 40, 'page' => 2])->assertCreated()->assertJsonPath('page', 2);
+        $this->as($this->internal)->postJson("/attachments/{$paper}/comments", ['body' => 'Whole page needs a rewrite.', 'page' => 3])->assertCreated();
+        $this->as($this->internal)->postJson("/attachments/{$paper}/comments", ['body' => 'bad', 'page' => 0])->assertStatus(422);
+
+        $this->as($this->internal)->getJson("/attachments/{$paper}/comments")->assertOk()->assertJsonCount(2, 'comments')->assertJsonPath('comments.0.page', 2);
+        // comments on one document do not appear on another document of the same assessment
+        $this->as($this->internal)->getJson("/attachments/{$annex}/comments")->assertOk()->assertJsonCount(0, 'comments');
+        // the PDF is shown with the page viewer
+        $this->as($this->internal)->get("/assessments/{$a->id}")->assertOk()->assertSee('pdfReview', false);
+    }
 }
