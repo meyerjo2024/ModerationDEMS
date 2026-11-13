@@ -29,7 +29,8 @@ class ReportService
 
         $docs = [];
         foreach ($a->documents() as $att) {
-            $docs[] = ['label' => $att->doc_label, 'filename' => $att->filename, 'sha' => $att->sha256, 'at' => $att->created_at];
+            $n = $a->versionNumber($att);
+            $docs[] = ['label' => $att->doc_label.($n > 1 ? " (Version {$n}, final)" : ''), 'filename' => $att->filename, 'sha' => $att->sha256, 'at' => $att->created_at];
         }
         if ($att = $a->latestAttachment(AttachmentKind::Marks)) {
             $docs[] = ['label' => AttachmentKind::Marks->label(), 'filename' => $att->filename, 'sha' => $att->sha256, 'at' => $att->created_at];

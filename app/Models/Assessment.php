@@ -162,6 +162,34 @@ class Assessment extends Model
             ->map(fn ($g) => $g->last())->reject(fn (Attachment $a) => $a->removed_at !== null)->values();
     }
 
+    /** Every upload under the same document name, oldest first (Version 1, 2, 3 …), including superseded and removed ones. @return Collection<int, Attachment> */
+    public function versionsOf(Attachment $att)
+    {
+        if (! in_array($att->kind, [AttachmentKind::Paper, AttachmentKind::Memo], true)) {
+            return collect([$att]);
+        }
+
+        return $this->attachments->whereIn('kind', [AttachmentKind::Paper, AttachmentKind::Memo])->filter(fn (Attachment $x) => mb_strtolower($x->doc_label) === mb_strtolower($att->doc_label))
+            ->sortBy([['created_at', 'asc'], ['id', 'asc']])->values();
+    }
+
+    public function versionNumber(Attachment $att): int
+    {
+        return ((int) $this->versionsOf($att)->search(fn (Attachment $x) => $x->id === $att->id)) + 1;
+    }
+
+    /** 'final' = the version that passed pre-moderation; 'current' = latest while still being prepared or reviewed; 'superseded' = an earlier version. */
+    public function versionState(Attachment $att): string
+    {
+        $v = $this->versionsOf($att);
+        if ($v->last()->id !== $att->id) {
+            return 'superseded';
+        }
+        $passed = ! in_array($this->status, [AssessmentStatus::Draft, AssessmentStatus::RevisionRequested, AssessmentStatus::PendingPreModeration], true);
+
+        return $passed ? 'final' : 'current';
+    }
+
     /** @return Collection<int, Attachment> */
     public function attachmentsOf(AttachmentKind $kind)
     {

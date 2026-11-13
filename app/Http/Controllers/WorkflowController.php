@@ -42,7 +42,7 @@ class WorkflowController extends Controller
         $file = $request->file('file');
         $att = $this->workflow->upload($request->user(), $a, AttachmentKind::from($request->input('kind')), $file->getClientOriginalName(), file_get_contents($file->getRealPath()), $this->meta($request), $request->input('label'));
 
-        return response()->json(['attachment' => ['id' => $att->id, 'kind' => $att->kind->value, 'filename' => $att->filename, 'label' => $att->doc_label]]);
+        return response()->json(['attachment' => ['id' => $att->id, 'kind' => $att->kind->value, 'filename' => $att->filename, 'label' => $att->doc_label, 'version' => $a->fresh('attachments')->versionNumber($att)]]);
     }
 
     public function removeDocument(Request $request, Assessment $assessment, \App\Models\Attachment $attachment)
