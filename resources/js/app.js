@@ -635,6 +635,32 @@ Alpine.data('faceId', () => ({
 // ── Chrome ──────────────────────────────────────────────────────────────────
 Alpine.data('docViewer', (first) => ({ tab: first }));
 
+// Click-to-collapse boxes; each remembers its state on this device.
+Alpine.data('fold', (key, open = true) => ({
+    open,
+    init() {
+        try {
+            const v = localStorage.getItem('dems.fold.' + key);
+            if (v !== null) this.open = v === '1';
+        } catch (e) {}
+    },
+    toggle() {
+        this.open = !this.open;
+        try { localStorage.setItem('dems.fold.' + key, this.open ? '1' : '0'); } catch (e) {}
+    },
+}));
+
+Alpine.data('sidePanel', () => ({
+    show: true,
+    init() {
+        try { this.show = localStorage.getItem('dems.side') !== '0'; } catch (e) {}
+    },
+    toggle() {
+        this.show = !this.show;
+        try { localStorage.setItem('dems.side', this.show ? '1' : '0'); } catch (e) {}
+    },
+}));
+
 Alpine.data('notifs', () => ({
     items: [],
     unread: 0,

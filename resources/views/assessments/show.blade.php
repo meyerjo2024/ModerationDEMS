@@ -25,9 +25,12 @@ $stage = $st === $S::PendingExternalModeration ? 'external' : 'internal';
     </div>
   </div>
   <div class="card p-5 sm:p-6"><x-stepper :current="$st->gateIndex((bool) $a->external_moderator_id)" :has-external="(bool) $a->external_moderator_id" /></div>
-  <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+  <div x-data="sidePanel" class="space-y-3">
+  <div class="hidden justify-end lg:flex"><button type="button" @click="toggle()" class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] hover:bg-[var(--fog)]" :aria-expanded="show"><span x-text="show ? 'Hide details panel ›' : '‹ Show details panel'"></span></button></div>
+  <div class="grid items-start gap-6" :class="show ? 'lg:grid-cols-[minmax(0,1fr)_340px]' : 'lg:grid-cols-1'">
     <div class="min-w-0">@include('assessments.panels.'.$panel, ['a' => $a, 'user' => $user, 'stage' => $stage])</div>
-    <aside class="space-y-6 lg:sticky lg:top-20">@include('assessments.partials.sidebar', ['a' => $a])</aside>
+    <aside x-show="show" class="space-y-6 lg:sticky lg:top-20">@include('assessments.partials.sidebar', ['a' => $a])</aside>
+  </div>
   </div>
 </div>
 </x-app-layout>
