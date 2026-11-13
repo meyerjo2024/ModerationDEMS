@@ -11,6 +11,26 @@ class Subject extends Model
 {
     protected $guarded = [];
 
+    /** The qualification names on this subject (a subject can be offered in several). @return list<string> */
+    public function qualificationList(): array
+    {
+        return array_values(array_filter(array_map('trim', explode(', ', (string) $this->qualification))));
+    }
+
+    /** Every qualification name in use, for pickers. @return list<string> */
+    public static function allQualifications(): array
+    {
+        $all = [];
+        foreach (static::whereNotNull('qualification')->pluck('qualification') as $q) {
+            foreach (array_filter(array_map('trim', explode(', ', (string) $q))) as $name) {
+                $all[mb_strtolower($name)] = $name;
+            }
+        }
+        ksort($all);
+
+        return array_values($all);
+    }
+
     public function hod(): BelongsTo
     {
         return $this->belongsTo(User::class, 'hod_id');

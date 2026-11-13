@@ -30,7 +30,7 @@
             <a href="{{ route('dashboard') }}" class="{{ $link }}">Dashboard</a>
             @if ($u->hasRole(\App\Enums\Role::Examiner))<a href="{{ route('assessments.create') }}" class="{{ $link }}">New assessment</a>@endif
             @if ($u->hasRole(\App\Enums\Role::Examiner, \App\Enums\Role::InternalModerator))<a href="{{ route('my-subjects') }}" class="{{ $link }}">My subjects</a>@endif
-            @if ($u->hasRole(\App\Enums\Role::Hod))<a href="{{ route('overview') }}" class="{{ $link }}">Overview</a>@endif
+            @if ($u->hasRole(\App\Enums\Role::Hod, \App\Enums\Role::HeadOfProgramme))<a href="{{ route('overview') }}" class="{{ $link }}">Overview</a>@endif
             @if ($u->isAdmin())<a href="{{ route('admin') }}" class="{{ $link }}">Admin</a>@endif
           </nav>
         </div>

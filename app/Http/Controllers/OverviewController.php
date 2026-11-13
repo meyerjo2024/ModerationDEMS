@@ -30,7 +30,8 @@ class OverviewController extends Controller
             'q' => trim((string) $request->query('q', '')),
         ];
 
-        $subjects = Subject::where('hod_id', $hod->id)->orderBy('code')->get();
+        $subjects = $this->scopeSubjects($hod);
+        $myQuals = $hod->hasRole(Role::Hod) ? null : array_map('mb_strtolower', $hod->programme_qualifications ?? []);
         $links = DB::table('subject_user')->whereIn('subject_id', $subjects->pluck('id'))->get()->groupBy('subject_id');
         $people = User::whereIn('id', $links->flatten()->pluck('user_id')->unique())->pluck('name', 'id');
         $assessments = Assessment::with('subject')->whereIn('subject_id', $subjects->pluck('id'))->get()->groupBy('subject_id');
@@ -68,10 +69,16 @@ class OverviewController extends Controller
                 $quals[$q] = $x;
             }
         }
+        if ($myQuals !== null) { // a Head of Programme sees only the qualification(s) they head, even for subjects shared with others
+            $quals = array_filter($quals, fn ($q) => in_array(mb_strtolower($q['name']), $myQuals, true));
+        }
         ksort($quals);
 
-        $shown = $rows->filter(function ($r) use ($f) {
+        $shown = $rows->filter(function ($r) use ($f, $myQuals) {
             if ($f['qualification'] !== '' && ! in_array($f['qualification'], $r->quals, true)) {
+                return false;
+            }
+            if ($myQuals !== null && ! array_intersect(array_map('mb_strtolower', $r->quals), $myQuals)) {
                 return false;
             }
             if ($f['staff']) {
@@ -103,7 +110,7 @@ class OverviewController extends Controller
         $tests = collect();
         foreach ($assessments->flatten() as $a) {
             if ($ids->contains($a->subject_id) && $a->assessment_date && $a->assessment_date->toDateString() >= $from && $a->assessment_date->toDateString() <= $to) {
-                $tests->push((object) ['date' => $a->assessment_date, 'subject' => $a->subject, 'label' => $a->number_label, 'status' => $a->status->label(), 'url' => route('assessments.show', $a), 'who' => $a->examiner?->name]);
+                $tests->push((object) ['date' => $a->assessment_date, 'subject' => $a->subject, 'label' => $a->number_label, 'status' => $a->status->label(), 'url' => $a->subject->hod_id === $hod->id ? route('assessments.show', $a) : null, 'who' => $a->examiner?->name]);
             }
         }
         AssessmentPlan::with(['subject', 'user'])->whereIn('subject_id', $ids)->whereDate('assessment_date', '>=', $from)->whereDate('assessment_date', '<=', $to)->get()
@@ -119,17 +126,26 @@ class OverviewController extends Controller
 
     public function subject(Request $request, Subject $subject)
     {
-        abort_unless($subject->hod_id === $request->user()->id, 404);
+        abort_unless($this->scopeSubjects($request->user())->contains('id', $subject->id), 404);
         $l = DB::table('subject_user')->where('subject_id', $subject->id)->get();
         $people = User::whereIn('id', $l->pluck('user_id')->merge($l->pluck('default_internal_moderator_id'))->filter()->unique())->pluck('name', 'id');
 
         return view('overview.subject', [
-            'subject' => $subject,
+            'subject' => $subject, 'canOpen' => $subject->hod_id === $request->user()->id,
             'assessments' => Assessment::with(['examiner', 'internalModerator'])->where('subject_id', $subject->id)->orderByDesc('assessment_date')->get(),
             'plans' => AssessmentPlan::with('user')->where('subject_id', $subject->id)->orderBy('assessment_date')->get()->reject(fn ($p) => $p->started()),
             'examiners' => $l->where('role', 'EXAMINER')->map(fn ($x) => ['name' => $people[$x->user_id] ?? '?', 'default' => $x->default_internal_moderator_id ? ($people[$x->default_internal_moderator_id] ?? null) : null]),
             'moderators' => $l->where('role', 'INTERNAL_MODERATOR')->map(fn ($x) => $people[$x->user_id] ?? '?'),
         ]);
+    }
+
+    /** A Head of Department sees their own subjects; a Head of Programme sees every subject in the qualification(s) they head. */
+    private function scopeSubjects(User $u)
+    {
+        $quals = array_map('mb_strtolower', $u->hasRole(Role::HeadOfProgramme) ? ($u->programme_qualifications ?? []) : []);
+
+        return Subject::orderBy('code')->get()->filter(fn (Subject $s) => ($u->hasRole(Role::Hod) && $s->hod_id === $u->id)
+            || ($quals && array_intersect(array_map('mb_strtolower', $s->qualificationList()), $quals)))->values();
     }
 
     private function date(mixed $v): ?string

@@ -38,9 +38,8 @@ class AuthController extends Controller
         $audit->log('LOGIN', null, Auth::id(), [], $request->ip());
 
         // a pure System Administrator has no assessments: always start in the Admin area
-        $u = $request->user();
-        if ($u->hasRole(\App\Enums\Role::SystemAdmin) && ! $u->hasRole(\App\Enums\Role::Hod, \App\Enums\Role::Examiner, \App\Enums\Role::InternalModerator, \App\Enums\Role::ExternalModerator)) {
-            return redirect('/admin');
+        if ($route = $request->user()->landingRoute()) {
+            return redirect()->route($route);
         }
 
         return redirect()->intended('/');

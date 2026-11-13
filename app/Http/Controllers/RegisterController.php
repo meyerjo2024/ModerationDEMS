@@ -12,8 +12,8 @@ use Illuminate\Validation\Rule;
 /** Staff self-registration. Accounts stay inactive until the Head of Department approves them. */
 class RegisterController extends Controller
 {
-    /** Roles a person may ask for; Head of Department is only ever granted by an administrator. */
-    public const REQUESTABLE = [Role::Examiner, Role::InternalModerator, Role::ExternalModerator];
+    /** Roles a person may ask for; Head of Department is only ever granted by an administrator. A Head of Programme still needs an administrator to assign their qualification(s). */
+    public const REQUESTABLE = [Role::Examiner, Role::InternalModerator, Role::ExternalModerator, Role::HeadOfProgramme];
 
     public function show()
     {
@@ -34,6 +34,7 @@ class RegisterController extends Controller
             'department' => ['nullable', 'string', 'max:120'],
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => [Rule::in(array_map(fn (Role $r) => $r->value, self::REQUESTABLE))],
+            'programme_request' => ['nullable', 'string', 'max:255'],
             'password' => ['required', 'string', 'min:10', 'max:128', 'confirmed'],
         ], [
             'email.unique' => 'An account with that e-mail already exists (it may be waiting for approval).',
@@ -44,7 +45,7 @@ class RegisterController extends Controller
         $user = User::create([
             'name' => trim($d['name']), 'email' => mb_strtolower(trim($d['email'])), 'department' => $d['department'] ?? null,
             'password' => $d['password'], 'role' => $ordered[0], 'extra_roles' => count($ordered) > 1 ? implode(',', array_slice($ordered, 1)) : null,
-            'requested_roles' => implode(',', $ordered), 'active' => false, 'approval_status' => 'pending',
+            'requested_roles' => implode(',', $ordered), 'programme_request' => in_array(Role::HeadOfProgramme->value, $ordered, true) ? trim((string) ($d['programme_request'] ?? '')) ?: null : null, 'active' => false, 'approval_status' => 'pending',
         ]);
         $audit->log('USER_REGISTERED', null, null, ['email' => $user->email, 'requested' => $ordered], $request->ip());
         foreach (User::where(fn ($q) => $q->withRole(Role::Hod)->orWhere(fn ($w) => $w->withRole(Role::SystemAdmin)))->where('active', true)->pluck('id') as $hodId) {

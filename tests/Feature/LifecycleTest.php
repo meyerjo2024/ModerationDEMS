@@ -1093,4 +1093,50 @@ class LifecycleTest extends TestCase
         $this->blade('<x-doc-viewer :docs="$docs" />', ['docs' => [[$doc->doc_label, $doc]]])->assertSee('Version 3')->assertSee('Version 1')->assertSee('Superseded')->assertSee('Final');
         $this->assertSame(3, collect(app(\App\Services\ReportService::class)->data($a)['docs'] ?? [])->count() ? 3 : 0);
     }
+
+    public function test_head_of_programme_registers_is_approved_with_qualifications_and_sees_only_their_dashboard(): void
+    {
+        $this->subject->update(['qualification' => 'Diploma in Testing']);
+        $other = Subject::create(['code' => 'OTH101', 'name' => 'Other', 'qualification' => 'BTech Elsewhere', 'hod_id' => $this->hod->id]);
+        $this->newAssessment();
+
+        $this->post('/logout');
+        // anyone may ask for the role when registering, with a note about their qualification
+        $this->post('/register', ['name' => 'Pat Programme', 'email' => 'pat@t.test', 'roles' => ['HEAD_OF_PROGRAMME'], 'programme_request' => 'Diploma in Testing', 'password' => 'long-enough-pass', 'password_confirmation' => 'long-enough-pass'])->assertRedirect('/login');
+        $pat = User::where('email', 'pat@t.test')->first();
+        $this->assertSame('Diploma in Testing', $pat->programme_request);
+        $this->assertFalse($pat->active);
+
+        // approval needs the qualification to be assigned
+        $this->as($this->hod)->get('/admin')->assertOk()->assertSee('Head of Programme')->assertSee('Diploma in Testing');
+        $this->as($this->hod)->post("/admin/registrations/{$pat->id}/approve", ['roles' => ['HEAD_OF_PROGRAMME']])->assertSessionHasErrors('roles');
+        $this->as($this->hod)->post("/admin/registrations/{$pat->id}/approve", ['roles' => ['HEAD_OF_PROGRAMME'], 'programmes' => ['Diploma in Testing', 'Not a real qualification']])->assertSessionHasNoErrors();
+        $pat->refresh();
+        $this->assertTrue($pat->active && $pat->hasRole(Role::HeadOfProgramme));
+        $this->assertSame(['Diploma in Testing'], $pat->programme_qualifications);
+
+        // lands on the programme dashboard and sees only that qualification
+        $this->post('/logout');
+        $this->post('/login', ['email' => 'pat@t.test', 'password' => 'long-enough-pass'])->assertRedirect('/overview');
+        $this->as($pat)->get('/')->assertRedirect('/overview');
+        $this->as($pat)->get('/overview')->assertOk()->assertSee('Head of Programme')->assertSee('Diploma in Testing')->assertSee('CSC101')->assertDontSee('OTH101')->assertDontSee('BTech Elsewhere')->assertDontSee('Open →');
+        $this->as($pat)->get('/overview/subjects/'.$this->subject->id)->assertOk()->assertSee('Test Examiner')->assertDontSee('Open →');
+        $this->as($pat)->get('/overview/subjects/'.$other->id)->assertNotFound();
+
+        // no access to assessments, files, the admin area or the audit trail
+        $a = Assessment::first();
+        $this->as($pat)->get("/assessments/{$a->id}")->assertNotFound();
+        $this->as($pat)->get('/admin')->assertForbidden();
+        $this->as($pat)->get('/assessments/create')->assertForbidden();
+    }
+
+    public function test_staff_upload_can_create_a_head_of_programme_with_qualification(): void
+    {
+        $this->subject->update(['qualification' => 'Diploma in Testing']);
+        $csv = "Name,Email,Roles,Qualifications\nHop One,hop1@t.test,Head of Programme,Diploma in Testing\nHop Two,hop2@t.test,Head of Programme,\n";
+        $this->as($this->hod)->post('/admin/users/import', ['file' => UploadedFile::fake()->createWithContent('s.csv', $csv), 'password' => 'temporary-pass-1'])->assertSessionHas('status');
+        $this->assertSame(['Diploma in Testing'], User::where('email', 'hop1@t.test')->first()->programme_qualifications);
+        $this->assertNull(User::where('email', 'hop2@t.test')->first());
+        $this->assertStringContainsString('Head of Programme needs', collect(session('import_errors'))->implode(' '));
+    }
 }

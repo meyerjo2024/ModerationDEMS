@@ -19,8 +19,10 @@ class StaffImporter
         $e = $col('email', 'e-mail', 'email address');
         $r = $col('roles', 'role');
         $d = $col('department');
+        $q = $col('qualifications', 'qualification', 'programme', 'programmes');
+        $known = collect(\App\Models\Subject::allQualifications())->keyBy(fn ($x) => mb_strtolower($x));
         if ($n === null || $e === null || $r === null) {
-            throw new \InvalidArgumentException('The first row must contain the columns Name, Email and Roles (Department is optional).');
+            throw new \InvalidArgumentException('The first row must contain the columns Name, Email and Roles (Department and, for a Head of Programme, Qualifications are optional columns).');
         }
         $allowed = array_map(fn (Role $x) => $x->value, $assignable);
         $out = ['created' => [], 'skipped' => [], 'errors' => []];
@@ -39,17 +41,25 @@ class StaffImporter
             }
             $roles = $this->roles((string) ($row[$r] ?? ''), $allowed);
             if ($roles === null || $roles === []) {
-                $out['errors'][] = "Row {$line} ({$email}): roles not recognised — use Examiner, Internal Moderator, External Moderator or HOD".(in_array(Role::SystemAdmin->value, $allowed, true) ? ' (or System Administrator)' : '').', separated by commas.';
+                $out['errors'][] = "Row {$line} ({$email}): roles not recognised — use Examiner, Internal Moderator, External Moderator, HOD or Head of Programme".(in_array(Role::SystemAdmin->value, $allowed, true) ? ' (or System Administrator)' : '').', separated by commas.';
                 continue;
             }
             if (isset($seen[$email]) || User::where('email', $email)->exists()) {
                 $out['skipped'][] = $email;
                 continue;
             }
+            $programmes = null;
+            if (in_array('HEAD_OF_PROGRAMME', $roles, true)) {
+                $programmes = collect(preg_split('/[;|]+/', $q !== null ? (string) ($row[$q] ?? '') : ''))->map(fn ($x) => $known->get(mb_strtolower(trim($x))))->filter()->unique()->values()->all();
+                if (! $programmes) {
+                    $out['errors'][] = "Row {$line} ({$email}): a Head of Programme needs a Qualifications cell naming an existing qualification (separate several with ;).";
+                    continue;
+                }
+            }
             $seen[$email] = true;
             [$primary, $extra] = $splitRoles($roles);
             $out['created'][] = User::create(['name' => $name, 'email' => $email, 'role' => $primary, 'extra_roles' => $extra,
-                'department' => ($d !== null ? trim((string) ($row[$d] ?? '')) : '') ?: null, 'password' => $password, 'active' => true, 'approval_status' => 'approved']);
+                'programme_qualifications' => $programmes, 'department' => ($d !== null ? trim((string) ($row[$d] ?? '')) : '') ?: null, 'password' => $password, 'active' => true, 'approval_status' => 'approved']);
         }
 
         return $out;
@@ -59,7 +69,7 @@ class StaffImporter
     private function roles(string $cell, array $allowed): ?array
     {
         $map = ['examiner' => 'EXAMINER', 'internal moderator' => 'INTERNAL_MODERATOR', 'internal' => 'INTERNAL_MODERATOR', 'external moderator' => 'EXTERNAL_MODERATOR', 'external' => 'EXTERNAL_MODERATOR',
-            'hod' => 'HOD', 'head of department' => 'HOD', 'system administrator' => 'SYSTEM_ADMIN', 'system admin' => 'SYSTEM_ADMIN', 'admin' => 'SYSTEM_ADMIN'];
+            'hod' => 'HOD', 'head of programme' => 'HEAD_OF_PROGRAMME', 'programme head' => 'HEAD_OF_PROGRAMME', 'hop' => 'HEAD_OF_PROGRAMME', 'head of department' => 'HOD', 'system administrator' => 'SYSTEM_ADMIN', 'system admin' => 'SYSTEM_ADMIN', 'admin' => 'SYSTEM_ADMIN'];
         $out = [];
         foreach (preg_split('/[,;\/|]+/', $cell) as $w) {
             $w = mb_strtolower(trim($w));
