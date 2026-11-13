@@ -120,7 +120,8 @@ class Workflow
                 'assessment_id' => $a->id, 'kind' => $kind, 'filename' => $v['filename'], 'mime_type' => $v['mime'],
                 'size' => strlen($bytes), 'sha256' => $sha, 'storage_key' => $key, 'uploaded_by_id' => $user->id, 'label' => $label,
             ]);
-            $this->audit->log('FILE_UPLOADED', $a->id, $user->id, ['kind' => $kind->value, 'label' => $att->doc_label, 'filename' => $v['filename'], 'sha256' => $sha], $meta['ip']);
+            $a->load('attachments');
+            $this->audit->log('FILE_UPLOADED', $a->id, $user->id, ['kind' => $kind->value, 'label' => $att->doc_label, 'version' => $a->versionNumber($att), 'filename' => $v['filename'], 'sha256' => $sha], $meta['ip']);
 
             return $att;
         });

@@ -212,7 +212,7 @@ Alpine.data('section1', (cfg) => ({
             f.set('label', label);
             f.set('file', file);
             const { attachment } = await api('POST', `/assessments/${this.id}/attachments`, f);
-            const d = { id: attachment.id, label: attachment.label, filename: attachment.filename };
+            const d = { id: attachment.id, label: attachment.label, filename: attachment.filename, version: attachment.version };
             const i = this.docs.findIndex((x) => x.label.toLowerCase() === d.label.toLowerCase());
             if (i >= 0) this.docs.splice(i, 1, d);
             else this.docs.push(d);

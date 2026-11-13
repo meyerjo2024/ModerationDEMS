@@ -1065,4 +1065,32 @@ class LifecycleTest extends TestCase
         $this->assertTrue(\App\Models\Notification::where('user_id', $this->internal->id)->where('message', 'like', '%replied to a comment%')->exists());
         $this->assertTrue(\App\Models\Notification::where('user_id', $this->examiner->id)->where('message', 'like', '%replied to a comment%')->exists());
     }
+
+    public function test_revised_uploads_become_versions_and_the_approved_one_is_final(): void
+    {
+        $a = $this->newAssessment();
+        $up = fn ($file) => $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'PAPER', 'label' => 'Exam paper', 'file' => $this->pdf($file)], ['Accept' => 'application/json'])->assertOk()->json('attachment.version');
+        $this->assertSame(1, $up('v1.pdf'));
+        $this->as($this->examiner)->postJson("/assessments/{$a->id}/submit-pre", ['s1' => $this->s1(), 'signature' => $this->sig()])->assertOk();
+        $this->as($this->internal)->postJson("/assessments/{$a->id}/pre-review", ['decision' => 'REVISION_REQUESTED', 'comments' => 'Fix Q2.'])->assertOk();
+        $this->assertSame(2, $up('v2.pdf'));
+        $this->assertSame(3, $up('v3.pdf'));
+
+        $a = $a->fresh('attachments');
+        $docs = $a->documents();
+        $this->assertCount(1, $docs);
+        $this->assertSame(3, $a->versionNumber($docs->first()));
+        $this->assertSame('current', $a->versionState($docs->first()));
+        $this->assertSame('superseded', $a->versionState($a->versionsOf($docs->first())->first()));
+        $this->as($this->examiner)->get("/assessments/{$a->id}")->assertOk()->assertSee('version\\u0022:3', false);
+
+        $this->as($this->examiner)->postJson("/assessments/{$a->id}/submit-pre", ['s1' => $this->s1(), 'signature' => $this->sig()])->assertOk();
+        $this->approveGate1($a);
+        $a = $a->fresh('attachments');
+        $this->assertSame('final', $a->versionState($a->documents()->first()));
+        $doc = $a->documents()->first();
+        $this->actingAs($this->internal);
+        $this->blade('<x-doc-viewer :docs="$docs" />', ['docs' => [[$doc->doc_label, $doc]]])->assertSee('Version 3')->assertSee('Version 1')->assertSee('Superseded')->assertSee('Final');
+        $this->assertSame(3, collect(app(\App\Services\ReportService::class)->data($a)['docs'] ?? [])->count() ? 3 : 0);
+    }
 }

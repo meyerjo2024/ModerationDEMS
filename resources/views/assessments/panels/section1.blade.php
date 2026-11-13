@@ -8,7 +8,7 @@ $form = [
   'assessment_date' => $s['assessment_date'] ?? '',
   'weights' => collect(array_keys($f['question_types']))->mapWithKeys(fn ($k) => [$k => $s['weights'][$k] ?? ''])->all(),
 ];
-$docList = $a->documents()->map(fn ($d) => ['id' => $d->id, 'label' => $d->doc_label, 'filename' => $d->filename])->values()->all();
+$docList = $a->documents()->map(fn ($d) => ['id' => $d->id, 'label' => $d->doc_label, 'filename' => $d->filename, 'version' => $a->versionNumber($d)])->values()->all();
 $feedback = $a->records->where('stage', ModerationStage::PreModeration)->where('decision', 'REVISION_REQUESTED')->last();
 @endphp
 <div x-data="section1(@js(['id' => $a->id, 'form' => $form, 'docs' => $docList]))" @signed="sig = $event.detail" class="space-y-6">
@@ -69,7 +69,7 @@ $feedback = $a->records->where('stage', ModerationStage::PreModeration)->where('
     <p class="mt-1 text-sm text-slate-500 dark:text-zinc-400">Upload the exam paper — it already contains the memorandum, so no separate memo is needed. Add as many other documents as the assessment has (annexures, formula sheets, a second paper…). Reviewers read every one inline. Uploading under a name you already used replaces that document.</p>
     <ul class="mt-5 divide-y divide-[var(--divider)] text-sm">
       <template x-for="d in docs" :key="d.id"><li class="flex items-center justify-between gap-3 py-2.5">
-        <a :href="'/files/' + d.id" class="flex min-w-0 items-center gap-2 hover:underline"><x-icon name="file" class="h-4 w-4 shrink-0 text-slate-400" /><span class="font-semibold" x-text="d.label"></span><span class="truncate text-[var(--ink-3)]" x-text="d.filename"></span></a>
+        <a :href="'/files/' + d.id" class="flex min-w-0 items-center gap-2 hover:underline"><x-icon name="file" class="h-4 w-4 shrink-0 text-slate-400" /><span class="font-semibold" x-text="d.label"></span><span class="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent" x-text="'Version ' + d.version"></span><span class="truncate text-[var(--ink-3)]" x-text="d.filename"></span></a>
         <button type="button" class="text-xs font-semibold text-rose-600" @click="removeDoc(d)" :disabled="busy">Remove</button></li></template>
       <li x-show="!docs.length" class="py-3 text-[var(--ink-3)]">No documents yet.</li>
     </ul>
