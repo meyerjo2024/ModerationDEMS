@@ -4,13 +4,14 @@
   <div><p class="kicker">Phase 1 · Pre-assessment</p><h1 class="mt-1 text-3xl font-semibold">New assessment</h1><p class="mt-1 text-sm text-slate-500 dark:text-zinc-400">Choose the subject and assessment, then assign who will moderate it.</p></div>
   @if ($subjects->isEmpty())<x-notice tone="warn" title="Choose your subjects first">You can only start assessments for subjects you are responsible for. <a href="{{ route('my-subjects') }}" class="font-semibold underline">Pick them in My subjects</a>.</x-notice>@endif
   @if ($errors->any())<x-notice tone="error">{{ $errors->first() }}</x-notice>@endif
-  @php $mods = $internals->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'subjects' => $u->subjects->where('pivot.role', 'INTERNAL_MODERATOR')->pluck('id')->values()])->values(); @endphp
+  @php $quals = $subjects->mapWithKeys(fn ($s) => [$s->id => $s->qualificationOptions()])->all(); $mods = $internals->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'subjects' => $u->subjects->where('pivot.role', 'INTERNAL_MODERATOR')->pluck('id')->values()])->values(); @endphp
   <div x-data="{ defaults: @js($defaults), plans: @js($plans), number: @js((string) old('number', request('number'))), planned: false,
     init() { this.$watch('subject', () => { this.fill(); this.pickModerator(); }); this.pickModerator(); this.$watch('number', () => this.fill()); },
     pickModerator() { const d = this.defaults[this.subject]; this.internal = ''; if (d && this.options.some(u => u.id == d)) this.$nextTick(() => { this.internal = String(d); }); },
     fill() { const p = (this.plans[this.subject] || {})[this.number]; if (p && (!this.date || this.planned)) { this.date = p; this.planned = true; } },
-    subject: @js((string) old('subject_id', request('subject'))), mods: @js($mods), date: @js(old('assessment_date', '')), internal: @js((string) old('internal_moderator_id')),
+    quals: @js($quals), qual: @js((string) old('qualification', '')), subject: @js((string) old('subject_id', request('subject'))), mods: @js($mods), date: @js(old('assessment_date', '')), internal: @js((string) old('internal_moderator_id')),
     get options() { const m = this.mods.filter(u => u.subjects.includes(Number(this.subject))); return m.length ? m : this.mods; },
+    get subjectQuals() { return this.quals[this.subject] || []; },
     get registered() { return this.mods.some(u => u.subjects.includes(Number(this.subject))); },
     fmt(d) { return d.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' }); },
     shift(n) { const d = new Date(this.date + 'T00:00:00'); d.setDate(d.getDate() + n); return this.fmt(d); } }" class="space-y-6">
@@ -22,6 +23,10 @@
         <optgroup label="Additional">@foreach (config('dems.assessment_labels') as $n => $l)<option value="{{ $n }}">{{ $l }} assessment</option>@endforeach</optgroup></select>
       <p class="mt-1 text-xs text-slate-400">Tests match their T column in the marks sheet.</p></div>
   </div>
+  <div x-show="subjectQuals.length" x-cloak><label class="label" for="qualification">Qualification</label>
+    <select id="qualification" name="qualification" class="field" x-model="qual" :disabled="subjectQuals.length === 1"><template x-for="q in subjectQuals" :key="q.name"><option :value="q.name" x-text="q.name + (q.code ? ' (' + q.code + ')' : '')" :selected="q.name === qual || (!qual && q === subjectQuals[0])"></option></template></select>
+    <input type="hidden" name="qualification" :value="subjectQuals.length === 1 ? subjectQuals[0].name : qual" x-bind:disabled="subjectQuals.length !== 1">
+    <p class="mt-1 text-xs text-slate-400">Taken from the subject list. It appears on every section and on the final report.</p></div>
   <div class="grid gap-5 sm:grid-cols-2"><div><label class="label" for="academic_year">Academic year</label>
     <select id="academic_year" name="academic_year" class="field">@foreach (range((int) date('Y') + 1, (int) date('Y') - 2) as $y)<option value="{{ $y }}" @selected((int) old('academic_year', date('Y')) === $y)>{{ $y }}</option>@endforeach</select></div>
     <div x-show="['SUPP','SPEC'].includes(number)" x-cloak><label class="label" for="label">Note <span class="font-normal">(optional)</span></label><input id="label" name="label" maxlength="80" class="field" value="{{ old('label') }}" placeholder="e.g. Aegrotat group, 3 students">

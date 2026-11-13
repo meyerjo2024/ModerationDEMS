@@ -20,7 +20,8 @@ $stage = $st === $S::PendingExternalModeration ? 'external' : 'internal';
   <div>
     <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200"><x-icon name="arrow-left" /> Dashboard</a>
     <div class="mt-3 flex flex-wrap items-start justify-between gap-4">
-      <div><h1 class="text-3xl font-semibold sm:text-4xl">{{ $a->title() }}</h1><p class="mt-1 text-slate-500 dark:text-zinc-400">{{ $a->subject->name }}@if ($a->revision > 1) · Revision {{ $a->revision }}@endif</p></div>
+      <div><h1 class="text-3xl font-semibold sm:text-4xl">{{ $a->title() }}</h1><p class="mt-1 text-slate-500 dark:text-zinc-400">{{ $a->subject->name }}@if ($a->revision > 1) · Revision {{ $a->revision }}@endif</p>
+        <p class="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-[var(--ink-2)]"><span><span class="text-[var(--ink-3)]">Subject code</span> <b>{{ $a->subject->code }}</b></span>@if ($a->qualification ?: ($a->s1_examiner['qualification'] ?? null))<span><span class="text-[var(--ink-3)]">Qualification</span> <b>{{ $a->qualification ?: $a->s1_examiner['qualification'] }}@if ($a->qualification_code ?: ($a->s1_examiner['qualification_code'] ?? null)) ({{ $a->qualification_code ?: $a->s1_examiner['qualification_code'] }})@endif</b></span>@endif<span><span class="text-[var(--ink-3)]">Assessment date</span> <b>{{ $a->assessment_date?->format('j M Y') ?? 'Not set' }}</b></span></p></div>
       <div class="flex flex-col items-end gap-2"><x-status-badge :status="$st" class="!px-4 !py-1.5 !text-sm" /><x-deadline :a="$a" full /></div>
     </div>
   </div>

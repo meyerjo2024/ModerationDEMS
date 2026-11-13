@@ -1,7 +1,7 @@
 {{-- Read-only rendering of the official form. $a, $sections = ['s1','s2','s3'] (any subset) --}}
 @php
 $f = config('moderation_form');
-$s1e = $a->s1_examiner ?? []; $s1m = $a->s1_moderator ?? [];
+$s1e = array_merge(['assessment_date' => $a->assessment_date?->toDateString(), 'qualification' => $a->qualification, 'qualification_code' => $a->qualification_code, 'subject_level' => $a->year_level], array_filter($a->s1_examiner ?? [], fn ($v) => $v !== null && $v !== '')); $s1m = $a->s1_moderator ?? [];
 $s2e = $a->s2_examiner ?? []; $s2m = $a->s2_moderator ?? [];
 $s3 = $a->s3_external ?? [];
 $yn = fn ($v) => $v === 'YES' ? 'Yes' : ($v === 'NO' ? 'No' : '—');
@@ -9,7 +9,7 @@ $rated = ['0' => 'Poor', '1' => 'Adequate', '2' => 'Good'];
 $kv = fn ($k, $v) => '<div><dt class="kicker">'.e($k).'</dt><dd class="mt-0.5 font-medium">'.e($v === null || $v === '' ? '—' : $v).'</dd></div>';
 @endphp
 
-@if (in_array('s1', $sections) && $s1e)
+@if (in_array('s1', $sections) && ($a->s1_examiner ?? false))
 <section class="card p-6 sm:p-8">
   <p class="kicker">Section 1 · Pre-assessment</p><h2 class="mt-1 text-xl font-semibold">Assessment details & types of questions</h2>
   <dl class="mt-4 grid gap-4 text-sm sm:grid-cols-3">

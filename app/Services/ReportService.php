@@ -23,7 +23,8 @@ class ReportService
             return $s ? ['name' => $s->user->name, 'image' => $s->image_data, 'date' => $s->signed_at->utc()->format('d/m/Y'), 'hash' => $s->content_hash] : null;
         };
         $external = $sig(Sig::ExternalModerator);
-        $s1e = $a->s1_examiner ?? [];
+        $s1e = array_merge(['assessment_date' => $a->assessment_date?->toDateString(), 'qualification' => $a->qualification, 'qualification_code' => $a->qualification_code, 'subject_level' => $a->year_level],
+            array_filter($a->s1_examiner ?? [], fn ($v) => $v !== null && $v !== ''));
         $s2e = $a->s2_examiner ?? [];
         $registered = $s2e['registered'] ?? $a->enrolled_count ?? $a->candidate_count;
 

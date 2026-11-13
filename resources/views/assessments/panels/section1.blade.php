@@ -4,8 +4,8 @@ $f = config('moderation_form');
 $s = $a->s1_examiner ?? [];
 $form = [
   'period' => $s['period'] ?? 'first', 'year' => $s['year'] ?? (int) date('Y'), 'heqf_level' => $s['heqf_level'] ?? 6,
-  'subject_level' => $s['subject_level'] ?? $a->year_level ?? '', 'qualification' => $s['qualification'] ?? '', 'qualification_code' => $s['qualification_code'] ?? '',
-  'assessment_date' => $s['assessment_date'] ?? '',
+  'subject_level' => $s['subject_level'] ?? $a->year_level ?? '', 'qualification' => ($s['qualification'] ?? '') ?: ($a->qualification ?? ''), 'qualification_code' => ($s['qualification_code'] ?? '') ?: ($a->qualification_code ?? ''),
+  'assessment_date' => ($s['assessment_date'] ?? '') ?: ($a->assessment_date?->toDateString() ?? ''),
   'weights' => collect(array_keys($f['question_types']))->mapWithKeys(fn ($k) => [$k => $s['weights'][$k] ?? ''])->all(),
 ];
 $docList = $a->documents()->map(fn ($d) => ['id' => $d->id, 'label' => $d->doc_label, 'filename' => $d->filename, 'version' => $a->versionNumber($d)])->values()->all();

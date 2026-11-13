@@ -17,6 +17,15 @@ class Subject extends Model
         return array_values(array_filter(array_map('trim', explode(', ', (string) $this->qualification))));
     }
 
+    /** Qualification name + code pairs offered with this subject. @return list<array{name: string, code: string}> */
+    public function qualificationOptions(): array
+    {
+        $names = $this->qualificationList();
+        $codes = array_map('trim', explode(', ', (string) $this->qualification_code));
+
+        return array_map(fn ($n, $i) => ['name' => $n, 'code' => $codes[$i] ?? ''], $names, array_keys($names));
+    }
+
     /** Every qualification name in use, for pickers. @return list<string> */
     public static function allQualifications(): array
     {
