@@ -10,7 +10,7 @@
   <section class="card p-6"><p class="kicker mb-3">Assessments · {{ $assessments->count() }}</p>
     <ul class="divide-y divide-[var(--divider)] text-sm">@forelse ($assessments as $a)
       <li class="flex flex-wrap items-center justify-between gap-3 py-3"><span><span class="font-semibold">{{ $a->number_label }}@if ($a->label !== '') ({{ $a->label }})@endif</span> <span class="text-[var(--ink-3)]">· {{ $a->examiner->name }} / {{ $a->internalModerator?->name ?? 'no moderator' }}@if ($a->assessment_date) · written {{ $a->assessment_date->format('j M Y') }}@endif</span></span>
-        <span class="flex items-center gap-3"><x-deadline :a="$a" /><x-status-badge :status="$a->status" /><a href="{{ route('assessments.show', $a) }}" class="text-xs font-semibold text-accent">Open →</a></span></li>
+        <span class="flex items-center gap-3"><x-deadline :a="$a" /><x-status-badge :status="$a->status" />@if ($canOpen)<a href="{{ route('assessments.show', $a) }}" class="text-xs font-semibold text-accent">Open →</a>@endif</span></li>
     @empty<li class="py-4 text-[var(--ink-3)]">Nothing has been started for this subject yet.</li>@endforelse</ul></section>
   @if ($plans->isNotEmpty())<section class="card p-6"><p class="kicker mb-3">Planned, not started yet</p>
     <ul class="divide-y divide-[var(--divider)] text-sm">@foreach ($plans as $p)<li class="flex justify-between gap-3 py-2.5"><span><span class="font-semibold">{{ $p->number_label }}</span> <span class="text-[var(--ink-3)]">· {{ $p->user?->name }}</span></span><span>{{ $p->assessment_date->format('j M Y') }}</span></li>@endforeach</ul></section>@endif

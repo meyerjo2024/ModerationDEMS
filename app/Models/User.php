@@ -13,7 +13,17 @@ class User extends Authenticatable
 
     protected function casts(): array
     {
-        return ['password' => 'hashed', 'role' => Role::class, 'active' => 'boolean', 'email_notifications' => 'boolean'];
+        return ['password' => 'hashed', 'role' => Role::class, 'active' => 'boolean', 'email_notifications' => 'boolean', 'programme_qualifications' => 'array'];
+    }
+
+    /** Where someone with no assessments of their own starts: the Admin area or their programme dashboard. */
+    public function landingRoute(): ?string
+    {
+        if ($this->hasRole(Role::Examiner, Role::InternalModerator, Role::ExternalModerator, Role::Hod)) {
+            return null;
+        }
+
+        return $this->hasRole(Role::SystemAdmin) ? 'admin' : ($this->hasRole(Role::HeadOfProgramme) ? 'overview' : null);
     }
 
     /** May use the Admin area: Head of Department or System Administrator. */

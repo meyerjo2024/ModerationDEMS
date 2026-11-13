@@ -14,13 +14,14 @@
         <div><label class="label" for="email">E-mail</label><input id="email" name="email" type="email" required autocomplete="username" class="field" value="{{ old('email') }}" placeholder="you@institution.edu"></div>
         <div class="sm:col-span-2"><label class="label" for="department">Department <span class="font-normal">(optional)</span></label><input id="department" name="department" maxlength="120" class="field" value="{{ old('department') }}"></div>
       </div>
-      <fieldset><legend class="label">I need to act as</legend>
+      <fieldset x-data="{ hop: @js(in_array('HEAD_OF_PROGRAMME', old('roles', []), true)) }"><legend class="label">I need to act as</legend>
         <div class="mt-1 space-y-2 text-sm">
           @foreach ($roles as $r)
-            <label class="flex cursor-pointer items-start gap-2.5"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="mt-0.5 h-4 w-4 rounded accent-[#006699]" @checked(in_array($r->value, old('roles', []), true))>
-              <span><b>{{ $r->label() }}</b> <span class="text-[var(--ink-3)]">— {{ ['EXAMINER' => 'sets assessments and uploads papers and marks', 'INTERNAL_MODERATOR' => 'moderates assessments within the department', 'EXTERNAL_MODERATOR' => 'gives the independent external review'][$r->value] }}</span></span></label>
+            <label class="flex cursor-pointer items-start gap-2.5"><input type="checkbox" name="roles[]" value="{{ $r->value }}" class="mt-0.5 h-4 w-4 rounded accent-[#006699]" @checked(in_array($r->value, old('roles', []), true)) @if ($r->value === 'HEAD_OF_PROGRAMME') x-model="hop" @endif>
+              <span><b>{{ $r->label() }}</b> <span class="text-[var(--ink-3)]">— {{ ['EXAMINER' => 'sets assessments and uploads papers and marks', 'INTERNAL_MODERATOR' => 'moderates assessments within the department', 'EXTERNAL_MODERATOR' => 'gives the independent external review', 'HEAD_OF_PROGRAMME' => 'follows the progress of the qualification you head (dashboard only)'][$r->value] }}</span></span></label>
           @endforeach
         </div>
+        <div x-show="hop" x-cloak class="mt-3"><label class="label" for="programme_request">Which qualification do you head?</label><input id="programme_request" name="programme_request" maxlength="255" class="field" value="{{ old('programme_request') }}" placeholder="e.g. National Diploma: Engineering"></div>
         <p class="mt-2 text-xs text-[var(--ink-3)]">You can hold more than one role. Head of Department access is granted by an administrator.</p>
       </fieldset>
       <div class="grid gap-4 sm:grid-cols-2">

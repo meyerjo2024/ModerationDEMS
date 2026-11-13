@@ -3,7 +3,7 @@
   $qs = fn (array $over = []) => route('overview', array_filter(array_merge(request()->query(), $over), fn ($v) => $v !== '' && $v !== null && $v !== 0));
 @endphp
 <div class="space-y-8">
-  <div><p class="kicker">Head of Department</p><h1 class="mt-1 text-3xl font-semibold">Moderation overview</h1>
+  <div><p class="kicker">{{ auth()->user()->hasRole(\App\Enums\Role::Hod) ? 'Head of Department' : 'Head of Programme' }}</p><h1 class="mt-1 text-3xl font-semibold">Moderation overview</h1>
     <p class="mt-1 text-sm text-[var(--ink-2)]"><b>Pending</b> = waiting on a moderator or signatory · <b>In process</b> = with the examiner · <b>Overdue</b> = past its pre- or post-moderation deadline (also counted in pending or in process).</p></div>
 
   <div class="grid grid-cols-2 gap-3 lg:grid-cols-3">
@@ -36,7 +36,7 @@
   <section class="card p-6"><p class="kicker mb-3">Tests {{ \Carbon\Carbon::parse($from)->format('j M Y') }} – {{ \Carbon\Carbon::parse($to)->format('j M Y') }} · {{ $tests->count() }}</p>
     <ul class="divide-y divide-[var(--divider)] text-sm">@forelse ($tests as $t)
       <li class="flex flex-wrap items-center justify-between gap-2 py-2.5"><span><span class="font-semibold">{{ $t->subject->code }} · {{ $t->label }}</span> <span class="text-[var(--ink-2)]">{{ $t->subject->name }}</span>@if ($t->who) <span class="text-[var(--ink-3)]">· {{ $t->who }}</span>@endif</span>
-        <span class="flex items-center gap-3"><span class="text-xs text-[var(--ink-3)]">{{ $t->status }}</span><span class="rounded-full bg-[var(--fog)] px-2.5 py-1 text-[11px] font-semibold">{{ $t->date->format('j M Y') }}</span><a href="{{ $t->url }}" class="text-xs font-semibold text-accent">Open →</a></span></li>
+        <span class="flex items-center gap-3"><span class="text-xs text-[var(--ink-3)]">{{ $t->status }}</span><span class="rounded-full bg-[var(--fog)] px-2.5 py-1 text-[11px] font-semibold">{{ $t->date->format('j M Y') }}</span>@if ($t->url)<a href="{{ $t->url }}" class="text-xs font-semibold text-accent">Open →</a>@endif</span></li>
     @empty<li class="py-4 text-[var(--ink-3)]">No tests in this period for the subjects shown.</li>@endforelse</ul></section>
 
   <section id="subjects" class="card p-6"><p class="kicker mb-3">Subjects · {{ $rows->count() }}@if ($f['qualification']) · {{ $f['qualification'] }}@endif</p>

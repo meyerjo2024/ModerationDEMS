@@ -71,7 +71,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/read', [NotificationController::class, 'markRead']);
 
-    Route::middleware('role:HOD')->prefix('/overview')->group(function () {
+    Route::middleware('role:HOD,HEAD_OF_PROGRAMME')->prefix('/overview')->group(function () {
         Route::get('/', [\App\Http\Controllers\OverviewController::class, 'index'])->name('overview');
         Route::get('/subjects/{subject}', [\App\Http\Controllers\OverviewController::class, 'subject'])->name('overview.subject');
     });

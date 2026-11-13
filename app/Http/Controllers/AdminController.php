@@ -20,6 +20,7 @@ class AdminController extends Controller
             'subjects' => Subject::with('hod')->orderBy('code')->get(),
             'hods' => User::withRole(Role::Hod)->where('active', true)->orderBy('name')->get(),
             'assignable' => $this->assignable($request),
+            'quals' => Subject::allQualifications(),
         ]);
     }
 
@@ -32,10 +33,12 @@ class AdminController extends Controller
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => [Rule::in($this->assignableValues($request))],
             'department' => ['nullable', 'string', 'max:120'],
+            'programmes' => ['nullable', 'array'],
             'password' => ['required', 'string', 'min:10', 'max:128'],
         ], ['password.min' => 'Use at least 10 characters.', 'email.unique' => 'A user with that e-mail already exists.']);
+        $programmes = $this->programmes($request, $d['roles']);
         [$primary, $extra] = $this->splitRoles($d['roles']);
-        $user = User::create(['name' => $d['name'], 'email' => $d['email'], 'role' => $primary, 'extra_roles' => $extra, 'department' => $d['department'] ?? null, 'password' => $d['password'], 'active' => true]);
+        $user = User::create(['programme_qualifications' => $programmes, 'name' => $d['name'], 'email' => $d['email'], 'role' => $primary, 'extra_roles' => $extra, 'department' => $d['department'] ?? null, 'password' => $d['password'], 'active' => true]);
         $audit->log('USER_CREATED', null, $request->user()->id, ['email' => $user->email, 'roles' => $user->roleValues()], $request->ip());
 
         return back()->with('status', "User {$user->name} created.");
@@ -99,11 +102,27 @@ class AdminController extends Controller
         if ($user->hasRole(Role::Hod) && ! in_array(Role::Hod->value, $d['roles'], true) && User::withRole(Role::Hod)->where('active', true)->where('id', '!=', $user->id)->doesntExist()) {
             return back()->with('error', 'There must be at least one active Head of Department.');
         }
+        $programmes = $this->programmes($request, $d['roles']);
         [$primary, $extra] = $this->splitRoles($d['roles']);
-        $user->update(['role' => $primary, 'extra_roles' => $extra]);
+        $user->update(['role' => $primary, 'extra_roles' => $extra, 'programme_qualifications' => $programmes]);
         $audit->log('USER_ROLES_CHANGED', null, $request->user()->id, ['email' => $user->email, 'roles' => $user->roleValues()], $request->ip());
 
         return back()->with('status', "Roles updated for {$user->name}.");
+    }
+
+    /** The qualifications a Head of Programme heads: required when that role is given, ignored (cleared) otherwise. @return list<string>|null */
+    private function programmes(Request $request, array $roles): ?array
+    {
+        if (! in_array(Role::HeadOfProgramme->value, $roles, true)) {
+            return null;
+        }
+        $known = collect(Subject::allQualifications())->keyBy(fn ($q) => mb_strtolower($q));
+        $picked = collect((array) $request->input('programmes', []))->map(fn ($q) => $known->get(mb_strtolower(trim((string) $q))))->filter()->unique()->values()->all();
+        if (! $picked) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['roles' => 'Choose the qualification(s) this Head of Programme heads.']);
+        }
+
+        return $picked;
     }
 
     /** Roles the signed-in person may hand out: everything except System Administrator, unless they are one themselves. @return list<Role> */
@@ -152,8 +171,9 @@ class AdminController extends Controller
     {
         abort_unless($user->approval_status === 'pending', 404);
         $d = $request->validate(['roles' => ['required', 'array', 'min:1'], 'roles.*' => [Rule::in($this->assignableValues($request))]], ['roles.required' => 'Choose at least one role.']);
+        $programmes = $this->programmes($request, $d['roles']);
         [$primary, $extra] = $this->splitRoles($d['roles']);
-        $user->update(['role' => $primary, 'extra_roles' => $extra, 'active' => true, 'approval_status' => 'approved']);
+        $user->update(['role' => $primary, 'extra_roles' => $extra, 'programme_qualifications' => $programmes, 'active' => true, 'approval_status' => 'approved']);
         $audit->log('USER_APPROVED', null, $request->user()->id, ['email' => $user->email, 'roles' => $user->roleValues()], $request->ip());
 
         return back()->with('status', "{$user->name} was approved and can now sign in.");
