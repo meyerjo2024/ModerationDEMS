@@ -15,6 +15,16 @@
   @endif
   <section class="card flex flex-wrap items-center justify-between gap-4 p-6"><div><p class="kicker">E-mail</p><p class="mt-1 text-sm text-[var(--ink-2)]">Sending as <b>{{ config('mail.from.address') }}</b> via <b>{{ config('mail.default') }}</b>@if (config('mail.default') === 'smtp') ({{ config('mail.mailers.smtp.host') }})@endif. The test goes to your own address ({{ auth()->user()->email }}).</p></div>
     <form method="POST" action="{{ route('admin.test-email') }}">@csrf<button class="btn-secondary">Send test e-mail</button></form></section>
+  @if (count($quals))
+  <section class="card p-6"><p class="kicker mb-1">Qualification codes</p>
+    <p class="mb-4 text-sm text-[var(--ink-2)]">Type the code against each qualification (for example D2EMCA). It is pre-filled on every new assessment and shown on all sections and the report. Unfinished records follow; completed records keep what was signed.</p>
+    <form method="POST" action="{{ route('admin.qualifications') }}" class="space-y-2">@csrf
+      @foreach ($quals as $i => $q)
+        <div class="grid items-center gap-3 sm:grid-cols-[1fr_180px]"><input type="hidden" name="names[{{ $i }}]" value="{{ $q }}"><span class="text-sm">{{ $q }}</span>
+          <input name="codes[{{ $i }}]" maxlength="40" class="field uppercase" placeholder="Code" value="{{ $qualCodes[mb_strtolower($q)] ?? '' }}" aria-label="Code for {{ $q }}"></div>
+      @endforeach
+      <div class="pt-2"><button class="btn-secondary">Save codes</button></div></form></section>
+  @endif
   <div class="grid gap-6 lg:grid-cols-2">
     <form method="POST" action="{{ route('admin.users') }}" class="card space-y-4 p-6">@csrf
       <p class="kicker flex items-center gap-1.5"><x-icon name="user-plus" class="h-3.5 w-3.5" /> Add user</p>

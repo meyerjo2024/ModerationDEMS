@@ -1164,4 +1164,18 @@ class LifecycleTest extends TestCase
         $data = app(\App\Services\ReportService::class)->data($a->fresh());
         $this->assertSame('BTech: Testing', $data['s1e']['qualification'] ?? $data['s1_examiner']['qualification'] ?? null);
     }
+
+    public function test_admin_sets_qualification_codes_and_records_follow(): void
+    {
+        $this->subject->update(['qualification' => 'National Diploma: Emergency Medical Care, BTech: Emergency Medical Care']);
+        $a = $this->newAssessment();
+        $a->update(['qualification' => 'National Diploma: Emergency Medical Care']);
+        $this->as($this->hod)->get('/admin')->assertOk()->assertSee('Qualification codes')->assertSee('National Diploma: Emergency Medical Care');
+
+        $this->as($this->hod)->post('/admin/qualifications', ['names' => ['National Diploma: Emergency Medical Care', 'BTech: Emergency Medical Care'], 'codes' => ['d2emca', 'BPEMCA']])->assertSessionHas('status');
+        $this->assertSame('D2EMCA, BPEMCA', $this->subject->fresh()->qualification_code);
+        $this->assertSame('D2EMCA', $a->fresh()->qualification_code);
+        $this->assertSame('BPEMCA', collect($this->subject->fresh()->qualificationOptions())->firstWhere('name', 'BTech: Emergency Medical Care')['code']);
+        $this->as($this->examiner)->post('/admin/qualifications', ['names' => ['x'], 'codes' => ['y']])->assertForbidden();
+    }
 }
