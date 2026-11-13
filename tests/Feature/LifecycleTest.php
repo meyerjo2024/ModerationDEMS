@@ -966,4 +966,19 @@ class LifecycleTest extends TestCase
         $this->as($this->hod)->post('/admin/test-email')->assertSessionHas('error');
         $this->as($this->examiner)->post('/admin/test-email')->assertForbidden();
     }
+
+    public function test_pre_moderation_submission_reaches_the_internal_moderator(): void
+    {
+        \Illuminate\Support\Facades\Mail::fake();
+        $a = $this->newAssessment();
+        $this->submitSection1($a);
+
+        $this->assertSame(AssessmentStatus::PendingPreModeration, $a->fresh()->status);
+        $this->assertSame($this->internal->id, $a->fresh()->internal_moderator_id);
+        $this->assertTrue(\App\Models\Notification::where('user_id', $this->internal->id)->where('assessment_id', $a->id)->where('message', 'like', '%pre-moderation review%')->exists());
+        \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\Notice::class, fn ($m) => $m->hasTo($this->internal->email));
+        $this->as($this->internal)->get('/')->assertOk()->assertSee('CSC101')->assertSee('Your turn');
+        $this->as($this->internal)->get("/assessments/{$a->id}")->assertOk();
+        $this->as($this->internal)->getJson('/notifications')->assertJsonPath('unread', \App\Models\Notification::where('user_id', $this->internal->id)->where('read', false)->count());
+    }
 }
