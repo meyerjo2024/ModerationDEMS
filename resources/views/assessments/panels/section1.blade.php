@@ -17,7 +17,7 @@ $feedback = $a->records->where('stage', ModerationStage::PreModeration)->where('
     @if (\App\Models\DocumentComment::where('assessment_id', $a->id)->exists())
       <section class="card p-6 sm:p-8">
         <p class="kicker">Reviewer comments</p><h2 class="mt-1 text-xl font-semibold">Comments on your documents</h2>
-        <p class="mb-4 mt-1 text-sm text-slate-500 dark:text-zinc-400">The moderator marked passages in your Word documents. Make the changes, upload the revised files below, and mark each comment as addressed.</p>
+        <p class="mb-4 mt-1 text-sm text-slate-500 dark:text-zinc-400">The moderator commented on your documents. Reply to a comment, make the changes, upload the revised files below, and mark each comment as addressed.</p>
         @php $AK = \App\Enums\AttachmentKind::class; @endphp
         <x-doc-viewer :docs="$a->documents()->map(fn ($d) => [$d->doc_label, $d])->all()" />
       </section>

@@ -22,7 +22,10 @@
           <p class="mt-1 whitespace-pre-wrap" x-text="c.body"></p>
           <p class="mt-1 text-[11px] text-slate-400"><span x-text="c.author"></span> · <span x-text="c.at"></span></p>
           <p class="mt-1 text-xs text-emerald-600 dark:text-emerald-400" x-show="c.addressed">✓ Addressed by the examiner</p>
-          <div class="mt-2 flex gap-3 text-xs font-medium"><button type="button" x-show="can.address" class="text-accent dark:text-accent-dark" @click="toggle(c)" x-text="c.addressed ? 'Mark as open' : 'Mark as addressed'"></button><button type="button" x-show="can.comment && c.mine" class="text-rose-600" @click="remove(c)">Delete</button></div>
+          <template x-if="c.reply"><p class="mt-2 border-l-2 border-slate-300 pl-2 text-xs text-slate-600 dark:text-zinc-300"><span class="font-semibold">Examiner:</span> <span x-text="c.reply"></span></p></template>
+          <template x-for="r in (c.replies || [])" :key="r.id"><div class="mt-2 border-l-2 border-accent/40 pl-2 text-xs"><p class="whitespace-pre-wrap text-slate-700 dark:text-zinc-200" x-text="r.body"></p><p class="text-[11px] text-slate-400"><span x-text="r.author"></span> · <span x-text="r.at"></span></p></div></template>
+          <template x-if="replying === c.id"><div class="mt-2 space-y-1.5"><textarea rows="2" class="field text-sm" maxlength="1500" placeholder="Write a reply…" x-model="replyText"></textarea><div class="flex justify-end gap-2"><button type="button" class="btn-secondary !py-1 text-xs" @click="replying = null">Cancel</button><button type="button" class="btn-primary !py-1 text-xs" :disabled="replyText.trim().length < 2 || busy" @click="sendReply(c)">Send reply</button></div></div></template>
+          <div class="mt-2 flex gap-3 text-xs font-medium"><button type="button" x-show="can.reply && replying !== c.id" class="text-accent dark:text-accent-dark" @click="replying = c.id; replyText = ''">Reply</button><button type="button" x-show="can.address" class="text-accent dark:text-accent-dark" @click="toggle(c)" x-text="c.addressed ? 'Mark as open' : 'Mark as addressed'"></button><button type="button" x-show="can.comment && c.mine" class="text-rose-600" @click="remove(c)">Delete</button></div>
         </li></template>
         <template x-if="!comments.length"><li class="text-xs text-slate-400">No comments yet.</li></template>
       </ul>

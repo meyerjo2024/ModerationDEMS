@@ -67,6 +67,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/attachments/{attachment}/comments', [DocumentCommentController::class, 'store']);
     Route::delete('/comments/{comment}', [DocumentCommentController::class, 'destroy']);
     Route::patch('/comments/{comment}', [DocumentCommentController::class, 'address']);
+    Route::post('/comments/{comment}/replies', [DocumentCommentController::class, 'reply']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/read', [NotificationController::class, 'markRead']);
 
