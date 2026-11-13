@@ -99,8 +99,9 @@ class Workflow
         $a->update(['s1_examiner' => $norm, 'assessment_date' => $norm['assessment_date'] ?: $a->assessment_date, 'year_level' => $norm['subject_level'] ?: $a->year_level]);
     }
 
-    public function upload(User $user, Assessment $a, AttachmentKind $kind, string $filename, string $bytes, array $meta): Attachment
+    public function upload(User $user, Assessment $a, AttachmentKind $kind, string $filename, string $bytes, array $meta, ?string $label = null): Attachment
     {
+        $label = $kind === AttachmentKind::Paper ? (trim((string) $label) !== '' ? mb_substr(trim((string) $label), 0, 120) : null) : null;
         $this->assertExaminer($user, $a);
         $slots = [
             'PAPER' => [S::Draft, S::RevisionRequested], 'MEMO' => [S::Draft, S::RevisionRequested],
@@ -114,14 +115,32 @@ class Workflow
         $key = $this->files->put($bytes);
         $sha = hash('sha256', $bytes);
 
-        return DB::transaction(function () use ($a, $kind, $v, $bytes, $sha, $key, $user, $meta) {
+        return DB::transaction(function () use ($a, $kind, $v, $bytes, $sha, $key, $user, $meta, $label) {
             $att = Attachment::create([
                 'assessment_id' => $a->id, 'kind' => $kind, 'filename' => $v['filename'], 'mime_type' => $v['mime'],
-                'size' => strlen($bytes), 'sha256' => $sha, 'storage_key' => $key, 'uploaded_by_id' => $user->id,
+                'size' => strlen($bytes), 'sha256' => $sha, 'storage_key' => $key, 'uploaded_by_id' => $user->id, 'label' => $label,
             ]);
-            $this->audit->log('FILE_UPLOADED', $a->id, $user->id, ['kind' => $kind->value, 'filename' => $v['filename'], 'sha256' => $sha], $meta['ip']);
+            $this->audit->log('FILE_UPLOADED', $a->id, $user->id, ['kind' => $kind->value, 'label' => $att->doc_label, 'filename' => $v['filename'], 'sha256' => $sha], $meta['ip']);
 
             return $att;
+        });
+    }
+
+    /** Take a document out of the submission (the file and its hash stay on record). */
+    public function removeDocument(User $user, Assessment $a, Attachment $att, array $meta): void
+    {
+        $this->assertExaminer($user, $a);
+        if (! in_array($a->status, [S::Draft, S::RevisionRequested], true)) {
+            throw WorkflowException::conflict("Documents can't be removed at this stage.");
+        }
+        if ($att->assessment_id !== $a->id || ! in_array($att->kind, [AttachmentKind::Paper, AttachmentKind::Memo], true)) {
+            throw new WorkflowException('That document is not part of this assessment.');
+        }
+        DB::transaction(function () use ($att, $a, $user, $meta) {
+            // remove every version under this name, so the earlier one does not come back
+            $a->attachments->whereIn('kind', [AttachmentKind::Paper, AttachmentKind::Memo])->filter(fn ($x) => mb_strtolower($x->doc_label) === mb_strtolower($att->doc_label) && $x->removed_at === null)
+                ->each(fn ($x) => $x->update(['removed_at' => now('UTC')]));
+            $this->audit->log('FILE_REMOVED', $a->id, $user->id, ['label' => $att->doc_label, 'filename' => $att->filename, 'sha256' => $att->sha256], $meta['ip']);
         });
     }
 
@@ -136,12 +155,14 @@ class Workflow
             throw new WorkflowException('The weightings across the task must add up to 100% (currently '.round($total, 2).'%).');
         }
         $a->load('attachments');
-        $paper = $a->latestAttachment(AttachmentKind::Paper) ?? throw new WorkflowException('Upload the draft assessment paper first.');
-        $memo = $a->latestAttachment(AttachmentKind::Memo) ?? throw new WorkflowException('Upload the memorandum first.');
+        $docs = $a->documents();
+        if ($docs->isEmpty()) {
+            throw new WorkflowException('Upload the assessment paper first (the paper includes the memorandum).');
+        }
         $this->signer->confirm($user, $sig);
 
         $revision = $a->revision + 1;
-        $hash = Hashing::content(['section' => 1, 'id' => $a->id, 'revision' => $revision, 'form' => $form, 'paper' => $paper->sha256, 'memo' => $memo->sha256]);
+        $hash = Hashing::content(['section' => 1, 'id' => $a->id, 'revision' => $revision, 'form' => $form, 'documents' => $docs->map(fn ($d) => [$d->doc_label, $d->sha256])->all()]);
         DB::transaction(function () use ($a, $user, $form, $sig, $meta, $revision, $hash) {
             $a = $this->lock($a, S::Draft, S::RevisionRequested);
             $a->update(['status' => S::PendingPreModeration, 's1_examiner' => $form, 'assessment_date' => $form['assessment_date'] ?: $a->assessment_date, 'year_level' => $form['subject_level'] ?: $a->year_level, 'revision' => $revision]);
@@ -187,7 +208,7 @@ class Workflow
         $this->signer->confirm($user, $in['signature'] ?? []);
         $a->load('attachments');
         $hash = Hashing::content(['gate' => 1, 'id' => $a->id, 'revision' => $a->revision,
-            'paper' => $a->latestAttachment(AttachmentKind::Paper)?->sha256, 'memo' => $a->latestAttachment(AttachmentKind::Memo)?->sha256,
+            'documents' => $a->documents()->map(fn ($d) => [$d->doc_label, $d->sha256])->all(),
             'section1' => $a->s1_examiner, 'moderator' => $form, 'comments' => $in['comments'] ?? '']);
         DB::transaction(function () use ($a, $user, $in, $meta, $hash, $form) {
             $a = $this->lock($a, S::PendingPreModeration);

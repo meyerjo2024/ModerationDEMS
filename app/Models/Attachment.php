@@ -15,7 +15,7 @@ class Attachment extends Model
 
     protected function casts(): array
     {
-        return ['kind' => AttachmentKind::class];
+        return ['kind' => AttachmentKind::class, 'removed_at' => 'datetime'];
     }
 
     public function assessment(): BelongsTo
@@ -26,6 +26,12 @@ class Attachment extends Model
     public function uploadedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by_id');
+    }
+
+    /** The name of the document slot (default: Assessment paper / Memorandum for older uploads). */
+    public function getDocLabelAttribute(): string
+    {
+        return $this->label ?: $this->kind->label();
     }
 
     public function isPdf(): bool

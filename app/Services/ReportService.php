@@ -28,10 +28,11 @@ class ReportService
         $registered = $s2e['registered'] ?? $a->enrolled_count ?? $a->candidate_count;
 
         $docs = [];
-        foreach ([AttachmentKind::Paper, AttachmentKind::Memo, AttachmentKind::Marks] as $kind) {
-            if ($att = $a->latestAttachment($kind)) {
-                $docs[] = ['label' => $kind->label(), 'filename' => $att->filename, 'sha' => $att->sha256, 'at' => $att->created_at];
-            }
+        foreach ($a->documents() as $att) {
+            $docs[] = ['label' => $att->doc_label, 'filename' => $att->filename, 'sha' => $att->sha256, 'at' => $att->created_at];
+        }
+        if ($att = $a->latestAttachment(AttachmentKind::Marks)) {
+            $docs[] = ['label' => AttachmentKind::Marks->label(), 'filename' => $att->filename, 'sha' => $att->sha256, 'at' => $att->created_at];
         }
         $audit = $a->auditLogs()->get();
 

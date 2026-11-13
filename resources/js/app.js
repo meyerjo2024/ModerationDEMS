@@ -179,7 +179,8 @@ Alpine.data('signoff', () => ({
 Alpine.data('section1', (cfg) => ({
     id: cfg.id,
     form: cfg.form,
-    files: cfg.files, // { PAPER: {filename,...}|null, MEMO: ... }
+    docs: cfg.docs, // [{ id, label, filename }]
+    newLabel: '',
     sig: null,
     busy: null,
     error: '',
@@ -192,7 +193,7 @@ Alpine.data('section1', (cfg) => ({
         return !(f.period && f.year && f.heqf_level && String(f.subject_level).trim() && f.qualification.trim() && f.qualification_code.trim() && f.assessment_date);
     },
     get ready() {
-        return this.sig && !this.missing && this.total === 100 && this.files.PAPER && this.files.MEMO;
+        return this.sig && !this.missing && this.total === 100 && this.docs.length > 0;
     },
     payload() {
         const f = this.form;
@@ -203,13 +204,26 @@ Alpine.data('section1', (cfg) => ({
             weights: Object.fromEntries(Object.entries(f.weights).map(([k, v]) => [k, Number(v) || 0])),
         };
     },
-    upload(kind, file) {
-        return run(this, kind, async () => {
+    addDoc(file) {
+        return run(this, 'doc', async () => {
+            const label = this.newLabel.trim() || (this.docs.length ? file.name.replace(/\.[^.]+$/, '') : 'Assessment paper');
             const f = new FormData();
-            f.set('kind', kind);
+            f.set('kind', 'PAPER');
+            f.set('label', label);
             f.set('file', file);
             const { attachment } = await api('POST', `/assessments/${this.id}/attachments`, f);
-            this.files[kind] = { id: attachment.id, filename: attachment.filename, fresh: true };
+            const d = { id: attachment.id, label: attachment.label, filename: attachment.filename };
+            const i = this.docs.findIndex((x) => x.label.toLowerCase() === d.label.toLowerCase());
+            if (i >= 0) this.docs.splice(i, 1, d);
+            else this.docs.push(d);
+            this.newLabel = '';
+        });
+    },
+    removeDoc(d) {
+        if (!confirm(`Remove “${d.label}” from this submission?`)) return;
+        return run(this, 'doc', async () => {
+            await api('DELETE', `/assessments/${this.id}/attachments/${d.id}`);
+            this.docs = this.docs.filter((x) => x.id !== d.id);
         });
     },
     saveDraft() {

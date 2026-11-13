@@ -15,8 +15,8 @@ $willComplete = ! $external && ! $a->external_moderator_id;
   <section class="card p-6 sm:p-8">
     <p class="kicker">{{ $external ? 'Gate 3 · External moderation' : 'Gate 2 · Final review' }}</p>
     <h2 class="mt-1 text-2xl font-semibold">Evidence</h2>
-    <p class="mb-4 mt-1 text-sm text-slate-500 dark:text-zinc-400">Sample scripts, the assessment paper and the memorandum. The examiner’s results and answers follow below.</p>
-    <x-doc-viewer :docs="array_merge($scripts, [['Assessment paper', $a->latestAttachment($AK::Paper)], ['Memorandum', $a->latestAttachment($AK::Memo)]])" />
+    <p class="mb-4 mt-1 text-sm text-slate-500 dark:text-zinc-400">Sample scripts and the assessment documents. The examiner’s results and answers follow below.</p>
+    <x-doc-viewer :docs="array_merge($scripts, $a->documents()->map(fn ($d) => [$d->doc_label, $d])->all())" />
   </section>
 
   @include('assessments.partials.form-readonly', ['a' => $a, 'sections' => $external ? ['s1', 's2'] : ['s1', 's2']])

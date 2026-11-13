@@ -149,7 +149,6 @@ class LifecycleTest extends TestCase
     private function submitSection1(Assessment $a): void
     {
         $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'PAPER', 'file' => $this->pdf('paper.pdf')], ['Accept' => 'application/json'])->assertOk();
-        $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'MEMO', 'file' => $this->pdf('memo.pdf')], ['Accept' => 'application/json'])->assertOk();
         $this->as($this->examiner)->postJson("/assessments/{$a->id}/submit-pre", ['s1' => $this->s1(), 'signature' => $this->sig()])->assertOk();
     }
 
@@ -178,10 +177,9 @@ class LifecycleTest extends TestCase
 
         // Phase 1 guards
         $this->as($this->examiner)->postJson("/assessments/{$a->id}/submit-pre", ['s1' => $this->s1(), 'signature' => $this->sig()])
-            ->assertStatus(400)->assertJsonPath('error', 'Upload the draft assessment paper first.');
+            ->assertStatus(400)->assertJsonPath('error', 'Upload the assessment paper first (the paper includes the memorandum).');
         $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'PAPER', 'file' => UploadedFile::fake()->createWithContent('evil.pdf', 'MZ not a pdf')], ['Accept' => 'application/json'])->assertStatus(400);
         $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'PAPER', 'file' => $this->pdf('paper.pdf')], ['Accept' => 'application/json'])->assertOk();
-        $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'MEMO', 'file' => $this->pdf('memo.pdf')], ['Accept' => 'application/json'])->assertOk();
         $bad = $this->s1();
         $bad['weights']['recall_simple'] = 40; // total 120
         $this->as($this->examiner)->postJson("/assessments/{$a->id}/submit-pre", ['s1' => $bad, 'signature' => $this->sig()])->assertStatus(400)->assertSee('add up to 100%');
@@ -919,6 +917,9 @@ class LifecycleTest extends TestCase
         $this->as($this->hod)->get('/overview?coverage=no_moderator')->assertOk()->assertSee('BAR101')->assertDontSee('CSC101');
         $this->as($this->hod)->get('/overview?staff='.$this->internal->id.'&staff_role=INTERNAL_MODERATOR')->assertOk()->assertSee('CSC101')->assertDontSee('BAR101');
         $this->as($this->hod)->get('/overview/subjects/'.$this->subject->id)->assertOk()->assertSee('Test Examiner');
+        Assessment::query()->update(['assessment_date' => now('UTC')->addDays(5)->toDateString()]);
+        $this->as($this->hod)->get('/overview')->assertOk()->assertSee('CSC101');
+        $this->as($this->hod)->get('/overview/subjects/'.$this->subject->id)->assertOk()->assertSee('written');
         $this->as($this->examiner)->get('/overview')->assertForbidden();
 
         $sa = User::create(['name' => 'Sys Admin', 'email' => 'sa2@t.test', 'role' => Role::SystemAdmin, 'password' => self::PW]);
@@ -980,5 +981,47 @@ class LifecycleTest extends TestCase
         $this->as($this->internal)->get('/')->assertOk()->assertSee('CSC101')->assertSee('Your turn');
         $this->as($this->internal)->get("/assessments/{$a->id}")->assertOk();
         $this->as($this->internal)->getJson('/notifications')->assertJsonPath('unread', \App\Models\Notification::where('user_id', $this->internal->id)->where('read', false)->count());
+    }
+
+    public function test_several_documents_no_memo_needed_and_historic_dates(): void
+    {
+        $a = $this->newAssessment();
+        $up = fn ($name, $label, $file) => $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'PAPER', 'label' => $label, 'file' => $this->pdf($file)], ['Accept' => 'application/json'])->assertOk();
+
+        // a paper alone (it contains the memo) is enough; several documents are listed under their names
+        $up('p', 'Exam paper', 'paper.pdf');
+        $up('a', 'Annexure A', 'annex.pdf');
+        $a->load('attachments');
+        $this->assertSame(['Exam paper', 'Annexure A'], $a->documents()->map->doc_label->all());
+
+        $this->as($this->examiner)->get("/assessments/{$a->id}")->assertOk()->assertSee('Annexure A')->assertSee('no separate memo is needed', false);
+
+        // the same name replaces; removing drops it, and the file stays on record
+        $up('p2', 'exam paper', 'paper2.pdf');
+        $a->load('attachments');
+        $this->assertCount(2, $a->documents());
+        $annex = $a->documents()->firstWhere('label', 'Annexure A');
+        $this->as($this->examiner)->deleteJson("/assessments/{$a->id}/attachments/{$annex->id}")->assertOk();
+        $a->load('attachments');
+        $this->assertSame(['exam paper'], $a->documents()->map(fn ($d) => mb_strtolower($d->doc_label))->all());
+        $this->assertSame(3, $a->attachments->count());
+        $this->as($this->internal)->deleteJson("/assessments/{$a->id}/attachments/{$annex->id}")->assertForbidden();
+
+        // an assessment written in the past is accepted and can be submitted
+        $a->update(['assessment_date' => '2023-03-12']);
+        $this->as($this->examiner)->postJson("/assessments/{$a->id}/submit-pre", ['s1' => array_merge($this->s1(), ['assessment_date' => '2023-03-12', 'year' => 2023]), 'signature' => $this->sig()])->assertOk();
+        $a->refresh();
+        $this->assertSame(AssessmentStatus::PendingPreModeration, $a->status);
+        $this->assertSame('2023-03-12', $a->assessment_date->toDateString());
+        $this->as($this->internal)->get("/assessments/{$a->id}")->assertOk()->assertSee('exam paper', false);
+        // documents can no longer be removed once submitted
+        $doc = $a->fresh()->load('attachments')->documents()->first();
+        $this->as($this->examiner)->deleteJson("/assessments/{$a->id}/attachments/{$doc->id}")->assertStatus(409);
+    }
+
+    public function test_submit_needs_at_least_one_document(): void
+    {
+        $a = $this->newAssessment();
+        $this->as($this->examiner)->postJson("/assessments/{$a->id}/submit-pre", ['s1' => $this->s1(), 'signature' => $this->sig()])->assertStatus(400);
     }
 }
