@@ -74,6 +74,8 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:HOD')->prefix('/dean-report')->group(function () {
         Route::get('/', [\App\Http\Controllers\DeanReportController::class, 'show'])->name('dean-report');
+        Route::post('/narrative', [\App\Http\Controllers\DeanReportController::class, 'narrative'])->middleware('throttle:8,1')->name('dean-report.narrative');
+        Route::post('/narrative/save', [\App\Http\Controllers\DeanReportController::class, 'saveNarrative'])->name('dean-report.narrative.save');
         Route::get('/pdf', [\App\Http\Controllers\DeanReportController::class, 'pdf'])->name('dean-report.pdf');
         Route::get('/docx', [\App\Http\Controllers\DeanReportController::class, 'docx'])->name('dean-report.docx');
     });

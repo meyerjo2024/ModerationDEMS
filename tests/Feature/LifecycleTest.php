@@ -1320,4 +1320,58 @@ class LifecycleTest extends TestCase
         $sa = User::create(['name' => 'SA', 'email' => 'sa9@t.test', 'role' => Role::SystemAdmin, 'password' => self::PW]);
         $this->as($sa)->get('/dean-report')->assertForbidden();
     }
+
+    public function test_dean_report_narrative_with_groq_or_plain_draft_flows_into_page_and_word(): void
+    {
+        $a = $this->newAssessment(false);
+        $a->update(['assessment_date' => '2026-03-12', 'academic_year' => 2026]);
+        $this->submitSection1($a);
+        $this->approveGate1($a);
+        $this->submitSection2Manual($a);
+        $this->as($this->examiner)->get('/'); // keep examiner session warm
+        \App\Models\Assessment::query()->update(['s2_examiner' => ['registered' => 30, 'answers' => ['q5' => 'Teach with ana.lee@cput.ac.za examples; Mr Hidden Name will help.']]]);
+
+        // plain draft needs no AI
+        $draft = $this->as($this->hod)->postJson('/dean-report/narrative', ['mode' => 'draft'])->assertOk()->json('sections');
+        $this->assertSame(array_keys(\App\Services\DeanNarrative::SECTIONS), array_keys($draft));
+        $this->assertStringContainsString('1 subject and 1 assessment', $draft['summary']);
+
+        // AI without a key says what to do
+        config(['dems.groq.key' => null]);
+        $this->as($this->hod)->postJson('/dean-report/narrative', ['mode' => 'ai'])->assertStatus(422)->assertJsonPath('message', fn ($m) => str_contains($m, 'GROQ_API_KEY'));
+
+        // AI with a key: Groq is called with figures only (no staff names, no e-mail addresses)
+        config(['dems.groq.key' => 'test-key', 'dems.groq.model' => 'test-model']);
+        \Illuminate\Support\Facades\Http::fake(['api.groq.com/*' => \Illuminate\Support\Facades\Http::sequence()->push(['choices' => [['message' => ['content' => json_encode([
+            'summary' => 'The department moderated one assessment this period.', 'compliance' => 'Compliance paragraph.', 'quality' => 'Quality paragraph.', 'results' => 'Results paragraph.', 'attention' => 'Attention paragraph.', 'actions' => 'Actions paragraph.'])]]]])->push(['error' => ['message' => 'rate']], 429)]);
+        $out = $this->as($this->hod)->postJson('/dean-report/narrative', ['mode' => 'ai'])->assertOk()->json('sections');
+        $this->assertSame('The department moderated one assessment this period.', $out['summary']);
+        \Illuminate\Support\Facades\Http::assertSent(function ($req) {
+            $body = json_encode($req->data());
+            return $req->hasHeader('Authorization', 'Bearer test-key') && $req['model'] === 'test-model'
+                && ! str_contains($body, 'Test Examiner') && ! str_contains($body, 'Test Internal') && ! str_contains($body, 'ana.lee@cput.ac.za') && str_contains($body, 'CSC101');
+        });
+        // a Groq failure is reported, not thrown
+        $this->as($this->hod)->postJson('/dean-report/narrative', ['mode' => 'ai'])->assertStatus(422)->assertJsonPath('message', fn ($m) => str_contains($m, 'busy'));
+
+        // save, then the page and the Word file carry the text
+        $this->as($this->hod)->postJson('/dean-report/narrative/save', ['sections' => $out])->assertOk();
+        $this->as($this->hod)->get('/dean-report')->assertOk()->assertSee('The department moderated one assessment this period.')->assertSee('A narrative is included');
+        $docx = $this->as($this->hod)->get('/dean-report/docx')->assertOk();
+        $tmp = tempnam(sys_get_temp_dir(), 'n').'.docx';
+        file_put_contents($tmp, $docx->getContent());
+        $zip = new \ZipArchive();
+        $zip->open($tmp);
+        $this->assertStringContainsString('Quality paragraph.', $zip->getFromName('word/document.xml'));
+        $zip->close();
+        @unlink($tmp);
+        $this->assertStringStartsWith('%PDF', $this->as($this->hod)->get('/dean-report/pdf')->getContent());
+        $this->assertSame(1, \App\Models\AuditLog::where('action', 'DEAN_NARRATIVE_GENERATED')->count());
+
+        // remove it again; others cannot use the endpoints
+        $this->as($this->hod)->postJson('/dean-report/narrative/save', ['sections' => []])->assertOk();
+        $this->as($this->hod)->get('/dean-report')->assertDontSee('A narrative is included');
+        $this->as($this->examiner)->postJson('/dean-report/narrative', ['mode' => 'draft'])->assertForbidden();
+        $this->as($this->examiner)->postJson('/dean-report/narrative/save', ['sections' => $out])->assertForbidden();
+    }
 }

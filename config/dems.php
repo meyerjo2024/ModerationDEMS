@@ -37,6 +37,9 @@ return [
     // Headings the class-list reader offers as mark columns.
     'marks_column_pattern' => '/^(T\d+|SUPP\w*|SUP\d*|SPEC\w*|SPECIAL.*|SICK.*|AEGROTAT.*|DEF\w*)$/i',
 
+    // Groq (OpenAI-compatible API) writes the narrative of the Dean report. Set GROQ_API_KEY in Render → Environment, never in git.
+    'groq' => ['key' => env('GROQ_API_KEY'), 'model' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'), 'url' => env('GROQ_URL', 'https://api.groq.com/openai/v1/chat/completions'), 'timeout' => 60],
+
     // Moderation windows around the assessment date.
     'pre_moderation_days' => 14,   // pre-moderation must be finished this many days BEFORE the assessment
     'post_moderation_days' => 14,  // post-moderation must be finished this many days AFTER it
@@ -73,6 +76,7 @@ return [
         'QUALIFICATION_CODES_SET' => 'Qualification codes updated',
         'ASSESSMENT_DELETED' => 'Record deleted',
         'DEAN_REPORT_DOWNLOADED' => 'Overview report downloaded',
+        'DEAN_NARRATIVE_GENERATED' => 'Overview report narrative written with AI',
         'SECTION1_SUBMITTED' => 'Section 1 signed & submitted',
         'PRE_REVIEW_APPROVED' => 'Pre-moderation approved',
         'PRE_REVIEW_REVISION' => 'Revision requested',
