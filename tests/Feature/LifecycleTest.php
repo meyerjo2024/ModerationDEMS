@@ -1272,4 +1272,52 @@ class LifecycleTest extends TestCase
         $this->assertSame(1, preg_match(config('dems.marks_column_pattern'), 'Deferred'));
         $this->assertSame(1, preg_match(config('dems.marks_column_pattern'), 'Sick test'));
     }
+
+    public function test_dean_report_page_pdf_and_word_for_the_hod_only(): void
+    {
+        $this->subject->update(['qualification' => 'Diploma in Testing']);
+        Subject::create(['code' => 'BAR101', 'name' => 'Bare', 'qualification' => 'Diploma in Testing', 'hod_id' => $this->hod->id]); // no examiner or moderator
+        $a = $this->newAssessment(false);
+        $a->update(['assessment_date' => '2026-03-12', 'academic_year' => 2026]);
+        $this->submitSection1($a);
+        $this->approveGate1($a);
+        $this->submitSection2Manual($a);
+        $this->approveGate2($a);
+        $b = $this->newAssessment(false, null, 'T2');
+        $b->update(['assessment_date' => '2020-01-01']);
+
+        $page = $this->as($this->hod)->get('/dean-report')->assertOk();
+        $page->assertSee('Report for the Dean')->assertSee('At a glance')->assertSee('Moderation compliance')->assertSee('Assessment quality')->assertSee('Matters for attention')
+            ->assertSee('BAR101')->assertSee('CSC101')->assertSee('Diploma in Testing')->assertSee('Without an internal moderator');
+        $this->as($this->hod)->get('/dean-report?year=2026&kind=tests&to_whom=Prof+Dean&comment=Good+semester')->assertOk()->assertSee('Prof Dean')->assertSee('Good semester');
+        $this->as($this->hod)->get('/dean-report?qualification=Nothing+here')->assertOk()->assertSee('No assessments match these filters');
+
+        // PDF
+        $pdf = $this->as($this->hod)->get('/dean-report/pdf?year=2026');
+        $pdf->assertOk();
+        $this->assertSame('application/pdf', $pdf->headers->get('Content-Type'));
+        $this->assertStringStartsWith('%PDF', $pdf->getContent());
+        // Word
+        $docx = $this->as($this->hod)->get('/dean-report/docx');
+        $docx->assertOk();
+        $this->assertStringContainsString('wordprocessingml', $docx->headers->get('Content-Type'));
+        $tmp = tempnam(sys_get_temp_dir(), 'd').'.docx';
+        file_put_contents($tmp, $docx->getContent());
+        $zip = new \ZipArchive();
+        $this->assertTrue($zip->open($tmp) === true);
+        $xml = $zip->getFromName('word/document.xml');
+        $this->assertStringContainsString('Assessment moderation overview', $xml);
+        $this->assertStringContainsString('CSC101', $xml);
+        $zip->close();
+        @unlink($tmp);
+        $this->assertSame(2, \App\Models\AuditLog::where('action', 'DEAN_REPORT_DOWNLOADED')->count());
+
+        // only the HOD
+        foreach (['/dean-report', '/dean-report/pdf', '/dean-report/docx'] as $url) {
+            $this->as($this->examiner)->get($url)->assertForbidden();
+            $this->as($this->internal)->get($url)->assertForbidden();
+        }
+        $sa = User::create(['name' => 'SA', 'email' => 'sa9@t.test', 'role' => Role::SystemAdmin, 'password' => self::PW]);
+        $this->as($sa)->get('/dean-report')->assertForbidden();
+    }
 }

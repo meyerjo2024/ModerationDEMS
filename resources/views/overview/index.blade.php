@@ -4,6 +4,7 @@
 @endphp
 <div class="space-y-8">
   <div><p class="kicker">{{ auth()->user()->hasRole(\App\Enums\Role::Hod) ? 'Head of Department' : 'Head of Programme' }}</p><h1 class="mt-1 text-3xl font-semibold">Moderation overview</h1>
+    @if (auth()->user()->hasRole(\App\Enums\Role::Hod))<p class="mt-2"><a href="{{ route('dean-report') }}" class="btn-secondary !py-1.5 text-sm">Report for the Dean →</a></p>@endif
     <p class="mt-1 text-sm text-[var(--ink-2)]"><b>Pending</b> = waiting on a moderator or signatory · <b>In process</b> = with the examiner · <b>Overdue</b> = past its pre- or post-moderation deadline (also counted in pending or in process).</p></div>
 
   <div class="grid grid-cols-2 gap-3 lg:grid-cols-3">
