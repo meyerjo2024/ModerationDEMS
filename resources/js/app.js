@@ -190,7 +190,7 @@ Alpine.data('section1', (cfg) => ({
     },
     get missing() {
         const f = this.form;
-        return !(f.period && f.year && f.heqf_level && String(f.subject_level).trim() && f.qualification.trim() && f.qualification_code.trim() && f.assessment_date);
+        return !(f.period && f.year && f.heqf_level && String(f.subject_level).trim() && f.qualification.trim() && f.qualification_code.trim() && f.assessment_date) || (f.subminimum === 'YES' && !(Number(f.subminimum_percent) > 0));
     },
     get ready() {
         return this.sig && !this.missing && this.total === 100 && this.docs.length > 0;
@@ -201,6 +201,7 @@ Alpine.data('section1', (cfg) => ({
             ...f,
             year: Number(f.year) || null,
             heqf_level: Number(f.heqf_level) || null,
+            subminimum_percent: f.subminimum === 'YES' ? Number(f.subminimum_percent) || null : null,
             weights: Object.fromEntries(Object.entries(f.weights).map(([k, v]) => [k, Number(v) || 0])),
         };
     },

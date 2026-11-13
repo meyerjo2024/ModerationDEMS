@@ -5,6 +5,7 @@ $s = $a->s1_examiner ?? [];
 $form = [
   'period' => $s['period'] ?? 'first', 'year' => $s['year'] ?? (int) date('Y'), 'heqf_level' => $s['heqf_level'] ?? 6,
   'subject_level' => $s['subject_level'] ?? $a->year_level ?? '', 'qualification' => ($s['qualification'] ?? '') ?: ($a->qualification ?? ''), 'qualification_code' => ($s['qualification_code'] ?? '') ?: ($a->qualification_code ?? ''),
+  'subminimum' => $s['subminimum'] ?? ($a->subminimum ? 'YES' : 'NO'), 'subminimum_percent' => $s['subminimum_percent'] ?? ($a->subminimum ? (float) $a->subminimum_percent : ''),
   'assessment_date' => ($s['assessment_date'] ?? '') ?: ($a->assessment_date?->toDateString() ?? ''),
   'weights' => collect(array_keys($f['question_types']))->mapWithKeys(fn ($k) => [$k => $s['weights'][$k] ?? ''])->all(),
 ];
@@ -43,6 +44,8 @@ $feedback = $a->records->where('stage', ModerationStage::PreModeration)->where('
       <div></div>
       <div class="sm:col-span-2"><label class="label" for="qual">Qualification</label><input id="qual" class="field" maxlength="160" placeholder="e.g. National Diploma: Emergency Medical Care" x-model="form.qualification"></div>
       <div><label class="label" for="qcode">Qualification code</label><input id="qcode" class="field" maxlength="40" x-model="form.qualification_code"></div>
+      <div><label class="label" for="sub">Subminimum</label><select id="sub" class="field" x-model="form.subminimum"><option value="NO">No</option><option value="YES">Yes</option></select></div>
+      <div x-show="form.subminimum === 'YES'" x-cloak><label class="label" for="subpct">Subminimum % <span class="font-normal text-slate-400">(least mark to qualify)</span></label><input id="subpct" type="number" min="1" max="100" step="any" inputmode="decimal" class="field tabular-nums" x-model="form.subminimum_percent"></div>
     </div>
   </section>
 

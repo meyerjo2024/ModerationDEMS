@@ -18,6 +18,7 @@ $kv = fn ($k, $v) => '<div><dt class="kicker">'.e($k).'</dt><dd class="mt-0.5 fo
     {!! $kv('Assessment date', ! empty($s1e['assessment_date']) ? \Illuminate\Support\Carbon::parse($s1e['assessment_date'])->format('d/m/Y') : null) !!}
     {!! $kv('HEQF level of subject', $s1e['heqf_level'] ?? null) !!}
     {!! $kv('Level of subject', $s1e['subject_level'] ?? null) !!}
+    {!! $kv('Subminimum', ($s1e['subminimum'] ?? 'NO') === 'YES' ? ($s1e['subminimum_percent'] ?? '').'%' : 'No') !!}
     {!! $kv('Qualification', trim(($s1e['qualification'] ?? '').' '.(! empty($s1e['qualification_code']) ? '('.$s1e['qualification_code'].')' : ''))) !!}
   </dl>
   <div class="mt-5 overflow-hidden rounded-2xl border border-slate-200/60 dark:border-white/10">
@@ -67,7 +68,8 @@ $kv = fn ($k, $v) => '<div><dt class="kicker">'.e($k).'</dt><dd class="mt-0.5 fo
         <li class="card-soft p-4 text-sm"><p class="font-medium">{{ $text }}</p><p class="mt-1 whitespace-pre-wrap text-slate-600 dark:text-zinc-300">{{ $s2m['items'][$k] ?? '—' }}</p></li>
       @endforeach
       <li class="card-soft p-4 text-sm"><p class="font-medium">{{ $f['adjustments'] }} <span class="ml-1 rounded-full bg-slate-900/5 px-2 py-0.5 text-xs font-semibold dark:bg-white/10">{{ $yn($s2m['adjustments']['recommended'] ?? null) }}</span></p>
-        @if (! empty($s2m['adjustments']['specify']))<p class="mt-1 whitespace-pre-wrap text-slate-600 dark:text-zinc-300">{{ $s2m['adjustments']['specify'] }}</p>@endif</li>
+        @if (! empty($s2m['adjustments']['specify']))<p class="mt-1 whitespace-pre-wrap text-slate-600 dark:text-zinc-300">{{ $s2m['adjustments']['specify'] }}</p>@endif
+        @if ($res = $a->resultsSummary())<p class="mt-2 rounded-lg bg-accent/5 px-3 py-2 text-xs text-[var(--ink-2)]"><b>Pass / fail{{ $res['subminimum'] ? ' and subminimum' : '' }}:</b> {{ $res['text'] }}</p>@endif</li>
     @endif
   </ul>
 </section>
@@ -81,7 +83,8 @@ $kv = fn ($k, $v) => '<div><dt class="kicker">'.e($k).'</dt><dd class="mt-0.5 fo
       <li class="card-soft p-4 text-sm"><p class="font-medium">{{ $text }}</p><p class="mt-1 whitespace-pre-wrap text-slate-600 dark:text-zinc-300">{{ $s3['items'][$k] ?? '—' }}</p></li>
     @endforeach
     <li class="card-soft p-4 text-sm"><p class="font-medium">{{ $f['adjustments'] }} <span class="ml-1 rounded-full bg-slate-900/5 px-2 py-0.5 text-xs font-semibold dark:bg-white/10">{{ $yn($s3['adjustments']['recommended'] ?? null) }}</span></p>
-      @if (! empty($s3['adjustments']['specify']))<p class="mt-1 whitespace-pre-wrap text-slate-600 dark:text-zinc-300">{{ $s3['adjustments']['specify'] }}</p>@endif</li>
+      @if (! empty($s3['adjustments']['specify']))<p class="mt-1 whitespace-pre-wrap text-slate-600 dark:text-zinc-300">{{ $s3['adjustments']['specify'] }}</p>@endif
+      @if ($res = $a->resultsSummary())<p class="mt-2 rounded-lg bg-accent/5 px-3 py-2 text-xs text-[var(--ink-2)]"><b>Pass / fail{{ $res['subminimum'] ? ' and subminimum' : '' }}:</b> {{ $res['text'] }}</p>@endif</li>
   </ul>
 </section>
 @endif

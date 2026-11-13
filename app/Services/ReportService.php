@@ -50,6 +50,7 @@ class ReportService
             'names' => ['examiner' => $a->examiner->name, 'internal' => $a->internalModerator->name, 'external' => $a->externalModerator?->name, 'hod' => $a->subject->hod->name],
             'hasExternal' => (bool) $a->external_moderator_id,
             's1e' => $s1e,
+            'results' => $a->resultsSummary(),
             's1m' => $a->s1_moderator ?? [],
             's2e' => $s2e,
             's2m' => $a->s2_moderator ?? [],

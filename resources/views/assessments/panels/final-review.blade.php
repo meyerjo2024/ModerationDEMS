@@ -41,6 +41,7 @@ $willComplete = ! $external && ! $a->external_moderator_id;
     </div>
 
     <div class="card-soft mt-5 space-y-3 p-4">
+      @if ($res = $a->resultsSummary())<p class="rounded-lg bg-accent/5 px-3 py-2 text-xs text-[var(--ink-2)]"><b>Pass / fail{{ $res['subminimum'] ? ' and subminimum' : '' }}:</b> {{ $res['text'] }}</p>@endif
       <div class="flex flex-wrap items-center justify-between gap-3">
         <p class="text-sm font-medium" x-text="adjustments"></p>
         <div role="radiogroup" aria-label="General adjustments recommended" class="inline-flex rounded-full bg-slate-900/5 p-1 dark:bg-white/10">
