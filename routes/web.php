@@ -72,6 +72,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/read', [NotificationController::class, 'markRead']);
 
+    Route::middleware('role:HOD')->prefix('/dean-report')->group(function () {
+        Route::get('/', [\App\Http\Controllers\DeanReportController::class, 'show'])->name('dean-report');
+        Route::get('/pdf', [\App\Http\Controllers\DeanReportController::class, 'pdf'])->name('dean-report.pdf');
+        Route::get('/docx', [\App\Http\Controllers\DeanReportController::class, 'docx'])->name('dean-report.docx');
+    });
+
     Route::middleware('role:HOD,HEAD_OF_PROGRAMME')->prefix('/overview')->group(function () {
         Route::get('/', [\App\Http\Controllers\OverviewController::class, 'index'])->name('overview');
         Route::get('/subjects/{subject}', [\App\Http\Controllers\OverviewController::class, 'subject'])->name('overview.subject');

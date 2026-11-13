@@ -72,6 +72,7 @@ return [
         'DOCUMENT_REPLIED' => 'Reply to a document comment',
         'QUALIFICATION_CODES_SET' => 'Qualification codes updated',
         'ASSESSMENT_DELETED' => 'Record deleted',
+        'DEAN_REPORT_DOWNLOADED' => 'Overview report downloaded',
         'SECTION1_SUBMITTED' => 'Section 1 signed & submitted',
         'PRE_REVIEW_APPROVED' => 'Pre-moderation approved',
         'PRE_REVIEW_REVISION' => 'Revision requested',
