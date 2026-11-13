@@ -1288,7 +1288,8 @@ class LifecycleTest extends TestCase
 
         $page = $this->as($this->hod)->get('/dean-report')->assertOk();
         $page->assertSee('Report for the Dean')->assertSee('At a glance')->assertSee('Moderation compliance')->assertSee('Assessment quality')->assertSee('Matters for attention')
-            ->assertSee('BAR101')->assertSee('CSC101')->assertSee('Diploma in Testing')->assertSee('Without an internal moderator');
+            ->assertSee('BAR101')->assertSee('CSC101')->assertSee('Diploma in Testing')->assertSee('Subjects without an internal moderator')
+            ->assertSee('Qualification code')->assertSee('numbers only')->assertSee('Term 1')->assertSee('Term 4')->assertSee('Appendix: all assessments by term');
         $this->as($this->hod)->get('/dean-report?year=2026&kind=tests&to_whom=Prof+Dean&comment=Good+semester')->assertOk()->assertSee('Prof Dean')->assertSee('Good semester');
         $this->as($this->hod)->get('/dean-report?qualification=Nothing+here')->assertOk()->assertSee('No assessments match these filters');
 
@@ -1368,6 +1369,20 @@ class LifecycleTest extends TestCase
         $this->assertStringStartsWith('%PDF', $this->as($this->hod)->get('/dean-report/pdf')->getContent());
         $this->assertSame(1, \App\Models\AuditLog::where('action', 'DEAN_NARRATIVE_GENERATED')->count());
 
+        // the PDF / Word buttons POST what is on screen, so text that was never saved is still included
+        $this->as($this->hod)->postJson('/dean-report/narrative/save', ['sections' => []])->assertOk();
+        $posted = $this->as($this->hod)->post('/dean-report/docx', ['sections' => ['summary' => 'Unsaved screen text for the Dean.', 'quality' => 'Another unsaved paragraph.']])->assertOk();
+        $tmp2 = tempnam(sys_get_temp_dir(), 'p').'.docx';
+        file_put_contents($tmp2, $posted->getContent());
+        $zip2 = new \ZipArchive();
+        $zip2->open($tmp2);
+        $xml2 = $zip2->getFromName('word/document.xml');
+        $this->assertStringContainsString('Unsaved screen text for the Dean.', $xml2);
+        $this->assertStringContainsString('Another unsaved paragraph.', $xml2);
+        $zip2->close();
+        @unlink($tmp2);
+        $this->as($this->hod)->post('/dean-report/pdf', ['sections' => ['summary' => 'x']])->assertOk();
+
         // remove it again; others cannot use the endpoints
         $this->as($this->hod)->postJson('/dean-report/narrative/save', ['sections' => []])->assertOk();
         $this->as($this->hod)->get('/dean-report')->assertDontSee('A narrative is included');
@@ -1394,5 +1409,25 @@ class LifecycleTest extends TestCase
         // the working model is remembered, so the next call does not hit the missing one again
         $client->chat([['role' => 'user', 'content' => 'y']]);
         \Illuminate\Support\Facades\Http::assertSentCount(5); // 404 + models + retry + models(listing test) + remembered call
+    }
+
+    public function test_dean_report_splits_by_qualification_code_and_term(): void
+    {
+        $this->subject->update(['qualification' => 'National Diploma: Testing', 'qualification_code' => 'NDTEST']);
+        $mk = fn ($n, $d) => tap($this->newAssessment(false, null, $n), fn ($a) => $a->update(['assessment_date' => $d, 'academic_year' => 2026, 'qualification' => 'National Diploma: Testing', 'qualification_code' => 'NDTEST']));
+        $mk('T1', '2026-02-10');
+        $mk('T2', '2026-05-12');
+        $mk('T3', '2026-08-20');
+        $mk('T4', '2026-11-05');
+        $d = app(\App\Services\DeanReport::class)->build($this->hod, []);
+        $this->assertSame('NDTEST', $d['by_code'][0]['code']);
+        $this->assertSame([1, 4], [$d['by_code'][0]['subjects'], $d['by_code'][0]['assessments']]);
+        $this->assertSame([1, 1, 1, 1], collect($d['by_term'])->pluck('assessments')->all());
+        $this->assertSame(['Term 1', 'Term 2', 'Term 3', 'Term 4'], collect($d['by_term'])->pluck('label')->all());
+        $this->assertSame([1, 2, 3, 4], collect($d['appendix'])->pluck('term')->all());
+        // an assessment with no date lands in its own block
+        $this->newAssessment(false, null, 'T5');
+        $d = app(\App\Services\DeanReport::class)->build($this->hod, []);
+        $this->assertSame('No date', collect($d['by_term'])->last()['label']);
     }
 }

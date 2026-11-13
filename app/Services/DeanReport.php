@@ -48,13 +48,30 @@ class DeanReport
                 'period' => $this->period($year, $from, $to), 'qualification' => $qual ?: 'All qualifications', 'kind' => ['all' => 'All assessments', 'tests' => 'Tests (T1–T7)', 'additional' => 'Supplementary, special, sick and deferred'][$kind],
             ],
             'headline' => $this->headline($subjects, $links, $rows),
+            'by_code' => $this->byCode($subjects, $links, $rows),
+            'by_term' => $this->byTerm($rows),
             'compliance' => $this->compliance($rows),
             'quality' => $this->quality($rows),
             'results' => $this->results($rows, $subjects),
             'exceptions' => $this->exceptions($rows),
             'actions' => $this->actions($rows),
-            'appendix' => $rows->map(fn ($r) => \Illuminate\Support\Arr::only($r, ['code', 'subject', 'title', 'qualification', 'date', 'status', 'examiner', 'moderator', 'overdue', 'revisions', 'candidates', 'pass_rate', 'average', 'adjust', 'sub_pct']))->all(),
+            'appendix' => $rows->map(fn ($r) => \Illuminate\Support\Arr::only($r, ['code', 'subject', 'title', 'qualification', 'qual_code', 'term', 'term_label', 'date', 'status', 'examiner', 'moderator', 'overdue', 'revisions', 'candidates', 'pass_rate', 'average', 'adjust', 'sub_pct']))->all(),
         ];
+    }
+
+    /** Term (1–4) of an assessment date, from config('dems.terms'); 0 when it has no date. */
+    private function term($date): int
+    {
+        if (! $date) {
+            return 0;
+        }
+        foreach (config('dems.terms') as $n => $months) {
+            if (in_array((int) $date->format('n'), $months, true)) {
+                return (int) $n;
+            }
+        }
+
+        return 0;
     }
 
     private function period(?int $year, ?string $from, ?string $to): string
@@ -99,6 +116,8 @@ class DeanReport
             'adjust' => ($s2m['adjustments']['recommended'] ?? null) === 'YES' || ($s3['adjustments']['recommended'] ?? null) === 'YES',
             'adjust_why' => trim(implode(' ', array_filter([$s2m['adjustments']['specify'] ?? '', $s3['adjustments']['specify'] ?? '']))),
             'next_time' => trim((string) ($s2e['answers']['q5'] ?? '')), 'external_rec' => trim((string) ($s3['items']['recommendations'] ?? '')),
+            'qual_code' => ($a->qualification_code ?: collect($a->subject->qualificationOptions())->first(fn ($o) => mb_strtolower($o['name']) === mb_strtolower((string) $a->qualification))['code'] ?? '') ?: ($a->qualification ?: ($quals[0] ?? '(none)')),
+            'term' => $this->term($date), 'term_label' => ($t = $this->term($date)) ? "Term {$t}" : 'No date',
             'sort_key' => $a->subject->code.'|'.($a->assessment_date?->toDateString() ?? '').'|'.$a->number, 'subject_id' => $a->subject_id, 'academic_year' => $a->academic_year,
         ];
     }
@@ -116,6 +135,52 @@ class DeanReport
             'no_moderator' => $noMod->map(fn ($s) => $s->code.' '.$s->name)->values()->all(), 'no_examiner' => $noEx->map(fn ($s) => $s->code.' '.$s->name)->values()->all(),
             'no_activity' => $subjects->filter(fn ($s) => ! $rows->contains('subject_id', $s->id))->count(),
         ];
+    }
+
+    /** Numbers only, one line per qualification code. @return list<array<string, int|string>> */
+    private function byCode($subjects, $links, $rows): array
+    {
+        $blank = fn (string $code) => ['code' => $code, 'subjects' => 0, 'assessments' => 0, 'completed' => 0, 'pending' => 0, 'in_process' => 0, 'overdue' => 0, 'no_moderator' => 0, 'no_examiner' => 0];
+        $out = [];
+        foreach ($subjects as $s) {
+            $l = $links->get($s->id, collect());
+            $opts = $s->qualificationOptions() ?: [['name' => '(none)', 'code' => '']];
+            foreach ($opts as $o) {
+                $k = $o['code'] ?: $o['name'];
+                $out[$k] ??= $blank($k);
+                $out[$k]['subjects']++;
+                $out[$k]['no_moderator'] += $l->where('role', Role::InternalModerator->value)->isEmpty() ? 1 : 0;
+                $out[$k]['no_examiner'] += $l->where('role', Role::Examiner->value)->isEmpty() ? 1 : 0;
+            }
+        }
+        foreach ($rows as $r) {
+            $k = $r['qual_code'];
+            $out[$k] ??= $blank($k);
+            $out[$k]['assessments']++;
+            $out[$k]['completed'] += $r['bucket'] === 'done' ? 1 : 0;
+            $out[$k]['pending'] += $r['bucket'] === 'pending' ? 1 : 0;
+            $out[$k]['in_process'] += $r['bucket'] === 'process' ? 1 : 0;
+            $out[$k]['overdue'] += $r['overdue'] ? 1 : 0;
+        }
+        ksort($out);
+
+        return array_values($out);
+    }
+
+    /** Numbers only, Term 1–4. @return list<array<string, int|string>> */
+    private function byTerm($rows): array
+    {
+        $out = [];
+        foreach ([1, 2, 3, 4, 0] as $t) {
+            $g = $rows->where('term', $t);
+            if ($t === 0 && $g->isEmpty()) {
+                continue;
+            }
+            $out[] = ['term' => $t, 'label' => $t ? "Term {$t}" : 'No date', 'assessments' => $g->count(), 'completed' => $g->where('bucket', 'done')->count(), 'pending' => $g->where('bucket', 'pending')->count(),
+                'in_process' => $g->where('bucket', 'process')->count(), 'overdue' => $g->where('overdue', true)->count()];
+        }
+
+        return $out;
     }
 
     private function compliance($rows): array
@@ -160,7 +225,7 @@ class DeanReport
 
                 return ['name' => $name, 'assessments' => $g->count(), 'candidates' => $cand, 'pass_rate' => $cand ? round($g->sum('pass_count') / $cand * 100, 1) : null,
                     'average' => round($g->avg('average'), 1), 'absent' => $g->sum(fn ($r) => max(0, ($r['registered'] ?? $r['candidates']) - $r['candidates']))];
-            })->sortKeys()->values()->all();
+            })->sortKeys(SORT_NATURAL)->values()->all();
         };
         $drops = [];
         foreach ($with->groupBy(fn ($r) => $r['subject_id'].'|'.$r['academic_year']) as $g) {
@@ -175,7 +240,7 @@ class DeanReport
         $sub = $with->filter(fn ($r) => $r['sub_pct'] !== null);
 
         return [
-            'by_qualification' => $group('qualification'), 'by_level' => $group('year_level'),
+            'by_qualification' => $group('qual_code'), 'by_level' => $group('year_level'), 'by_term' => $group('term_label'),
             'overall' => ['assessments' => $with->count(), 'candidates' => $with->sum('candidates'), 'pass_rate' => $with->sum('candidates') ? round($with->sum('pass_count') / $with->sum('candidates') * 100, 1) : null],
             'low' => $with->filter(fn ($r) => (float) $r['pass_rate'] < 50)->sortBy('pass_rate')->map(fn ($r) => ['name' => $r['code'].' '.$r['subject'].' · '.$r['title'], 'pass_rate' => $r['pass_rate'], 'candidates' => $r['candidates']])->values()->all(),
             'drops' => $drops,

@@ -894,20 +894,27 @@ Alpine.data('sidePanel', () => ({
     },
 }));
 
-// Dean report: write / edit the narrative, then save it into the report.
+// Dean report: write / edit the narrative. The text lives in a shared store so the PDF / Word buttons always send what is on screen.
+Alpine.store('dean', { sections: {} });
 Alpine.data('deanNarrative', (cfg) => ({
-    sections: cfg.sections,
     busy: '',
     msg: '',
     error: '',
+    init() {
+        Alpine.store('dean').sections = cfg.sections;
+    },
+    get sections() {
+        return Alpine.store('dean').sections;
+    },
     async generate(mode) {
         this.busy = mode;
         this.error = '';
         this.msg = '';
         try {
             const r = await api('POST', cfg.generate + location.search, { mode });
-            this.sections = { ...this.sections, ...r.sections };
-            this.msg = mode === 'ai' ? 'Written by the AI from your figures. Read it, edit anything, then press “Save into report”.' : 'Draft written from your figures. Edit it, then press “Save into report”.';
+            Object.assign(Alpine.store('dean').sections, r.sections);
+            await api('POST', cfg.save, { sections: Alpine.store('dean').sections }); // keep it for the preview and for the download buttons
+            this.msg = mode === 'ai' ? 'Written by the AI from your figures. Read it and edit anything; the PDF and Word buttons include exactly this text.' : 'Draft written from your figures. Edit it; the PDF and Word buttons include exactly this text.';
         } catch (e) {
             this.error = e.message;
         } finally {
@@ -918,7 +925,7 @@ Alpine.data('deanNarrative', (cfg) => ({
         this.busy = 'save';
         this.error = '';
         try {
-            await api('POST', cfg.save, { sections: clear ? {} : this.sections });
+            await api('POST', cfg.save, { sections: clear ? {} : Alpine.store('dean').sections });
             location.reload();
         } catch (e) {
             this.error = e.message;

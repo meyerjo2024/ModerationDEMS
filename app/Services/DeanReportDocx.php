@@ -43,13 +43,12 @@ class DeanReportDocx
         };
         $para('summary');
         $h = $d['headline'];
-        $sec->addTitle('1. At a glance', 1);
-        $this->table($sec, ['Subjects', 'Assessments', 'Completed', 'Pending moderation', 'In process', 'Overdue'], [[$h['subjects'], $h['assessments'], $h['completed'].($h['completed_pct'] !== null ? " ({$h['completed_pct']}%)" : ''), $h['pending'], $h['in_process'], $h['overdue']]]);
-        $this->lines($sec, [
-            $h['no_moderator'] ? 'Subjects without an internal moderator ('.count($h['no_moderator']).'): '.implode('; ', $h['no_moderator']) : 'Every subject has an internal moderator.',
-            $h['no_examiner'] ? 'Subjects without an examiner ('.count($h['no_examiner']).'): '.implode('; ', $h['no_examiner']) : 'Every subject has an examiner.',
-            $h['no_activity'] ? $h['no_activity'].' subject(s) have no assessment in this period.' : null,
-        ]);
+        $sec->addTitle('1. At a glance (numbers only)', 1);
+        $this->table($sec, ['Qualification code', 'Subjects', 'Assessments', 'Completed', 'Pending', 'In process', 'Overdue', 'No moderator', 'No examiner'],
+            array_merge(array_map(fn ($x) => [$x['code'], $x['subjects'], $x['assessments'], $x['completed'], $x['pending'], $x['in_process'], $x['overdue'], $x['no_moderator'], $x['no_examiner']], $d['by_code']),
+                [['Total', $h['subjects'], $h['assessments'], $h['completed'], $h['pending'], $h['in_process'], $h['overdue'], count($h['no_moderator']), count($h['no_examiner'])]]));
+        $this->table($sec, ['Term', 'Assessments', 'Completed', 'Pending', 'In process', 'Overdue'], array_map(fn ($x) => [$x['label'], $x['assessments'], $x['completed'], $x['pending'], $x['in_process'], $x['overdue']], $d['by_term']));
+        $sec->addText('Terms follow the month of the assessment date (Term 1 Jan–Mar, Term 2 Apr–Jun, Term 3 Jul–Sep, Term 4 Oct–Dec). Pending = waiting on a moderator or signatory; in process = with the examiner.', ['size' => 8, 'color' => '6E6E73']);
 
         $c = $d['compliance'];
         $sec->addTitle('2. Moderation compliance', 1);
@@ -78,10 +77,10 @@ class DeanReportDocx
         $sec->addTitle('4. Student results (anonymous, from the marks submitted)', 1);
         $para('results');
         $sec->addText("Overall: {$r['overall']['assessments']} assessment(s), {$r['overall']['candidates']} candidate results".($r['overall']['pass_rate'] !== null ? ", pass rate {$r['overall']['pass_rate']}%." : '.'));
-        foreach ([['By qualification', $r['by_qualification']], ['By year level', $r['by_level']]] as [$title, $set]) {
+        foreach ([['By qualification code', $r['by_qualification']], ['By term', $r['by_term']], ['By year level', $r['by_level']]] as [$title, $set]) {
             if ($set) {
                 $sec->addTitle($title, 2);
-                $this->table($sec, [$title === 'By year level' ? 'Year level' : 'Qualification', 'Assessments', 'Candidates', 'Pass rate', 'Class average', 'Absent'],
+                $this->table($sec, [$title === 'By year level' ? 'Year level' : ($title === 'By term' ? 'Term' : 'Qualification code'), 'Assessments', 'Candidates', 'Pass rate', 'Class average', 'Absent'],
                     array_map(fn ($x) => [$x['name'], $x['assessments'], $x['candidates'], $x['pass_rate'] !== null ? $x['pass_rate'].'%' : '—', $x['average'].'%', $x['absent']], $set));
             }
         }
@@ -105,6 +104,10 @@ class DeanReportDocx
         $this->lines($sec, $e['adjustments'] ? array_map(fn ($x) => $x['name'].($x['why'] !== '' ? ': '.$x['why'] : ''), $e['adjustments']) : ['None.']);
         $sec->addTitle('Overdue ('.count($e['overdue']).')', 2);
         $this->lines($sec, $e['overdue'] ? array_map(fn ($x) => "{$x['name']} — {$x['status']} (examiner: {$x['examiner']})", $e['overdue']) : ['None.']);
+        $sec->addTitle('Subjects without an internal moderator ('.count($h['no_moderator']).')', 2);
+        $this->lines($sec, $h['no_moderator'] ?: ['None.']);
+        $sec->addTitle('Subjects without an examiner ('.count($h['no_examiner']).')', 2);
+        $this->lines($sec, $h['no_examiner'] ?: ['None.']);
         $sec->addTitle('External moderators’ recommendations ('.count($e['external']).')', 2);
         $this->lines($sec, $e['external'] ? array_map(fn ($x) => $x['name'].': '.$x['text'], $e['external']) : ['None recorded.']);
 
@@ -112,9 +115,17 @@ class DeanReportDocx
         $para('actions');
         $this->lines($sec, $d['actions'] ? array_map(fn ($x) => $x['name'].': '.$x['text'], $d['actions']) : ['None recorded.']);
 
-        $sec->addTitle('Appendix: all assessments', 1);
-        $this->table($sec, ['Subject', 'Assessment', 'Date', 'Status', 'Examiner', 'Moderator', 'Cand.', 'Pass %', 'Adj.'],
-            array_map(fn ($x) => [$x['code'].' '.$x['subject'], $x['title'], $x['date'] ?? '—', $x['status'].($x['overdue'] ? ' (overdue)' : ''), $x['examiner'], $x['moderator'], $x['candidates'] ?? '—', $x['pass_rate'] !== null ? $x['pass_rate'] : '—', $x['adjust'] ? 'Yes' : 'No'], $d['appendix']), 8);
+        $sec->addTitle('Appendix: all assessments by term ('.count($d['appendix']).')', 1);
+        $byTerm = collect($d['appendix'])->groupBy('term');
+        foreach ([1, 2, 3, 4, 0] as $tn) {
+            $rowsT = $byTerm->get($tn, collect());
+            if ($tn === 0 && $rowsT->isEmpty()) {
+                continue;
+            }
+            $sec->addTitle(($tn ? 'Term '.$tn : 'No assessment date').' · '.$rowsT->count().' assessment(s)', 2);
+            $this->table($sec, ['Subject', 'Assessment', 'Date', 'Status', 'Examiner', 'Moderator', 'Cand.', 'Pass %', 'Adj.'],
+                $rowsT->map(fn ($x) => [$x['code'].' '.$x['subject'], $x['title'], $x['date'] ?? '—', $x['status'].($x['overdue'] ? ' (overdue)' : ''), $x['examiner'], $x['moderator'], $x['candidates'] ?? '—', $x['pass_rate'] !== null ? $x['pass_rate'] : '—', $x['adjust'] ? 'Yes' : 'No'])->all(), 8);
+        }
 
         $sec->addTextBreak(2);
         $sec->addText('Head of Department: ______________________________        Date: ________________', ['size' => 10]);

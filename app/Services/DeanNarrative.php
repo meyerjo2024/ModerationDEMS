@@ -26,10 +26,11 @@ class DeanNarrative
 
         return [
             'institution' => $d['meta']['institution'], 'department' => $d['meta']['department'], 'period' => $d['meta']['period'], 'qualification_filter' => $d['meta']['qualification'], 'assessment_types' => $d['meta']['kind'],
-            'at_a_glance' => \Illuminate\Support\Arr::except($d['headline'], []),
+            'at_a_glance' => \Illuminate\Support\Arr::only($d['headline'], ['subjects', 'assessments', 'completed', 'pending', 'in_process', 'overdue', 'completed_pct', 'no_activity']) + ['subjects_without_internal_moderator' => count($d['headline']['no_moderator']), 'subjects_without_examiner' => count($d['headline']['no_examiner'])],
+            'by_qualification_code' => $d['by_code'], 'by_term_calendar_quarters' => $d['by_term'],
             'moderation_compliance' => \Illuminate\Support\Arr::except($d['compliance'], []),
             'assessment_quality' => ['ratings_0_poor_1_adequate_2_good' => $d['quality']['areas'], 'moderator_yes_no_checks' => $d['quality']['yn'], 'rated_poor' => $d['quality']['poor']],
-            'student_results' => \Illuminate\Support\Arr::only($d['results'], ['overall', 'by_qualification', 'by_level', 'low', 'drops', 'subminimum']),
+            'student_results' => \Illuminate\Support\Arr::only($d['results'], ['overall', 'by_qualification', 'by_level', 'by_term', 'low', 'drops', 'subminimum']),
             'mark_adjustments_recommended' => array_map(fn ($x) => ['assessment' => $x['name'], 'reason' => $scrub($x['why'])], $d['exceptions']['adjustments']),
             'overdue' => array_map(fn ($x) => ['assessment' => $x['name'], 'status' => $x['status']], $d['exceptions']['overdue']),
             'external_moderator_recommendations' => array_map(fn ($x) => ['assessment' => $x['name'], 'text' => $scrub($x['text'])], $d['exceptions']['external']),
