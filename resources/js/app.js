@@ -5,6 +5,20 @@ window.Alpine = Alpine;
 // installable app: the service worker only adds an offline page
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 
+// ── Install to the home screen / desktop (browser) ─────────────────────────
+// Chrome, Edge and Android fire this once the site is installable; we keep the event so a visible "Install app" button can use it.
+let installEvent = null;
+const installWatchers = new Set();
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    installEvent = e;
+    installWatchers.forEach((f) => f());
+});
+window.addEventListener('appinstalled', () => {
+    installEvent = null;
+    installWatchers.forEach((f) => f());
+});
+
 // ── iPhone app (Capacitor shell) ────────────────────────────────────────────
 // Inside the app the native plugins are reachable through Capacitor; in a normal browser none of this runs.
 const cap = window.Capacitor;
@@ -891,6 +905,35 @@ Alpine.data('sidePanel', () => ({
     toggle() {
         this.show = !this.show;
         try { localStorage.setItem('dems.side', this.show ? '1' : '0'); } catch (e) {}
+    },
+}));
+
+// "Install app" button: browsers that allow it get the real install prompt; iPhone/iPad Safari gets the Add to Home Screen steps.
+Alpine.data('installApp', () => ({
+    can: false,
+    ios: false,
+    standalone: false,
+    help: false,
+    init() {
+        const ua = navigator.userAgent || '';
+        this.standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+        this.ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        this.can = !!installEvent;
+        const f = () => { this.can = !!installEvent; };
+        installWatchers.add(f);
+    },
+    get show() {
+        return !this.standalone && !inApp && (this.can || this.ios);
+    },
+    async install() {
+        if (installEvent) {
+            installEvent.prompt();
+            try { await installEvent.userChoice; } catch (e) {}
+            installEvent = null;
+            this.can = false;
+            return;
+        }
+        this.help = true;
     },
 }));
 

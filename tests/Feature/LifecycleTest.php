@@ -1430,4 +1430,22 @@ class LifecycleTest extends TestCase
         $d = app(\App\Services\DeanReport::class)->build($this->hod, []);
         $this->assertSame('No date', collect($d['by_term'])->last()['label']);
     }
+
+    public function test_app_is_installable_from_the_browser(): void
+    {
+        $m = json_decode(file_get_contents(public_path('manifest.json')), true);
+        $this->assertSame('standalone', $m['display']);
+        $this->assertNotEmpty(array_filter($m['icons'], fn ($i) => $i['sizes'] === '192x192'));
+        $this->assertNotEmpty(array_filter($m['icons'], fn ($i) => $i['sizes'] === '512x512'));
+        $this->assertSame(['/', '/assessments/create', '/my-subjects'], array_column($m['shortcuts'], 'url'));
+        foreach ($m['icons'] as $i) {
+            $this->assertFileExists(public_path($i['src']));
+        }
+        $this->assertFileExists(public_path('sw.js'));
+        // the sign-in page and the signed-in header both offer "Install"; the account page explains it
+        $this->post('/logout');
+        $this->get('/login')->assertOk()->assertSee('installApp', false)->assertSee('Install the app on this device');
+        $this->as($this->examiner)->get('/')->assertOk()->assertSee('Install the app for quick access');
+        $this->as($this->examiner)->get('/account/password')->assertOk()->assertSee('Install the app');
+    }
 }

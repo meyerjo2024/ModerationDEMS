@@ -32,6 +32,7 @@
         @if (session('error'))<x-notice tone="error">{{ session('error') }}</x-notice>@endif
         @error('email')<x-notice tone="error">{{ $message }}</x-notice>@enderror
         <button type="submit" class="btn-primary w-full">Sign in <x-icon name="arrow-right" /></button>
+        <x-install-button variant="block" />
       </form>
       <p x-data="{ ios: /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone }" x-show="ios" x-cloak class="mt-4 rounded-lg bg-[var(--canvas-soft)] p-3 text-center text-xs text-[var(--ink-2)]">On iPhone: tap <b>Share</b> (the square with an arrow), then <b>Add to Home Screen</b> to install this as an app.</p>
       <p class="mt-3 text-center text-xs text-[var(--ink-3)]"><a href="{{ route('privacy') }}" class="underline">Privacy</a> · <a href="{{ route('support') }}" class="underline">Support</a></p>

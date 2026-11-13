@@ -10,6 +10,12 @@
     <div><label class="label" for="password_confirmation">Confirm new password</label><input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password" class="field"></div>
     <div class="flex justify-end gap-3"><a href="{{ route('dashboard') }}" class="btn-secondary">Cancel</a><button class="btn-primary">Change password</button></div>
   </form>
+  <section class="card space-y-3 p-6 sm:p-8" x-data="installApp" x-show="show" x-cloak>
+    <div><p class="kicker">This device</p><h2 class="mt-1 text-xl font-semibold">Install the app</h2>
+      <p class="mt-1 text-sm text-[var(--ink-2)]">Put Moderation on your home screen or desktop for one-tap access. It opens full-screen and stays signed in like any app.</p></div>
+    <button type="button" class="btn-secondary" @click="install()"><x-icon name="download" /> Install app</button>
+    <div x-show="help" x-cloak class="rounded-xl bg-[var(--fog)] p-4 text-sm text-[var(--ink-2)]">Tap <b>Share</b> ⬆︎ in Safari, then <b>Add to Home Screen</b>, then <b>Add</b>.</div>
+  </section>
   <form method="POST" action="{{ route('account.notifications') }}" class="card space-y-3 p-6 sm:p-8">@csrf
     <div><p class="kicker">Notifications</p><h2 class="mt-1 text-xl font-semibold">E-mail</h2>
       <p class="mt-1 text-sm text-[var(--ink-2)]">Get an e-mail when something is waiting on you and when a deadline or test date is close. You always see these under the bell in the platform.</p></div>
