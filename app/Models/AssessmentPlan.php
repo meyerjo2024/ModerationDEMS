@@ -11,7 +11,7 @@ class AssessmentPlan extends Model
 
     protected function casts(): array
     {
-        return ['assessment_date' => 'date'];
+        return ['assessment_date' => 'date', 'subminimum' => 'boolean'];
     }
 
     public function subject(): BelongsTo

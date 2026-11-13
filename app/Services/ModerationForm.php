@@ -26,6 +26,8 @@ class ModerationForm
                     "$p.qualification_code" => $text(40),
                     "$p.assessment_date" => [$req, 'date'],
                     "$p.weights" => [$req, 'array'],
+                    "$p.subminimum" => ['nullable', Rule::in(['YES', 'NO'])],
+                    "$p.subminimum_percent" => ["required_if:$p.subminimum,YES", 'nullable', 'numeric', 'between:1,100'],
                 ];
                 foreach (array_keys(config('moderation_form.question_types')) as $k) {
                     $r["$p.weights.$k"] = ['nullable', 'numeric', 'between:0,100'];
@@ -105,6 +107,8 @@ class ModerationForm
             'qualification' => trim((string) ($in['qualification'] ?? '')),
             'qualification_code' => trim((string) ($in['qualification_code'] ?? '')),
             'assessment_date' => $in['assessment_date'] ?? null,
+            'subminimum' => ($in['subminimum'] ?? 'NO') === 'YES' ? 'YES' : 'NO',
+            'subminimum_percent' => ($in['subminimum'] ?? 'NO') === 'YES' && is_numeric($in['subminimum_percent'] ?? null) ? round((float) $in['subminimum_percent'], 2) + 0 : null,
             'weights' => $weights,
         ];
     }

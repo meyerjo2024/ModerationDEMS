@@ -31,7 +31,10 @@
                         <p class="mb-2 text-xs text-[var(--ink-2)]">Date each test or supplementary / special assessment is written. You are reminded {{ (int) config('dems.assessment_reminder_days') }} days before.</p>
                         <div class="grid grid-cols-1 gap-2 min-[440px]:grid-cols-2 sm:grid-cols-4">
                           @foreach (config('dems.assessment_numbers') as $n)
-                            <label class="min-w-0 text-xs font-semibold text-[var(--ink-2)]">{{ config('dems.assessment_labels.'.$n, $n) }}<input type="date" name="plans[{{ $s->id }}][{{ $n }}]" value="{{ $plans[$s->id][$n] ?? '' }}" class="field mt-0.5 w-full min-w-0 max-w-full !px-2 !py-1.5 text-xs"></label>
+                            <div class="min-w-0" x-data="{ sub: @js(isset($subs[$s->id][$n]) ? '1' : '0') }"><label class="block text-xs font-semibold text-[var(--ink-2)]">{{ config('dems.assessment_labels.'.$n, $n) }}<input type="date" name="plans[{{ $s->id }}][{{ $n }}]" value="{{ $plans[$s->id][$n] ?? '' }}" class="field mt-0.5 w-full min-w-0 max-w-full !px-2 !py-1.5 text-xs"></label>
+                              <div class="mt-1 flex items-center gap-1.5"><label class="text-[11px] font-medium text-[var(--ink-3)]" for="so-{{ $s->id }}-{{ $n }}">Subminimum</label>
+                                <select id="so-{{ $s->id }}-{{ $n }}" name="subon[{{ $s->id }}][{{ $n }}]" x-model="sub" class="field !w-auto !px-1.5 !py-0.5 text-[11px]"><option value="0">No</option><option value="1">Yes</option></select>
+                                <span x-show="sub === '1'" x-cloak class="inline-flex items-center gap-0.5"><input type="number" min="1" max="100" step="any" inputmode="decimal" name="subpct[{{ $s->id }}][{{ $n }}]" value="{{ $subs[$s->id][$n] ?? '' }}" aria-label="Subminimum percentage" class="field !w-14 !px-1.5 !py-0.5 text-[11px]" :required="sub === '1'"><span class="text-[11px] text-[var(--ink-3)]">%</span></span></div></div>
                           @endforeach
                         </div>
                       </div>

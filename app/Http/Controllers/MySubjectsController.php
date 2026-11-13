@@ -26,6 +26,7 @@ class MySubjectsController extends Controller
             'defaults' => DB::table('subject_user')->where('user_id', $user->id)->where('role', Role::Examiner->value)->whereNotNull('default_internal_moderator_id')->pluck('default_internal_moderator_id', 'subject_id')->all(),
             'moderators' => User::withRole(Role::InternalModerator)->where('active', true)->where('id', '!=', $user->id)->orderBy('name')->with('subjects')->get(),
             'plans' => \App\Models\AssessmentPlan::where('user_id', $user->id)->get()->groupBy('subject_id')->map(fn ($g) => $g->mapWithKeys(fn ($p) => [$p->number => $p->assessment_date->toDateString()])->all())->all(),
+            'subs' => \App\Models\AssessmentPlan::where('user_id', $user->id)->where('subminimum', true)->get()->groupBy('subject_id')->map(fn ($g) => $g->mapWithKeys(fn ($p) => [$p->number => (float) $p->subminimum_percent])->all())->all(),
             'subjects' => Subject::orderBy('qualification')->orderBy('code')->get()->groupBy(fn ($s) => $s->qualification ?: 'Other'),
         ]);
     }
@@ -50,6 +51,8 @@ class MySubjectsController extends Controller
         $user = $request->user();
         $d = $request->validate(['subjects' => ['nullable', 'array'], 'subjects.*' => ['array'], 'subjects.*.*' => ['integer', 'exists:subjects,id'],
             'plans' => ['nullable', 'array'], 'plans.*' => ['array'], 'plans.*.*' => ['nullable', 'date'],
+            'subon' => ['nullable', 'array'], 'subon.*' => ['array'], 'subon.*.*' => ['nullable', 'in:0,1'],
+            'subpct' => ['nullable', 'array'], 'subpct.*' => ['array'], 'subpct.*.*' => ['nullable', 'numeric', 'between:1,100'],
             'moderators' => ['nullable', 'array'], 'moderators.*' => ['nullable', 'integer']]);
         DB::transaction(function () use ($user, $d) {
             foreach (self::ROLES as $role) {
@@ -71,7 +74,9 @@ class MySubjectsController extends Controller
                 foreach ($d['plans'] ?? [] as $sid => $tests) {
                     foreach ($tests as $number => $date) {
                         if ($date && in_array((int) $sid, $mine, true) && in_array($number, config('dems.assessment_numbers'), true)) {
-                            \App\Models\AssessmentPlan::create(['user_id' => $user->id, 'subject_id' => (int) $sid, 'number' => $number, 'assessment_date' => $date]);
+                            $on = ($d['subon'][$sid][$number] ?? '0') === '1' && (float) ($d['subpct'][$sid][$number] ?? 0) > 0;
+                            \App\Models\AssessmentPlan::create(['user_id' => $user->id, 'subject_id' => (int) $sid, 'number' => $number, 'assessment_date' => $date,
+                                'subminimum' => $on, 'subminimum_percent' => $on ? (float) $d['subpct'][$sid][$number] : null]);
                         }
                     }
                 }

@@ -1178,4 +1178,40 @@ class LifecycleTest extends TestCase
         $this->assertSame('BPEMCA', collect($this->subject->fresh()->qualificationOptions())->firstWhere('name', 'BTech: Emergency Medical Care')['code']);
         $this->as($this->examiner)->post('/admin/qualifications', ['names' => ['x'], 'codes' => ['y']])->assertForbidden();
     }
+
+    public function test_subminimum_from_calendar_to_report_pass_fail_figures(): void
+    {
+        // set in the examiner's test calendar (Yes + %), copied to the assessment when it is started
+        $this->as($this->examiner)->put('/my-subjects', ['subjects' => ['EXAMINER' => [$this->subject->id]], 'plans' => [$this->subject->id => ['T1' => '2026-03-12']],
+            'subon' => [$this->subject->id => ['T1' => '1']], 'subpct' => [$this->subject->id => ['T1' => '60']]])->assertSessionHasNoErrors();
+        $this->as($this->examiner)->get('/my-subjects')->assertOk()->assertSee('Subminimum');
+        $a = $this->newAssessment(false);
+        $this->assertTrue($a->subminimum);
+        $this->assertEquals(60, $a->subminimum_percent);
+
+        // Yes needs a percentage in Section 1
+        $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'PAPER', 'file' => $this->pdf('paper.pdf')], ['Accept' => 'application/json'])->assertOk();
+        $this->as($this->examiner)->postJson("/assessments/{$a->id}/submit-pre", ['s1' => array_merge($this->s1(), ['subminimum' => 'YES', 'subminimum_percent' => null]), 'signature' => $this->sig()])->assertStatus(422);
+        $this->as($this->examiner)->postJson("/assessments/{$a->id}/submit-pre", ['s1' => array_merge($this->s1(), ['subminimum' => 'YES', 'subminimum_percent' => 60]), 'signature' => $this->sig()])->assertOk();
+        $this->approveGate1($a);
+        $this->submitSection2Manual($a); // marks 72, 48.5, 55, 30
+
+        $r = $a->fresh()->resultsSummary();
+        $this->assertSame(4, $r['total']);
+        $this->assertSame([2, 2], [$r['passed'], $r['failed']]);
+        $this->assertSame([1, 3, 1], [$r['met'], $r['not_met'], $r['passed_but_below']]);
+        $this->assertStringContainsString('1 of 4 students met the subminimum and 3 did not (1 reached the pass mark but not the subminimum)', $r['text']);
+
+        // the moderator sees it next to the adjustments question; the report carries it
+        $this->as($this->internal)->get("/assessments/{$a->id}")->assertOk()->assertSee('Subminimum 60%')->assertSee('2 of 4 students passed');
+        $this->approveGate2($a);
+        $data = app(\App\Services\ReportService::class)->data($a->fresh());
+        $this->assertSame($r['text'], $data['results']['text']);
+        $html = view('pdf.report', $data)->render();
+        $this->assertStringContainsString('Subminimum 60%: 1 of 4 students met the subminimum', $html);
+
+        // without a subminimum only the pass/fail line appears
+        $b = $this->newAssessment(false, null, 'T2');
+        $this->assertFalse($b->subminimum);
+    }
 }

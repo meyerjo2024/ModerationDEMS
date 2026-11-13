@@ -55,6 +55,7 @@ class Workflow
         if (! $user->isResponsibleFor($subject, Role::Examiner)) {
             throw new WorkflowException("Add {$subject->code} to My subjects first — you can only start assessments for subjects you are responsible for.");
         }
+        $plan = \App\Models\AssessmentPlan::where('user_id', $user->id)->where('subject_id', $subject->id)->where('number', $in['number'] ?? '')->first();
         if (empty($in['assessment_date'])) { // fall back to the date in the examiner's own test calendar
             $in['assessment_date'] = \App\Models\AssessmentPlan::where('user_id', $user->id)->where('subject_id', $subject->id)->where('number', $in['number'] ?? '')->first()?->assessment_date?->toDateString();
         }
@@ -81,10 +82,11 @@ class Workflow
         $opts = $subject->qualificationOptions();
         $chosen = collect($opts)->first(fn ($o) => mb_strtolower($o['name']) === mb_strtolower(trim((string) ($in['qualification'] ?? '')))) ?? ($opts[0] ?? null);
 
-        return DB::transaction(function () use ($user, $subject, $internal, $external, $in, $meta, $year, $label, $chosen) {
+        return DB::transaction(function () use ($user, $subject, $internal, $external, $in, $meta, $year, $label, $chosen, $plan) {
             $a = Assessment::create([
                 'subject_id' => $subject->id, 'number' => $in['number'], 'academic_year' => $year, 'label' => $label, 'examiner_id' => $user->id,
                 'internal_moderator_id' => $internal->id, 'external_moderator_id' => $external?->id, 'assessment_date' => ! empty($in['assessment_date']) ? $in['assessment_date'] : null, 'year_level' => $in['year_level'] ?? null,
+                'subminimum' => (bool) $plan?->subminimum, 'subminimum_percent' => $plan?->subminimum ? $plan->subminimum_percent : null,
                 'qualification' => $chosen['name'] ?? null, 'qualification_code' => ($chosen['code'] ?? '') !== '' ? $chosen['code'] : null,
                 'status' => S::Draft,
             ]);
@@ -102,7 +104,8 @@ class Workflow
         $this->expect($a, S::Draft, S::RevisionRequested);
         $norm = ModerationForm::s1Examiner($s1);
         $a->update(['s1_examiner' => $norm, 'assessment_date' => $norm['assessment_date'] ?: $a->assessment_date, 'year_level' => $norm['subject_level'] ?: $a->year_level,
-            'qualification' => $norm['qualification'] ?: $a->qualification, 'qualification_code' => $norm['qualification_code'] ?: $a->qualification_code]);
+            'qualification' => $norm['qualification'] ?: $a->qualification, 'qualification_code' => $norm['qualification_code'] ?: $a->qualification_code,
+            'subminimum' => $norm['subminimum'] === 'YES', 'subminimum_percent' => $norm['subminimum'] === 'YES' ? $norm['subminimum_percent'] : null]);
     }
 
     public function upload(User $user, Assessment $a, AttachmentKind $kind, string $filename, string $bytes, array $meta, ?string $label = null): Attachment
@@ -173,7 +176,8 @@ class Workflow
         DB::transaction(function () use ($a, $user, $form, $sig, $meta, $revision, $hash) {
             $a = $this->lock($a, S::Draft, S::RevisionRequested);
             $a->update(['status' => S::PendingPreModeration, 's1_examiner' => $form, 'assessment_date' => $form['assessment_date'] ?: $a->assessment_date, 'year_level' => $form['subject_level'] ?: $a->year_level,
-                'qualification' => $form['qualification'] ?: $a->qualification, 'qualification_code' => $form['qualification_code'] ?: $a->qualification_code, 'revision' => $revision]);
+                'qualification' => $form['qualification'] ?: $a->qualification, 'qualification_code' => $form['qualification_code'] ?: $a->qualification_code,
+                'subminimum' => $form['subminimum'] === 'YES', 'subminimum_percent' => $form['subminimum'] === 'YES' ? $form['subminimum_percent'] : null, 'revision' => $revision]);
             $this->signer->record($a, $user, SignatureSection::ExaminerSection1, $sig['image'], $hash, $meta);
             $this->audit->log('SECTION1_SUBMITTED', $a->id, $user->id, ['revision' => $revision, 'contentHash' => $hash], $meta['ip']);
             $this->notifier->inApp([$a->internal_moderator_id], $a, "{$a->title()} is ready for your pre-moderation review.");

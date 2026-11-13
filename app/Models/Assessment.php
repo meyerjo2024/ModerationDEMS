@@ -31,6 +31,7 @@ class Assessment extends Model
             'scores' => 'array',
             'completed_at' => 'datetime',
             'assessment_date' => 'date',
+            'subminimum' => 'boolean',
         ];
     }
 
@@ -203,6 +204,37 @@ class Assessment extends Model
 
         return $this->signatures->where('section', $section)
             ->contains(fn ($s) => ! $approvedAt || $s->signed_at->greaterThanOrEqualTo($approvedAt));
+    }
+
+    /**
+     * Pass/fail figures for the report, with the subminimum when the test has one. Null until the marks are submitted.
+     *
+     * @return array{total: int, pass_mark: float, passed: int, failed: int, subminimum: float|null, met: int|null, not_met: int|null, passed_but_below: int|null, text: string}|null
+     */
+    public function resultsSummary(): ?array
+    {
+        $scores = $this->scores;
+        if (! is_array($scores) || $scores === [] || ! ($this->total_marks > 0)) {
+            return null;
+        }
+        $total = (float) $this->total_marks;
+        $pass = \App\Services\StatisticsCalculator::PASS_MARK;
+        $pct = array_map(fn ($s) => (float) $s / $total * 100, $scores);
+        $n = count($pct);
+        $passed = count(array_filter($pct, fn ($p) => $p >= $pass - 1e-9));
+        $out = ['total' => $n, 'pass_mark' => $pass, 'passed' => $passed, 'failed' => $n - $passed, 'subminimum' => null, 'met' => null, 'not_met' => null, 'passed_but_below' => null];
+        $text = "Pass mark {$pass}%: {$passed} of {$n} students passed and ".($n - $passed).' failed.';
+        if ($this->subminimum && (float) $this->subminimum_percent > 0) {
+            $sub = (float) $this->subminimum_percent;
+            $met = count(array_filter($pct, fn ($p) => $p >= $sub - 1e-9));
+            $below = count(array_filter($pct, fn ($p) => $p >= $pass - 1e-9 && $p < $sub - 1e-9));
+            $out = array_merge($out, ['subminimum' => $sub, 'met' => $met, 'not_met' => $n - $met, 'passed_but_below' => $below]);
+            $text .= " Subminimum {$sub}%: {$met} of {$n} students met the subminimum and ".($n - $met).' did not'
+                .($below > 0 ? " ({$below} reached the pass mark but not the subminimum)" : '').'.';
+        }
+        $out['text'] = $text;
+
+        return $out;
     }
 
     public function getNumberLabelAttribute(): string

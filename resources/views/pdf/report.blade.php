@@ -117,6 +117,7 @@ $s1q = $s1m['questions'] ?? [];
   @endforeach
   <tr><td class="blue b">{{ $f['adjustments'] }} <span class="ans" style="float:right">{{ $yn($s2m['adjustments']['recommended'] ?? null) }}</span></td></tr>
   <tr><td><span class="i">Specify:</span> {!! $nl($s2m['adjustments']['specify'] ?? '') !!}</td></tr>
+  @if (! empty($results))<tr><td><span class="i">Pass / fail{{ ! empty($results['subminimum']) ? ' and subminimum' : '' }}:</span> {{ $results['text'] }}</td></tr>@endif
 </table>
 
 @include('pdf.declaration', ['rows' => [['Examiner', $sig['s2']['examiner']], ['Internal Moderator', $sig['s2']['internal']], ['External Moderator', $hasExternal ? $sig['s2']['external'] : null, ! $hasExternal]]])
@@ -133,6 +134,7 @@ $s1q = $s1m['questions'] ?? [];
     @endforeach
     <tr><td class="blue b">{{ $f['adjustments'] }} <span class="ans" style="float:right">{{ $yn($s3['adjustments']['recommended'] ?? null) }}</span></td></tr>
     <tr><td><span class="i">Specify:</span> {!! $nl($s3['adjustments']['specify'] ?? '') !!}</td></tr>
+    @if (! empty($results))<tr><td><span class="i">Pass / fail{{ ! empty($results['subminimum']) ? ' and subminimum' : '' }}:</span> {{ $results['text'] }}</td></tr>@endif
   </table>
 
   <table class="nb" style="margin-top:10px">
