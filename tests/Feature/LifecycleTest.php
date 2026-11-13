@@ -1374,4 +1374,25 @@ class LifecycleTest extends TestCase
         $this->as($this->examiner)->postJson('/dean-report/narrative', ['mode' => 'draft'])->assertForbidden();
         $this->as($this->examiner)->postJson('/dean-report/narrative/save', ['sections' => $out])->assertForbidden();
     }
+
+    public function test_groq_falls_back_to_a_model_the_key_can_use(): void
+    {
+        config(['dems.groq.key' => 'k', 'dems.groq.model' => 'llama-3.3-70b-versatile']);
+        \Illuminate\Support\Facades\Cache::flush();
+        $ok = ['choices' => [['message' => ['content' => json_encode(['summary' => 'S', 'compliance' => 'C', 'quality' => 'Q', 'results' => 'R', 'attention' => 'A', 'actions' => 'W'])]]]];
+        \Illuminate\Support\Facades\Http::fake([
+            'api.groq.com/openai/v1/chat/completions' => \Illuminate\Support\Facades\Http::sequence()
+                ->push(['error' => ['message' => 'The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.', 'code' => 'model_not_found']], 404)
+                ->push($ok)->push($ok),
+            'api.groq.com/openai/v1/models' => \Illuminate\Support\Facades\Http::response(['data' => [['id' => 'whisper-large-v3'], ['id' => 'llama-guard-4-12b'], ['id' => 'openai/gpt-oss-20b'], ['id' => 'llama-3.1-8b-instant'], ['id' => 'openai/gpt-oss-120b']]]),
+        ]);
+        $client = app(\App\Services\GroqClient::class);
+        $this->assertSame(['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'llama-3.1-8b-instant'], $client->models());
+        $text = $client->chat([['role' => 'user', 'content' => 'x']]);
+        $this->assertStringContainsString('"summary":"S"', $text);
+        \Illuminate\Support\Facades\Http::assertSent(fn ($r) => str_contains($r->url(), 'chat/completions') && $r['model'] === 'openai/gpt-oss-120b');
+        // the working model is remembered, so the next call does not hit the missing one again
+        $client->chat([['role' => 'user', 'content' => 'y']]);
+        \Illuminate\Support\Facades\Http::assertSentCount(5); // 404 + models + retry + models(listing test) + remembered call
+    }
 }
