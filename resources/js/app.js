@@ -894,6 +894,39 @@ Alpine.data('sidePanel', () => ({
     },
 }));
 
+// Dean report: write / edit the narrative, then save it into the report.
+Alpine.data('deanNarrative', (cfg) => ({
+    sections: cfg.sections,
+    busy: '',
+    msg: '',
+    error: '',
+    async generate(mode) {
+        this.busy = mode;
+        this.error = '';
+        this.msg = '';
+        try {
+            const r = await api('POST', cfg.generate + location.search, { mode });
+            this.sections = { ...this.sections, ...r.sections };
+            this.msg = mode === 'ai' ? 'Written by the AI from your figures. Read it, edit anything, then press “Save into report”.' : 'Draft written from your figures. Edit it, then press “Save into report”.';
+        } catch (e) {
+            this.error = e.message;
+        } finally {
+            this.busy = '';
+        }
+    },
+    async save(clear = false) {
+        this.busy = 'save';
+        this.error = '';
+        try {
+            await api('POST', cfg.save, { sections: clear ? {} : this.sections });
+            location.reload();
+        } catch (e) {
+            this.error = e.message;
+            this.busy = '';
+        }
+    },
+}));
+
 Alpine.data('notifs', () => ({
     items: [],
     unread: 0,

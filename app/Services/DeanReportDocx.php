@@ -34,6 +34,14 @@ class DeanReportDocx
             }
         }
 
+        $para = function (string $k) use ($sec, $d) {
+            foreach (preg_split('/\R+/', (string) ($d['narrative'][$k] ?? '')) as $line) {
+                if (trim($line) !== '') {
+                    $sec->addText($line, ['size' => 10.5], ['spaceAfter' => 100, 'alignment' => Jc::BOTH]);
+                }
+            }
+        };
+        $para('summary');
         $h = $d['headline'];
         $sec->addTitle('1. At a glance', 1);
         $this->table($sec, ['Subjects', 'Assessments', 'Completed', 'Pending moderation', 'In process', 'Overdue'], [[$h['subjects'], $h['assessments'], $h['completed'].($h['completed_pct'] !== null ? " ({$h['completed_pct']}%)" : ''), $h['pending'], $h['in_process'], $h['overdue']]]);
@@ -45,6 +53,7 @@ class DeanReportDocx
 
         $c = $d['compliance'];
         $sec->addTitle('2. Moderation compliance', 1);
+        $para('compliance');
         $this->table($sec, ['Measure', 'Result'], [
             ['Moderated before the students wrote (Yes / No / not yet recorded)', "{$c['pre_yes']} / {$c['pre_no']} / {$c['pre_unknown']}"],
             ['Completed on time (within the post-moderation window) / late', "{$c['on_time']} / {$c['late']}"],
@@ -57,6 +66,7 @@ class DeanReportDocx
 
         $q = $d['quality'];
         $sec->addTitle('3. Assessment quality (internal moderators’ ratings, 0 = poor, 1 = adequate, 2 = good)', 1);
+        $para('quality');
         $this->table($sec, ['Area', 'Average (of 2)', 'Rated', 'Rated poor'], array_map(fn ($a) => [$a['label'], $a['avg'] ?? '—', $a['n'], $a['poor']], $q['areas']));
         $this->table($sec, ['Moderator’s check', 'Yes', 'No'], array_map(fn ($a) => [$a['label'], $a['yes'], $a['no']], $q['yn']));
         if ($q['poor']) {
@@ -66,6 +76,7 @@ class DeanReportDocx
 
         $r = $d['results'];
         $sec->addTitle('4. Student results (anonymous, from the marks submitted)', 1);
+        $para('results');
         $sec->addText("Overall: {$r['overall']['assessments']} assessment(s), {$r['overall']['candidates']} candidate results".($r['overall']['pass_rate'] !== null ? ", pass rate {$r['overall']['pass_rate']}%." : '.'));
         foreach ([['By qualification', $r['by_qualification']], ['By year level', $r['by_level']]] as [$title, $set]) {
             if ($set) {
@@ -89,6 +100,7 @@ class DeanReportDocx
 
         $e = $d['exceptions'];
         $sec->addTitle('5. Matters for attention', 1);
+        $para('attention');
         $sec->addTitle('General mark adjustments recommended ('.count($e['adjustments']).')', 2);
         $this->lines($sec, $e['adjustments'] ? array_map(fn ($x) => $x['name'].($x['why'] !== '' ? ': '.$x['why'] : ''), $e['adjustments']) : ['None.']);
         $sec->addTitle('Overdue ('.count($e['overdue']).')', 2);
@@ -97,6 +109,7 @@ class DeanReportDocx
         $this->lines($sec, $e['external'] ? array_map(fn ($x) => $x['name'].': '.$x['text'], $e['external']) : ['None recorded.']);
 
         $sec->addTitle('6. What examiners will do differently next time', 1);
+        $para('actions');
         $this->lines($sec, $d['actions'] ? array_map(fn ($x) => $x['name'].': '.$x['text'], $d['actions']) : ['None recorded.']);
 
         $sec->addTitle('Appendix: all assessments', 1);
