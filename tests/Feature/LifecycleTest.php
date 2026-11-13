@@ -1214,4 +1214,41 @@ class LifecycleTest extends TestCase
         $b = $this->newAssessment(false, null, 'T2');
         $this->assertFalse($b->subminimum);
     }
+
+    public function test_hod_can_delete_a_completed_practice_record(): void
+    {
+        $a = $this->newAssessment(false);
+        $this->submitSection1($a);
+        $this->approveGate1($a);
+        $this->submitSection2Manual($a);
+        $this->approveGate2($a);
+        $a->refresh();
+        $this->assertSame(AssessmentStatus::Completed, $a->status);
+        $keys = $a->attachments->pluck('storage_key')->all();
+        $this->assertNotEmpty($keys);
+
+        // only the HOD of the subject, with the password and the word DELETE
+        $this->as($this->examiner)->delete("/assessments/{$a->id}")->assertForbidden();
+        $this->as($this->internal)->delete("/assessments/{$a->id}")->assertForbidden();
+        $this->as($this->hod)->get("/assessments/{$a->id}")->assertOk()->assertSee('Delete this record');
+        $this->as($this->hod)->delete("/assessments/{$a->id}", ['current_password' => self::PW, 'confirm_text' => 'nope'])->assertSessionHasErrors('confirm_text');
+        $this->as($this->hod)->delete("/assessments/{$a->id}", ['current_password' => 'wrong-password-1', 'confirm_text' => 'DELETE'])->assertSessionHasErrors('current_password');
+        $this->assertNotNull(Assessment::find($a->id));
+        $otherHod = User::create(['name' => 'Other HOD', 'email' => 'oh@t.test', 'role' => Role::Hod, 'password' => self::PW]);
+        $this->as($otherHod)->delete("/assessments/{$a->id}", ['current_password' => self::PW, 'confirm_text' => 'DELETE'])->assertStatus(404);
+
+        $this->as($this->hod)->delete("/assessments/{$a->id}", ['current_password' => self::PW, 'confirm_text' => 'DELETE'])->assertRedirect(route('overview.subject', $a->subject_id));
+        $this->assertNull(Assessment::find($a->id));
+        $this->assertSame(0, \Illuminate\Support\Facades\DB::table('attachments')->where('assessment_id', $a->id)->count());
+        $this->assertSame(0, \Illuminate\Support\Facades\DB::table('audit_logs')->where('assessment_id', $a->id)->count());
+        foreach ($keys as $k) {
+            $this->assertSame(0, \Illuminate\Support\Facades\DB::table('file_blobs')->where('id', explode(':', $k, 2)[1])->count());
+        }
+        // one line stays in the general log, and the people on the record are told
+        $log = \App\Models\AuditLog::where('action', 'ASSESSMENT_DELETED')->first();
+        $this->assertNotNull($log);
+        $this->assertTrue($log->details['was_completed']);
+        $this->assertTrue(\App\Models\Notification::where('user_id', $this->examiner->id)->where('message', 'like', '%deleted the record%')->exists());
+        $this->assertFalse(\App\Models\Notification::where('user_id', $this->hod->id)->where('message', 'like', '%deleted the record%')->exists());
+    }
 }

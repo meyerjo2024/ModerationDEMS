@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/assessments/create', [AssessmentController::class, 'create'])->middleware('role:EXAMINER')->name('assessments.create');
     Route::post('/assessments', [AssessmentController::class, 'store'])->middleware('role:EXAMINER')->name('assessments.store');
     Route::get('/assessments/{assessment}', [AssessmentController::class, 'show'])->name('assessments.show');
+    Route::delete('/assessments/{assessment}', [AssessmentController::class, 'destroy'])->middleware('role:HOD')->name('assessments.destroy');
 
     Route::prefix('/assessments/{assessment}')->controller(WorkflowController::class)->group(function () {
         Route::put('/section1', 'saveSection1')->middleware('role:EXAMINER');

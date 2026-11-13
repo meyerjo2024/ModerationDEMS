@@ -29,3 +29,17 @@
     @endforeach
   </ol>
   <p class="mt-4 text-[11px] leading-snug text-slate-400">Entries are hash-chained: each one cryptographically covers the one before it.</p></div></section>
+
+@if (auth()->user()->hasRole(\App\Enums\Role::Hod) && $a->subject->hod_id === auth()->id())
+<section class="card border-rose-300/60 p-6" x-data="{ open: {{ $errors->has('current_password') || $errors->has('confirm_text') ? 'true' : 'false' }} }">
+  <button type="button" @click="open = !open" class="flex w-full items-center justify-between text-left"><span class="kicker text-rose-600">Delete this record</span><span class="text-[var(--ink-3)]" x-text="open ? '−' : '+'"></span></button>
+  <form x-show="open" x-cloak method="POST" action="{{ route('assessments.destroy', $a) }}" class="mt-3 space-y-3 text-sm" onsubmit="return confirm('Permanently delete {{ $a->title() }}? This cannot be undone.')">@csrf @method('DELETE')
+    <p class="text-[var(--ink-2)]">For demo or practice records. The documents, comments, signatures and this record’s audit trail are removed for good; the examiner and moderators are told. One line stays in the general audit log.</p>
+    @error('current_password')<p class="text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
+    @error('confirm_text')<p class="text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
+    <div><label class="label" for="del-pw">Your password</label><input id="del-pw" name="current_password" type="password" required autocomplete="current-password" class="field"></div>
+    <div><label class="label" for="del-txt">Type DELETE</label><input id="del-txt" name="confirm_text" required autocomplete="off" class="field" placeholder="DELETE"></div>
+    <button class="btn-danger w-full">Delete permanently</button>
+  </form>
+</section>
+@endif
