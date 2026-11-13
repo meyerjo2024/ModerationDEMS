@@ -16,7 +16,7 @@ Under each subject you tick you can also pick your usual **internal moderator** 
 
 ## Supplementary and special assessments
 
-Choose **Supplementary assessment** or **Special assessment** in the *Assessment* dropdown (under *Additional*), next to the tests T1–T7. They are moderated exactly like a test: the same Section 1, Gate 1, Section 2, Gate 2 (and external review if assigned), with their own marks.
+Choose **Supplementary**, **Special**, **Sick** or **Deferred assessment** in the *Assessment* dropdown (under *Additional*), next to the tests T1–T7. They are moderated exactly like a test: the same Section 1, Gate 1, Section 2, Gate 2 (and external review if assigned), with their own marks.
 
 - **Academic year:** pick the year; the same test or assessment can be created again in another year.
 - **Note:** for a second sitting in the same year (for example two aegrotat groups) add a short note such as *Aegrotat group B*; it appears in the title and on the report.
