@@ -9,9 +9,9 @@ $cfg = [
 @endphp
 <div x-data="preReview(@js($cfg))" @signed="sig = $event.detail" class="space-y-6">
   <section class="card p-6 sm:p-8">
-    <p class="kicker">Gate 1 · Review</p><h2 class="mt-1 text-2xl font-semibold">Assessment paper & memorandum</h2>
+    <p class="kicker">Gate 1 · Review</p><h2 class="mt-1 text-2xl font-semibold">Assessment documents</h2>
     <p class="mb-5 mt-1 text-sm text-slate-500 dark:text-zinc-400">Read the documents and the examiner’s Section 1, complete your ratings and answers below, then approve or send it back with feedback.</p>
-    <x-doc-viewer :docs="[['Assessment paper', $a->latestAttachment($AK::Paper)], ['Memorandum', $a->latestAttachment($AK::Memo)]]" />
+    <x-doc-viewer :docs="$a->documents()->map(fn ($d) => [$d->doc_label, $d])->all()" />
   </section>
 
   @include('assessments.partials.form-readonly', ['a' => $a, 'sections' => ['s1']])

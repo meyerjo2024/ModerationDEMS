@@ -30,6 +30,7 @@ class Assessment extends Model
             's3_external' => 'array',
             'scores' => 'array',
             'completed_at' => 'datetime',
+            'assessment_date' => 'date',
         ];
     }
 
@@ -147,6 +148,18 @@ class Assessment extends Model
     public function latestAttachment(AttachmentKind $kind): ?Attachment
     {
         return $this->attachments->firstWhere('kind', $kind);
+    }
+
+    /**
+     * The examiner's current documents (the exam paper already contains the memorandum). Each has a name; the newest file
+     * under a name is the current one, and a removed document drops out. Older Memorandum uploads still show.
+     *
+     * @return Collection<int, Attachment>
+     */
+    public function documents()
+    {
+        return $this->attachments->whereIn('kind', [AttachmentKind::Paper, AttachmentKind::Memo])->sortBy([['created_at', 'asc'], ['id', 'asc']])->groupBy(fn (Attachment $a) => mb_strtolower($a->doc_label))
+            ->map(fn ($g) => $g->last())->reject(fn (Attachment $a) => $a->removed_at !== null)->values();
     }
 
     /** @return Collection<int, Attachment> */

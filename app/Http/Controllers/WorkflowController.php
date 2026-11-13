@@ -37,11 +37,20 @@ class WorkflowController extends Controller
         $request->validate([
             'kind' => ['required', Rule::in(['PAPER', 'MEMO', 'MARKS', 'SAMPLE_SCRIPT'])],
             'file' => ['required', 'file'],
+            'label' => ['nullable', 'string', 'max:120'],
         ], ['file.required' => 'Attach a file and choose what it is.']);
         $file = $request->file('file');
-        $att = $this->workflow->upload($request->user(), $a, AttachmentKind::from($request->input('kind')), $file->getClientOriginalName(), file_get_contents($file->getRealPath()), $this->meta($request));
+        $att = $this->workflow->upload($request->user(), $a, AttachmentKind::from($request->input('kind')), $file->getClientOriginalName(), file_get_contents($file->getRealPath()), $this->meta($request), $request->input('label'));
 
-        return response()->json(['attachment' => ['id' => $att->id, 'kind' => $att->kind->value, 'filename' => $att->filename]]);
+        return response()->json(['attachment' => ['id' => $att->id, 'kind' => $att->kind->value, 'filename' => $att->filename, 'label' => $att->doc_label]]);
+    }
+
+    public function removeDocument(Request $request, Assessment $assessment, \App\Models\Attachment $attachment)
+    {
+        $a = $this->visible($request, $assessment);
+        $this->workflow->removeDocument($request->user(), $a, $attachment, $this->meta($request));
+
+        return response()->json(['ok' => true]);
     }
 
     public function submitPre(Request $request, Assessment $assessment)

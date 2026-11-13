@@ -52,6 +52,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('/assessments/{assessment}')->controller(WorkflowController::class)->group(function () {
         Route::put('/section1', 'saveSection1')->middleware('role:EXAMINER');
         Route::post('/attachments', 'upload')->middleware('role:EXAMINER');
+        Route::delete('/attachments/{attachment}', 'removeDocument')->middleware('role:EXAMINER');
         Route::post('/submit-pre', 'submitPre')->middleware('role:EXAMINER');
         Route::post('/pre-review', 'preReview')->middleware('role:INTERNAL_MODERATOR');
         Route::get('/marks', 'marks')->middleware('role:EXAMINER');

@@ -13,7 +13,7 @@ enum AttachmentKind: string
     public function label(): string
     {
         return match ($this) {
-            self::Paper => 'Assessment paper',
+            self::Paper => 'Assessment paper',  // includes the memorandum
             self::Memo => 'Memorandum',
             self::Marks => 'Student marks',
             self::SampleScript => 'Sample script',

@@ -8,10 +8,10 @@ $form = [
   'assessment_date' => $s['assessment_date'] ?? '',
   'weights' => collect(array_keys($f['question_types']))->mapWithKeys(fn ($k) => [$k => $s['weights'][$k] ?? ''])->all(),
 ];
-$file = fn ($kind) => ($att = $a->latestAttachment($kind)) ? ['id' => $att->id, 'filename' => $att->filename] : null;
+$docList = $a->documents()->map(fn ($d) => ['id' => $d->id, 'label' => $d->doc_label, 'filename' => $d->filename])->values()->all();
 $feedback = $a->records->where('stage', ModerationStage::PreModeration)->where('decision', 'REVISION_REQUESTED')->last();
 @endphp
-<div x-data="section1(@js(['id' => $a->id, 'form' => $form, 'files' => ['PAPER' => $file(\App\Enums\AttachmentKind::Paper), 'MEMO' => $file(\App\Enums\AttachmentKind::Memo)]]))" @signed="sig = $event.detail" class="space-y-6">
+<div x-data="section1(@js(['id' => $a->id, 'form' => $form, 'docs' => $docList]))" @signed="sig = $event.detail" class="space-y-6">
   @if ($feedback && $a->status === \App\Enums\AssessmentStatus::RevisionRequested)
     <x-notice tone="warn" title="Revision requested by {{ $feedback->reviewer->name }}"><p class="whitespace-pre-wrap">{{ $feedback->comments }}</p><p class="mt-1 text-xs opacity-70">{{ $feedback->created_at->utc()->format('j M Y, H:i') }} UTC</p></x-notice>
     @if (\App\Models\DocumentComment::where('assessment_id', $a->id)->exists())
@@ -19,7 +19,7 @@ $feedback = $a->records->where('stage', ModerationStage::PreModeration)->where('
         <p class="kicker">Reviewer comments</p><h2 class="mt-1 text-xl font-semibold">Comments on your documents</h2>
         <p class="mb-4 mt-1 text-sm text-slate-500 dark:text-zinc-400">The moderator marked passages in your Word documents. Make the changes, upload the revised files below, and mark each comment as addressed.</p>
         @php $AK = \App\Enums\AttachmentKind::class; @endphp
-        <x-doc-viewer :docs="[['Assessment paper', $a->latestAttachment($AK::Paper)], ['Memorandum', $a->latestAttachment($AK::Memo)]]" />
+        <x-doc-viewer :docs="$a->documents()->map(fn ($d) => [$d->doc_label, $d])->all()" />
       </section>
     @endif
   @endif
@@ -65,26 +65,29 @@ $feedback = $a->records->where('stage', ModerationStage::PreModeration)->where('
   </section>
 
   <section class="card p-6 sm:p-8">
-    <p class="kicker">Documents</p><h2 class="mt-1 text-2xl font-semibold">Assessment paper & memorandum</h2>
-    <div class="mt-5 grid gap-5 sm:grid-cols-2">
-      @foreach ([['PAPER', 'Draft assessment paper'], ['MEMO', 'Memorandum']] as [$kind, $label])
-        <div class="space-y-2"><p class="label !mb-0">{{ $label }}</p>
-          <template x-if="files.{{ $kind }}"><a :href="'/files/' + files.{{ $kind }}.id" class="flex items-center gap-2 rounded-xl bg-slate-900/[.04] px-3 py-2 text-sm hover:bg-slate-900/[.07] dark:bg-white/5"><x-icon name="file" class="h-4 w-4 shrink-0 text-slate-400" /><span class="truncate font-medium" x-text="files.{{ $kind }}.filename"></span></a></template>
-          <x-file-drop :label="'Upload / replace '.strtolower($label)" hint="PDF or Word · up to {{ config('dems.max_upload_mb') }} MB" accept=".pdf,.doc,.docx" on-file="upload('{{ $kind }}', file)" busy="busy === '{{ $kind }}'" />
-        </div>
-      @endforeach
+    <p class="kicker">Documents</p><h2 class="mt-1 text-2xl font-semibold">Assessment documents</h2>
+    <p class="mt-1 text-sm text-slate-500 dark:text-zinc-400">Upload the exam paper — it already contains the memorandum, so no separate memo is needed. Add as many other documents as the assessment has (annexures, formula sheets, a second paper…). Reviewers read every one inline. Uploading under a name you already used replaces that document.</p>
+    <ul class="mt-5 divide-y divide-[var(--divider)] text-sm">
+      <template x-for="d in docs" :key="d.id"><li class="flex items-center justify-between gap-3 py-2.5">
+        <a :href="'/files/' + d.id" class="flex min-w-0 items-center gap-2 hover:underline"><x-icon name="file" class="h-4 w-4 shrink-0 text-slate-400" /><span class="font-semibold" x-text="d.label"></span><span class="truncate text-[var(--ink-3)]" x-text="d.filename"></span></a>
+        <button type="button" class="text-xs font-semibold text-rose-600" @click="removeDoc(d)" :disabled="busy">Remove</button></li></template>
+      <li x-show="!docs.length" class="py-3 text-[var(--ink-3)]">No documents yet.</li>
+    </ul>
+    <div class="mt-5 grid gap-3 sm:grid-cols-[1fr_1.4fr] sm:items-end">
+      <div><label class="label" for="doclabel">Document name</label><input id="doclabel" class="field" x-model="newLabel" list="doclabels" placeholder="e.g. Assessment paper, Annexure A"><datalist id="doclabels"><option value="Assessment paper"><option value="Annexure A"><option value="Formula sheet"><option value="Answer book"></datalist></div>
+      <x-file-drop label="Upload document" hint="PDF or Word · up to {{ config('dems.max_upload_mb') }} MB" accept=".pdf,.doc,.docx" on-file="addDoc(file)" busy="busy === 'doc'" />
     </div>
   </section>
 
   <section class="card p-6 sm:p-8">
     <p class="kicker">Sign-off</p><h2 class="mt-1 text-2xl font-semibold">Sign & submit for pre-moderation</h2>
-    <div class="mt-5"><x-signoff statement="By signing, I confirm the details and weightings above are accurate and the attached paper and memorandum are final for moderation." /></div>
+    <div class="mt-5"><x-signoff statement="By signing, I confirm the details and weightings above are accurate and the attached documents are final for moderation." /></div>
     <template x-if="error"><x-notice tone="error" class="mt-5"><span x-text="error"></span></x-notice></template>
     <template x-if="saved"><x-notice tone="success" class="mt-5"><span x-text="saved"></span></x-notice></template>
     <div class="mt-6 flex flex-wrap justify-end gap-3">
       <button type="button" class="btn-secondary" @click="saveDraft()" :disabled="busy"><x-icon name="save" /> Save draft</button>
       <button type="button" class="btn-primary" @click="submit()" :disabled="!ready || busy"><x-icon name="send" /> <span x-text="busy === 'submit' ? 'Submitting…' : 'Sign & submit'"></span></button>
     </div>
-    <p x-show="!ready" class="mt-3 text-right text-xs text-slate-400"><span x-show="missing">Complete all details. </span><span x-show="total !== 100">Weightings must total 100%. </span><span x-show="!files.PAPER || !files.MEMO">Upload both documents. </span><span x-show="!sig">Sign and enter your password.</span></p>
+    <p x-show="!ready" class="mt-3 text-right text-xs text-slate-400"><span x-show="missing">Complete all details. </span><span x-show="total !== 100">Weightings must total 100%. </span><span x-show="!docs.length">Upload the assessment paper. </span><span x-show="!sig">Sign and enter your password.</span></p>
   </section>
 </div>
