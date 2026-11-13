@@ -32,6 +32,18 @@ class FileStore
         return 'db:'.$id;
     }
 
+    /** Remove a stored file (used when a practice record is deleted). Missing files are ignored. */
+    public function delete(string $storageKey): void
+    {
+        [$driver, $id] = explode(':', $storageKey, 2);
+        if ($driver === 'disk') {
+            Storage::disk(config('dems.disk'))->delete($id);
+
+            return;
+        }
+        DB::table('file_blobs')->where('id', $id)->delete();
+    }
+
     public function get(string $storageKey): string
     {
         [$driver, $id] = explode(':', $storageKey, 2);
