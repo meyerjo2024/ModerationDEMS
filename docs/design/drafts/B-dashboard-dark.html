@@ -1,0 +1,32 @@
+<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><style>
+:root{--bg:#fff;--side:#f2f2f4;--ink:#1d1d1f;--ink2:#6e6e73;--ink3:#98989d;--line:rgba(0,0,0,.09);--blue:#0a5a94;--sel:rgba(10,90,148,.12);--fill:rgba(0,0,0,.04);--green:#1f9d55;--amber:#c77700;--red:#d2202a}
+.dark{--bg:#1c1c1e;--side:#161618;--ink:#f5f5f7;--ink2:#a1a1a6;--ink3:#6e6e73;--line:rgba(255,255,255,.1);--blue:#4aa3df;--sel:rgba(74,163,223,.18);--fill:rgba(255,255,255,.06);--green:#34c759;--amber:#ff9f0a;--red:#ff453a}
+*{box-sizing:border-box;margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,sans-serif;background:var(--bg);color:var(--ink);font-size:14.5px;line-height:1.45;-webkit-font-smoothing:antialiased;letter-spacing:-.01em;display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+h1,h2{letter-spacing:-.028em;font-weight:600}
+aside{background:var(--side);border-right:1px solid var(--line);padding:20px 12px;display:flex;flex-direction:column;gap:2px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 18px;font-weight:600}.brand img{height:34px}.brand small{display:block;font-weight:400;color:var(--ink2);font-size:12px}
+aside a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--ink);font-size:14px}aside a.on{background:var(--sel);color:var(--blue);font-weight:500}
+aside a i{width:18px;height:18px;border-radius:5px;border:1.6px solid currentColor;opacity:.7}
+aside h6{font-size:11px;font-weight:600;color:var(--ink3);padding:16px 10px 6px;letter-spacing:.02em;text-transform:uppercase}
+.me{margin-top:auto;padding:10px;display:flex;gap:10px;align-items:center;border-top:1px solid var(--line);font-size:13px}.me span{display:block;color:var(--ink2);font-size:12px}
+.av{width:32px;height:32px;border-radius:50%;background:var(--fill);display:grid;place-items:center;font-weight:600;font-size:12px;color:var(--ink2)}
+main{padding:36px 44px 60px;max-width:980px}
+.top{display:flex;justify-content:space-between;align-items:flex-end}
+h1{font-size:30px}.sub{color:var(--ink2);margin-top:4px}
+.btn{background:var(--blue);color:#fff;border-radius:8px;padding:8px 16px;font-weight:500;font-size:14px}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);margin-top:28px;border:1px solid var(--line);border-radius:14px}
+.kpi div{padding:18px 20px;border-left:1px solid var(--line)}.kpi div:first-child{border-left:0}.kpi span{font-size:12.5px;color:var(--ink2)}.kpi b{display:block;font-size:30px;font-weight:600;letter-spacing:-.03em;margin-top:2px}
+.sec{display:flex;justify-content:space-between;align-items:center;margin-top:34px;margin-bottom:10px}.sec h2{font-size:17px}.sec span{color:var(--ink2);font-size:13px}
+.grp{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.r{display:flex;align-items:center;gap:14px;padding:14px 18px;border-top:1px solid var(--line)}.r:first-child{border-top:0}
+.ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:#fff;font-weight:600;font-size:12px}
+.r div.t{flex:1}.r b{font-weight:600}.r small{display:block;color:var(--ink2);font-size:13px}
+.tag{font-size:12.5px;color:var(--ink2)}.tag.bad{color:var(--red)}.tag.warn{color:var(--amber)}.tag.ok{color:var(--green)}
+.chev{color:var(--ink3)}
+</style><body class="dark"><aside><div class="brand"><img src="logo.png" alt=""><div>Moderation<small>CPUT</small></div></div><a class="on"><i></i>Dashboard</a><a class=""><i></i>Overview</a><a class=""><i></i>My subjects</a><a class=""><i></i>New assessment</a><h6>Administration</h6><a><i></i>People &amp; subjects</a><a><i></i>Registrations</a><div class="me"><div class="av">AB</div><div>Dr A. Example<span>Head of Department</span></div></div></aside><main>
+<div class="top"><div><h1>Dashboard</h1><p class="sub">Two records are waiting on you.</p></div><span class="btn">New assessment</span></div>
+<div class="kpi"><div><span>Pending</span><b>6</b></div><div><span>In process</span><b>9</b></div><div><span>Completed</span><b style="color:var(--green)">21</b></div><div><span>Overdue</span><b style="color:var(--red)">2</b></div></div>
+<div class="sec"><h2>Needs your attention</h2><span>4 records</span></div><div class="grp"><div class="r"><div class="ic" style="background:#0a5a94">MA</div><div class="t"><b>MAT201 · Test 2</b><small>Applied Mathematics II · Examiner A</small></div><span class="tag warn">Pre-moderation due in 3 days</span><span class="chev">›</span></div><div class="r"><div class="ic" style="background:#d2202a">PH</div><div class="t"><b>PHY110 · Test 1</b><small>Physics I · Examiner B</small></div><span class="tag bad">Revision requested · 2 days overdue</span><span class="chev">›</span></div><div class="r"><div class="ic" style="background:#5e8fb5">CH</div><div class="t"><b>CHM140 · Test 3</b><small>Chemistry for Engineers · Examiner C</small></div><span class="tag ">Ready for post-moderation</span><span class="chev">›</span></div><div class="r"><div class="ic" style="background:#1f9d55">ST</div><div class="t"><b>STA120 · Supplementary</b><small>Statistics I · Examiner D</small></div><span class="tag ok">Completed</span><span class="chev">›</span></div></div>
+<div class="sec"><h2>Upcoming tests</h2><span>Next 45 days</span></div><div class="grp"><div class="r"><div class="t"><b>MAT201 · Test 3</b><small>Applied Mathematics II</small></div><span class="tag warn">in 3 days</span></div><div class="r"><div class="t"><b>CHM140 · Test 4</b><small>Chemistry for Engineers</small></div><span class="tag">24 Nov 2026</span></div></div>
+</main>

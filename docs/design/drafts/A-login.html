@@ -1,0 +1,38 @@
+<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><style>
+:root{--bg:#f5f5f7;--card:#fff;--ink:#1d1d1f;--ink2:#6e6e73;--ink3:#8e8e93;--line:rgba(0,0,0,.08);--blue:#0a5a94;--blue-soft:rgba(10,90,148,.08);--green:#1f9d55;--amber:#c77700;--red:#d2202a}
+*{box-sizing:border-box;margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.47;-webkit-font-smoothing:antialiased;letter-spacing:-.011em}
+h1,h2,h3{font-family:-apple-system,"SF Pro Display",Inter,sans-serif;letter-spacing:-.025em;font-weight:600}
+.bar{position:sticky;top:0;height:52px;background:rgba(245,245,247,.8);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 max(24px,calc((100% - 1120px)/2))}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.02em}.brand img{height:30px}
+.nav{display:flex;gap:4px}.nav a{padding:6px 12px;border-radius:8px;color:var(--ink2);text-decoration:none;font-size:14px}.nav a.on{background:rgba(0,0,0,.06);color:var(--ink)}
+.av{width:30px;height:30px;border-radius:50%;background:#e5e5ea;display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--ink2)}
+main{max-width:1120px;margin:0 auto;padding:40px 24px 80px}
+.eyebrow{font-size:13px;color:var(--ink2);font-weight:500}
+h1{font-size:34px;line-height:1.1;margin-top:4px}
+.sub{color:var(--ink2);margin-top:6px}
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--blue);color:#fff;border:0;border-radius:980px;padding:9px 18px;font:500 14px inherit;font-family:inherit}
+.btn.sec{background:rgba(0,0,0,.06);color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:32px}
+.stat{background:var(--card);border-radius:18px;padding:20px 22px;border:1px solid var(--line)}
+.stat b{display:block;font-size:34px;font-weight:600;letter-spacing:-.03em;margin-top:6px;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--ink2)}
+.seg{display:inline-flex;background:rgba(0,0,0,.06);border-radius:9px;padding:2px;margin-top:36px}.seg a{padding:5px 14px;border-radius:7px;font-size:13px;color:var(--ink2);font-weight:500}.seg a.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.list{background:var(--card);border-radius:18px;border:1px solid var(--line);margin-top:16px;overflow:hidden}
+.row{display:grid;grid-template-columns:1.6fr 1fr 1fr 130px 24px;gap:16px;align-items:center;padding:16px 22px;border-top:1px solid var(--line)}.row:first-child{border-top:0}
+.row b{font-weight:600}.row small{display:block;color:var(--ink2);font-size:13px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px}
+.pill{font-size:12px;font-weight:500;padding:3px 10px;border-radius:980px;background:rgba(0,0,0,.05);color:var(--ink2)}
+.pill.warn{background:rgba(199,119,0,.1);color:var(--amber)}.pill.bad{background:rgba(210,32,42,.09);color:var(--red)}
+.chev{color:#c7c7cc;font-size:18px}
+.prog{height:4px;border-radius:4px;background:rgba(0,0,0,.08);overflow:hidden}.prog i{display:block;height:100%;background:var(--blue);border-radius:4px}
+.card{background:var(--card);border-radius:18px;border:1px solid var(--line);padding:24px}
+table{width:100%;border-collapse:collapse}th{font-weight:500;font-size:12px;color:var(--ink3);text-align:left;padding:0 12px 10px 0}td{padding:13px 12px 13px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}td.n,th.n{text-align:right}
+
+.wrap{min-height:100vh;display:grid;place-items:center;padding:24px}.box{width:380px;text-align:center}.box img{height:96px}
+.box h1{font-size:28px;margin-top:22px}.fld{display:block;width:100%;text-align:left;margin-top:12px}
+.in{width:100%;border:1px solid rgba(0,0,0,.12);background:#fff;border-radius:12px;padding:13px 15px;font:inherit;color:var(--ink3)}
+.btn{width:100%;justify-content:center;margin-top:18px;padding:13px}.foot{margin-top:18px;font-size:13px;color:var(--ink2)}.foot a{color:var(--blue)}</style>
+<div class="wrap"><div class="box"><img src="logo.png" alt=""><h1>Moderation Platform</h1><p class="sub">Sign in with your CPUT account</p>
+<div class="fld"><div class="in">name@cput.ac.za</div></div><div class="fld"><div class="in">Password</div></div><button class="btn">Sign in</button>
+<p class="foot">New member of staff? <a>Register</a></p></div></div>
