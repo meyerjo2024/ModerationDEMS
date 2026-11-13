@@ -6,7 +6,7 @@ use App\Models\Subject;
 use App\Models\User;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-/** Reads the subject list (columns: Qualification, Subject Code, Subject Name). Idempotent. */
+/** Reads the subject list (columns: Qualification, Subject Code, Subject Name; optional: Qualification Code). Idempotent. */
 class SubjectImporter
 {
     /** @return array{created: int, updated: int, skipped: int} */
@@ -18,6 +18,7 @@ class SubjectImporter
         $q = array_search('qualification', $head, true);
         $c = array_search('subject code', $head, true);
         $n = array_search('subject name', $head, true);
+        $qc = array_search('qualification code', $head, true);
         if ($q === false || $c === false || $n === false) {
             throw new \InvalidArgumentException('The first row must contain the columns Qualification, Subject Code and Subject Name.');
         }
@@ -35,17 +36,22 @@ class SubjectImporter
             if ($qual !== '' && ! in_array($qual, $subjects[$code]['quals'] ?? [], true)) {
                 $subjects[$code]['quals'][] = $qual;
             }
+            if ($qual !== '' && $qc !== false && trim((string) ($r[$qc] ?? '')) !== '') {
+                $subjects[$code]['codes'][$qual] = trim((string) $r[$qc]);
+            }
         }
 
         $out = ['created' => 0, 'updated' => 0, 'skipped' => 0];
         foreach ($subjects as $code => $s) {
             $qual = implode(', ', $s['quals'] ?? []) ?: null;
+            $codes = collect($s['quals'] ?? [])->map(fn ($x) => $s['codes'][$x] ?? '');
+            $qualCode = $codes->filter()->isNotEmpty() ? $codes->implode(', ') : null;
             $existing = Subject::where('code', $code)->first();
             if (! $existing) {
-                Subject::create(['code' => $code, 'name' => $s['name'] ?: $code, 'qualification' => $qual, 'hod_id' => $hod->id]);
+                Subject::create(['code' => $code, 'name' => $s['name'] ?: $code, 'qualification' => $qual, 'qualification_code' => $qualCode, 'hod_id' => $hod->id]);
                 $out['created']++;
-            } elseif ($existing->qualification !== $qual) {
-                $existing->update(['qualification' => $qual]);
+            } elseif ($existing->qualification !== $qual || ($qualCode !== null && $existing->qualification_code !== $qualCode)) {
+                $existing->update(['qualification' => $qual] + ($qualCode !== null ? ['qualification_code' => $qualCode] : []));
                 $out['updated']++;
             } else {
                 $out['skipped']++;

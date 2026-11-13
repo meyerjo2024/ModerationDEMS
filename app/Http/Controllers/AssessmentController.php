@@ -31,6 +31,7 @@ class AssessmentController extends Controller
             'external_moderator_id' => ['nullable', 'integer'],
             'assessment_date' => ['nullable', 'date'],
             'academic_year' => ['nullable', 'integer', 'between:2000,2100'],
+            'qualification' => ['nullable', 'string', 'max:200'],
             'label' => ['nullable', 'string', 'max:80'],
             'year_level' => ['required', \Illuminate\Validation\Rule::in(config('moderation_form.levels'))],
         ], ['number.required' => 'Choose the assessment number.', 'number.in' => 'Choose T1 to T7.', 'year_level.required' => 'Choose the year level.', 'year_level.in' => 'Choose Y0 to Y4.', 'internal_moderator_id.required' => 'Choose an internal moderator.']);

@@ -1139,4 +1139,29 @@ class LifecycleTest extends TestCase
         $this->assertNull(User::where('email', 'hop2@t.test')->first());
         $this->assertStringContainsString('Head of Programme needs', collect(session('import_errors'))->implode(' '));
     }
+
+    public function test_qualification_code_and_date_travel_through_every_section(): void
+    {
+        $csv = "Qualification,Qualification Code,Subject Code,Subject Name\nNational Diploma: Testing,NDTEST,TST101,Testing One\nBTech: Testing,BTTEST,TST101,Testing One\n";
+        $this->as($this->hod)->post('/admin/subjects/import', ['file' => UploadedFile::fake()->createWithContent('s.csv', $csv)])->assertSessionHasNoErrors();
+        $subj = Subject::where('code', 'TST101')->first();
+        $this->assertSame('National Diploma: Testing, BTech: Testing', $subj->qualification);
+        $this->assertSame([['name' => 'National Diploma: Testing', 'code' => 'NDTEST'], ['name' => 'BTech: Testing', 'code' => 'BTTEST']], $subj->qualificationOptions());
+        $this->responsible($this->examiner, $subj, Role::Examiner);
+
+        // the examiner picks which qualification this sitting belongs to; the date is set once
+        $this->as($this->examiner)->post('/assessments', ['subject_id' => $subj->id, 'number' => 'T2', 'internal_moderator_id' => $this->internal->id, 'qualification' => 'BTech: Testing', 'assessment_date' => '2026-05-20', 'year_level' => 'Y2'])->assertRedirect();
+        $a = Assessment::where('subject_id', $subj->id)->first();
+        $this->assertSame('BTech: Testing', $a->qualification);
+        $this->assertSame('BTTEST', $a->qualification_code);
+
+        // header on every page, and Section 1 is pre-filled so nothing is typed twice
+        $this->as($this->examiner)->get("/assessments/{$a->id}")->assertOk()->assertSee('TST101')->assertSee('BTech: Testing')->assertSee('BTTEST')->assertSee('20 May 2026')
+            ->assertSee('qualification_code\u0022:\u0022BTTEST', false)->assertSee('assessment_date\u0022:\u00222026-05-20', false);
+
+        // the report falls back to the record when Section 1 holds nothing for these fields
+        $a->update(['s1_examiner' => ['weights' => []]]);
+        $data = app(\App\Services\ReportService::class)->data($a->fresh());
+        $this->assertSame('BTech: Testing', $data['s1e']['qualification'] ?? $data['s1_examiner']['qualification'] ?? null);
+    }
 }

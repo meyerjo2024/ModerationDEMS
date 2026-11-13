@@ -77,10 +77,15 @@ class Workflow
             throw WorkflowException::conflict("{$subject->code} already has {$name}".($label !== '' ? " ({$label})" : '')." for {$year}. For another group or sitting, add a note to tell them apart.");
         }
 
-        return DB::transaction(function () use ($user, $subject, $internal, $external, $in, $meta, $year, $label) {
+        // the qualification this sitting belongs to (a subject can be offered in several)
+        $opts = $subject->qualificationOptions();
+        $chosen = collect($opts)->first(fn ($o) => mb_strtolower($o['name']) === mb_strtolower(trim((string) ($in['qualification'] ?? '')))) ?? ($opts[0] ?? null);
+
+        return DB::transaction(function () use ($user, $subject, $internal, $external, $in, $meta, $year, $label, $chosen) {
             $a = Assessment::create([
                 'subject_id' => $subject->id, 'number' => $in['number'], 'academic_year' => $year, 'label' => $label, 'examiner_id' => $user->id,
                 'internal_moderator_id' => $internal->id, 'external_moderator_id' => $external?->id, 'assessment_date' => ! empty($in['assessment_date']) ? $in['assessment_date'] : null, 'year_level' => $in['year_level'] ?? null,
+                'qualification' => $chosen['name'] ?? null, 'qualification_code' => ($chosen['code'] ?? '') !== '' ? $chosen['code'] : null,
                 'status' => S::Draft,
             ]);
             $this->audit->log('ASSESSMENT_CREATED', $a->id, $user->id, ['subject' => $subject->code, 'number' => $a->number], $meta['ip']);
@@ -96,7 +101,8 @@ class Workflow
         $this->assertExaminer($user, $a);
         $this->expect($a, S::Draft, S::RevisionRequested);
         $norm = ModerationForm::s1Examiner($s1);
-        $a->update(['s1_examiner' => $norm, 'assessment_date' => $norm['assessment_date'] ?: $a->assessment_date, 'year_level' => $norm['subject_level'] ?: $a->year_level]);
+        $a->update(['s1_examiner' => $norm, 'assessment_date' => $norm['assessment_date'] ?: $a->assessment_date, 'year_level' => $norm['subject_level'] ?: $a->year_level,
+            'qualification' => $norm['qualification'] ?: $a->qualification, 'qualification_code' => $norm['qualification_code'] ?: $a->qualification_code]);
     }
 
     public function upload(User $user, Assessment $a, AttachmentKind $kind, string $filename, string $bytes, array $meta, ?string $label = null): Attachment
@@ -166,7 +172,8 @@ class Workflow
         $hash = Hashing::content(['section' => 1, 'id' => $a->id, 'revision' => $revision, 'form' => $form, 'documents' => $docs->map(fn ($d) => [$d->doc_label, $d->sha256])->all()]);
         DB::transaction(function () use ($a, $user, $form, $sig, $meta, $revision, $hash) {
             $a = $this->lock($a, S::Draft, S::RevisionRequested);
-            $a->update(['status' => S::PendingPreModeration, 's1_examiner' => $form, 'assessment_date' => $form['assessment_date'] ?: $a->assessment_date, 'year_level' => $form['subject_level'] ?: $a->year_level, 'revision' => $revision]);
+            $a->update(['status' => S::PendingPreModeration, 's1_examiner' => $form, 'assessment_date' => $form['assessment_date'] ?: $a->assessment_date, 'year_level' => $form['subject_level'] ?: $a->year_level,
+                'qualification' => $form['qualification'] ?: $a->qualification, 'qualification_code' => $form['qualification_code'] ?: $a->qualification_code, 'revision' => $revision]);
             $this->signer->record($a, $user, SignatureSection::ExaminerSection1, $sig['image'], $hash, $meta);
             $this->audit->log('SECTION1_SUBMITTED', $a->id, $user->id, ['revision' => $revision, 'contentHash' => $hash], $meta['ip']);
             $this->notifier->inApp([$a->internal_moderator_id], $a, "{$a->title()} is ready for your pre-moderation review.");
