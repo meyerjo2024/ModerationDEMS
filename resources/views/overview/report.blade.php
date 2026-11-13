@@ -4,7 +4,10 @@
   <div class="flex flex-wrap items-end justify-between gap-4">
     <div><a href="{{ route('overview') }}" class="text-sm font-semibold text-accent">← Overview</a><p class="kicker mt-3">Head of Department</p><h1 class="mt-1 text-3xl font-semibold">Report for the Dean</h1>
       <p class="mt-1 text-sm text-[var(--ink-2)]">All your subjects at a glance. Always up to date — no student names or individual marks. Separate from the moderation report of each assessment.</p></div>
-    <div class="flex gap-2"><a href="{{ route('dean-report.pdf', $query) }}" class="btn-primary"><x-icon name="download" /> PDF</a><a href="{{ route('dean-report.docx', $query) }}" class="btn-secondary"><x-icon name="download" /> Word</a></div>
+    <form method="POST" class="flex gap-2" x-data>@csrf
+      @foreach ($f as $fk => $fv)@if ($fv !== null && $fv !== '')<input type="hidden" name="{{ $fk }}" value="{{ $fv }}">@endif @endforeach
+      <template x-for="(v, k) in ($store.dean.sections || {})" :key="k"><input type="hidden" :name="'sections[' + k + ']'" :value="v"></template>
+      <button type="submit" formaction="{{ route('dean-report.pdf') }}" class="btn-primary"><x-icon name="download" /> PDF</button><button type="submit" formaction="{{ route('dean-report.docx') }}" class="btn-secondary"><x-icon name="download" /> Word</button></form>
   </div>
 
   <form method="GET" action="{{ route('dean-report') }}" class="card grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -44,17 +47,14 @@
     @if ($m['comment'])<p class="mt-4 whitespace-pre-wrap rounded-xl bg-[var(--fog)] p-4 text-sm"><b>Head of Department’s comment:</b> {{ $m['comment'] }}</p>@endif
 
     {!! $para('summary') !!}
-    <h3 class="mt-8 text-lg font-semibold">1. At a glance</h3>
-    <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      @foreach ([['Subjects', $h['subjects'], ''], ['Assessments', $h['assessments'], ''], ['Completed', $h['completed'].($h['completed_pct'] !== null ? ' · '.$h['completed_pct'].'%' : ''), 'text-emerald-600'], ['Pending moderation', $h['pending'], ''], ['In process', $h['in_process'], ''], ['Overdue', $h['overdue'], $h['overdue'] ? 'text-rose-600' : '']] as [$l, $v, $cls])
-        <div class="rounded-xl border border-[var(--divider)] p-4"><p class="text-xs text-[var(--ink-3)]">{{ $l }}</p><p class="mt-1 text-2xl font-semibold tabular-nums {{ $cls }}">{{ $v }}</p></div>
-      @endforeach
-    </div>
-    <ul class="mt-3 list-disc space-y-1 pl-5 text-sm text-[var(--ink-2)]">
-      <li>{{ $h['no_moderator'] ? 'Without an internal moderator ('.count($h['no_moderator']).'): '.implode('; ', $h['no_moderator']) : 'Every subject has an internal moderator.' }}</li>
-      <li>{{ $h['no_examiner'] ? 'Without an examiner ('.count($h['no_examiner']).'): '.implode('; ', $h['no_examiner']) : 'Every subject has an examiner.' }}</li>
-      @if ($h['no_activity'])<li>{{ $h['no_activity'] }} subject(s) have no assessment in this period.</li>@endif
-    </ul>
+    <h3 class="mt-8 text-lg font-semibold">1. At a glance <span class="text-sm font-normal text-[var(--ink-3)]">(numbers only)</span></h3>
+    @php $tot = fn ($rows, $k) => collect($rows)->sum($k); @endphp
+    <div class="mt-3 overflow-x-auto"><table class="w-full min-w-[40rem] text-sm"><thead class="text-left text-xs text-[var(--ink-3)]"><tr><th class="py-2">Qualification code</th><th class="text-right">Subjects</th><th class="text-right">Assessments</th><th class="text-right">Completed</th><th class="text-right">Pending</th><th class="text-right">In process</th><th class="text-right">Overdue</th><th class="text-right">No moderator</th><th class="text-right">No examiner</th></tr></thead>
+      <tbody class="divide-y divide-[var(--divider)]">@forelse ($d['by_code'] as $x)<tr><td class="py-2 pr-3 font-semibold">{{ $x['code'] }}</td><td class="text-right tabular-nums">{{ $x['subjects'] }}</td><td class="text-right tabular-nums">{{ $x['assessments'] }}</td><td class="text-right tabular-nums text-emerald-600">{{ $x['completed'] }}</td><td class="text-right tabular-nums">{{ $x['pending'] }}</td><td class="text-right tabular-nums">{{ $x['in_process'] }}</td><td class="text-right tabular-nums {{ $x['overdue'] ? 'font-semibold text-rose-600' : '' }}">{{ $x['overdue'] }}</td><td class="text-right tabular-nums {{ $x['no_moderator'] ? 'text-rose-600' : '' }}">{{ $x['no_moderator'] }}</td><td class="text-right tabular-nums {{ $x['no_examiner'] ? 'text-amber-600' : '' }}">{{ $x['no_examiner'] }}</td></tr>@empty<tr><td colspan="9" class="py-4 text-[var(--ink-3)]">No subjects.</td></tr>@endforelse</tbody>
+      <tfoot><tr class="border-t border-[var(--ink-3)] font-semibold"><td class="py-2">Total</td><td class="text-right tabular-nums">{{ $h['subjects'] }}</td><td class="text-right tabular-nums">{{ $h['assessments'] }}</td><td class="text-right tabular-nums">{{ $h['completed'] }}</td><td class="text-right tabular-nums">{{ $h['pending'] }}</td><td class="text-right tabular-nums">{{ $h['in_process'] }}</td><td class="text-right tabular-nums">{{ $h['overdue'] }}</td><td class="text-right tabular-nums">{{ count($h['no_moderator']) }}</td><td class="text-right tabular-nums">{{ count($h['no_examiner']) }}</td></tr></tfoot></table></div>
+    <div class="mt-4 overflow-x-auto"><table class="w-full min-w-[30rem] text-sm"><thead class="text-left text-xs text-[var(--ink-3)]"><tr><th class="py-2">Term</th><th class="text-right">Assessments</th><th class="text-right">Completed</th><th class="text-right">Pending</th><th class="text-right">In process</th><th class="text-right">Overdue</th></tr></thead>
+      <tbody class="divide-y divide-[var(--divider)]">@foreach ($d['by_term'] as $x)<tr><td class="py-2 pr-3 font-semibold">{{ $x['label'] }}</td><td class="text-right tabular-nums">{{ $x['assessments'] }}</td><td class="text-right tabular-nums text-emerald-600">{{ $x['completed'] }}</td><td class="text-right tabular-nums">{{ $x['pending'] }}</td><td class="text-right tabular-nums">{{ $x['in_process'] }}</td><td class="text-right tabular-nums {{ $x['overdue'] ? 'font-semibold text-rose-600' : '' }}">{{ $x['overdue'] }}</td></tr>@endforeach</tbody></table></div>
+    <p class="mt-2 text-xs text-[var(--ink-3)]">Terms follow the month of the assessment date (Term 1 Jan–Mar, Term 2 Apr–Jun, Term 3 Jul–Sep, Term 4 Oct–Dec). Pending = waiting on a moderator or signatory; in process = with the examiner.</p>
 
     <h3 class="mt-8 text-lg font-semibold">2. Moderation compliance</h3>{!! $para('compliance') !!}
     <div class="mt-3 overflow-x-auto"><table class="w-full min-w-[30rem] text-sm"><tbody class="divide-y divide-[var(--divider)]">
@@ -75,7 +75,7 @@
 
     <h3 class="mt-8 text-lg font-semibold">4. Student results <span class="text-sm font-normal text-[var(--ink-3)]">(anonymous)</span></h3>{!! $para('results') !!}
     <p class="mt-2 text-sm">Overall: {{ $r['overall']['assessments'] }} assessment(s) with results, {{ $r['overall']['candidates'] }} candidate results{{ $r['overall']['pass_rate'] !== null ? ', pass rate '.$r['overall']['pass_rate'].'%' : '' }}.</p>
-    @foreach ([['Qualification', $r['by_qualification']], ['Year level', $r['by_level']]] as [$title, $set])
+    @foreach ([['Qualification code', $r['by_qualification']], ['Term', $r['by_term']], ['Year level', $r['by_level']]] as [$title, $set])
       @if ($set)<div class="mt-3 overflow-x-auto"><table class="w-full min-w-[34rem] text-sm"><thead class="text-left text-xs text-[var(--ink-3)]"><tr><th class="py-2">{{ $title }}</th><th class="text-right">Assessments</th><th class="text-right">Candidates</th><th class="text-right">Pass rate</th><th class="text-right">Class average</th><th class="text-right">Absent</th></tr></thead>
         <tbody class="divide-y divide-[var(--divider)]">@foreach ($set as $x)<tr><td class="py-2 pr-3">{{ $x['name'] }}</td><td class="text-right tabular-nums">{{ $x['assessments'] }}</td><td class="text-right tabular-nums">{{ $x['candidates'] }}</td><td class="text-right font-semibold tabular-nums">{{ $x['pass_rate'] !== null ? $x['pass_rate'].'%' : '—' }}</td><td class="text-right tabular-nums">{{ $x['average'] }}%</td><td class="text-right tabular-nums">{{ $x['absent'] }}</td></tr>@endforeach</tbody></table></div>@endif
     @endforeach
@@ -88,15 +88,27 @@
     <ul class="mt-1 list-disc space-y-1 pl-5 text-sm">@forelse ($e['adjustments'] as $x)<li>{{ $x['name'] }}@if ($x['why']): {{ $x['why'] }}@endif</li>@empty<li class="list-none text-[var(--ink-3)]">None.</li>@endforelse</ul>
     <p class="mt-3 text-sm font-semibold">Overdue ({{ count($e['overdue']) }})</p>
     <ul class="mt-1 list-disc space-y-1 pl-5 text-sm">@forelse ($e['overdue'] as $x)<li>{{ $x['name'] }} — {{ $x['status'] }} (examiner: {{ $x['examiner'] }})</li>@empty<li class="list-none text-[var(--ink-3)]">None.</li>@endforelse</ul>
+    <p class="mt-3 text-sm font-semibold">Subjects without an internal moderator ({{ count($h['no_moderator']) }})</p>
+    <ul class="mt-1 list-disc space-y-1 pl-5 text-sm">@forelse ($h['no_moderator'] as $x)<li>{{ $x }}</li>@empty<li class="list-none text-[var(--ink-3)]">None.</li>@endforelse</ul>
+    <p class="mt-3 text-sm font-semibold">Subjects without an examiner ({{ count($h['no_examiner']) }})</p>
+    <ul class="mt-1 list-disc space-y-1 pl-5 text-sm">@forelse ($h['no_examiner'] as $x)<li>{{ $x }}</li>@empty<li class="list-none text-[var(--ink-3)]">None.</li>@endforelse</ul>
     <p class="mt-3 text-sm font-semibold">External moderators’ recommendations ({{ count($e['external']) }})</p>
     <ul class="mt-1 list-disc space-y-1 pl-5 text-sm">@forelse ($e['external'] as $x)<li>{{ $x['name'] }}: {{ $x['text'] }}</li>@empty<li class="list-none text-[var(--ink-3)]">None recorded.</li>@endforelse</ul>
 
     <h3 class="mt-8 text-lg font-semibold">6. What examiners will do differently next time</h3>{!! $para('actions') !!}
     <ul class="mt-2 list-disc space-y-1 pl-5 text-sm">@forelse ($d['actions'] as $x)<li><b>{{ $x['name'] }}:</b> {{ $x['text'] }}</li>@empty<li class="list-none text-[var(--ink-3)]">None recorded.</li>@endforelse</ul>
 
-    <h3 class="mt-8 text-lg font-semibold">Appendix: all assessments ({{ count($d['appendix']) }})</h3>
-    <div class="mt-3 overflow-x-auto"><table class="w-full min-w-[48rem] text-sm"><thead class="text-left text-xs text-[var(--ink-3)]"><tr><th class="py-2">Subject</th><th>Assessment</th><th>Date</th><th>Status</th><th>Examiner</th><th>Moderator</th><th class="text-right">Cand.</th><th class="text-right">Pass %</th><th class="text-right">Adj.</th></tr></thead>
-      <tbody class="divide-y divide-[var(--divider)]">@forelse ($d['appendix'] as $x)<tr><td class="py-2 pr-3"><b>{{ $x['code'] }}</b> {{ $x['subject'] }}</td><td>{{ $x['title'] }}</td><td>{{ $x['date'] ?? '—' }}</td><td>{{ $x['status'] }}@if ($x['overdue']) <span class="text-rose-600">· overdue</span>@endif</td><td>{{ $x['examiner'] }}</td><td>{{ $x['moderator'] }}</td><td class="text-right tabular-nums">{{ $x['candidates'] ?? '—' }}</td><td class="text-right tabular-nums">{{ $x['pass_rate'] ?? '—' }}</td><td class="text-right">{{ $x['adjust'] ? 'Yes' : 'No' }}</td></tr>@empty<tr><td colspan="9" class="py-6 text-[var(--ink-3)]">No assessments match these filters.</td></tr>@endforelse</tbody></table></div>
+    <h3 class="mt-8 text-lg font-semibold">Appendix: all assessments by term ({{ count($d['appendix']) }})</h3>
+    @php $byTerm = collect($d['appendix'])->groupBy('term'); @endphp
+    @if (! count($d['appendix']))<p class="mt-3 text-sm text-[var(--ink-3)]">No assessments match these filters.</p>@endif
+    @forelse ([1, 2, 3, 4, 0] as $tn)
+      @php $rowsT = $byTerm->get($tn, collect()); @endphp
+      @continue($tn === 0 && $rowsT->isEmpty())
+      <p class="mt-5 text-sm font-semibold">{{ $tn ? 'Term '.$tn : 'No assessment date' }} <span class="font-normal text-[var(--ink-3)]">· {{ $rowsT->count() }} assessment(s)</span></p>
+      <div class="mt-2 overflow-x-auto"><table class="w-full min-w-[48rem] text-sm"><thead class="text-left text-xs text-[var(--ink-3)]"><tr><th class="py-2">Subject</th><th>Assessment</th><th>Date</th><th>Status</th><th>Examiner</th><th>Moderator</th><th class="text-right">Cand.</th><th class="text-right">Pass %</th><th class="text-right">Adj.</th></tr></thead>
+        <tbody class="divide-y divide-[var(--divider)]">@forelse ($rowsT as $x)<tr><td class="py-2 pr-3"><b>{{ $x['code'] }}</b> {{ $x['subject'] }}</td><td>{{ $x['title'] }}</td><td>{{ $x['date'] ?? '—' }}</td><td>{{ $x['status'] }}@if ($x['overdue']) <span class="text-rose-600">· overdue</span>@endif</td><td>{{ $x['examiner'] }}</td><td>{{ $x['moderator'] }}</td><td class="text-right tabular-nums">{{ $x['candidates'] ?? '—' }}</td><td class="text-right tabular-nums">{{ $x['pass_rate'] ?? '—' }}</td><td class="text-right">{{ $x['adjust'] ? 'Yes' : 'No' }}</td></tr>@empty<tr><td colspan="9" class="py-4 text-[var(--ink-3)]">No assessments in this term.</td></tr>@endforelse</tbody></table></div>
+    @empty
+    @endforelse
   </section>
 </div>
 </x-app-layout>

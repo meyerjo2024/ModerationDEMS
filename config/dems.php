@@ -40,6 +40,9 @@ return [
     // Groq (OpenAI-compatible API) writes the narrative of the Dean report. Set GROQ_API_KEY in Render → Environment, never in git.
     'groq' => ['key' => env('GROQ_API_KEY'), 'model' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'), 'url' => env('GROQ_URL', 'https://api.groq.com/openai/v1/chat/completions'), 'timeout' => 60],
 
+    // Terms used to split assessments in the Dean report (by the month of the assessment date). Edit if your terms differ.
+    'terms' => [1 => [1, 2, 3], 2 => [4, 5, 6], 3 => [7, 8, 9], 4 => [10, 11, 12]],
+
     // Moderation windows around the assessment date.
     'pre_moderation_days' => 14,   // pre-moderation must be finished this many days BEFORE the assessment
     'post_moderation_days' => 14,  // post-moderation must be finished this many days AFTER it

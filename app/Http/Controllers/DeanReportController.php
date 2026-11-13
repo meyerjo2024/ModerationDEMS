@@ -91,7 +91,9 @@ class DeanReportController extends Controller
 
     private function withNarrative(array $d, Request $r): array
     {
-        $d['narrative'] = (array) $r->session()->get('dean_narrative', []);
+        // text sent with the download (what is on screen) wins; otherwise the narrative saved for this session
+        $sent = collect((array) $r->input('sections', []))->only(array_keys(\App\Services\DeanNarrative::SECTIONS))->map(fn ($v) => mb_substr(trim((string) $v), 0, 4000))->filter()->all();
+        $d['narrative'] = $sent ?: (array) $r->session()->get('dean_narrative', []);
 
         return $d;
     }
@@ -100,8 +102,8 @@ class DeanReportController extends Controller
     {
         $date = fn ($v) => is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) ? $v : null;
 
-        return ['year' => $r->integer('year') ?: null, 'qualification' => trim((string) $r->query('qualification', '')), 'kind' => (string) $r->query('kind', 'all'),
-            'from' => $date($r->query('from')), 'to' => $date($r->query('to')), 'to_whom' => mb_substr(trim((string) $r->query('to_whom', '')), 0, 120), 'comment' => mb_substr(trim((string) $r->query('comment', '')), 0, 3000)];
+        return ['year' => $r->integer('year') ?: null, 'qualification' => trim((string) $r->input('qualification', '')), 'kind' => (string) $r->input('kind', 'all'),
+            'from' => $date($r->input('from')), 'to' => $date($r->input('to')), 'to_whom' => mb_substr(trim((string) $r->input('to_whom', '')), 0, 120), 'comment' => mb_substr(trim((string) $r->input('comment', '')), 0, 3000)];
     }
 
     private function name(): string

@@ -21,14 +21,13 @@
 @if ($m['comment'])<div class="note"><b>Head of Department’s comment:</b> {!! nl2br(e($m['comment'])) !!}</div>@endif
 
 {!! $para('summary') !!}
-<h2>1. At a glance</h2>
-<table class="kpi"><tr>
-  <td>Subjects<b>{{ $h['subjects'] }}</b></td><td>Assessments<b>{{ $h['assessments'] }}</b></td><td>Completed<b class="good">{{ $h['completed'] }}</b>{{ $h['completed_pct'] !== null ? $h['completed_pct'].'%' : '' }}</td>
-  <td>Pending moderation<b>{{ $h['pending'] }}</b></td><td>In process<b>{{ $h['in_process'] }}</b></td><td>Overdue<b class="{{ $h['overdue'] ? 'bad' : '' }}">{{ $h['overdue'] }}</b></td></tr></table>
-<ul>
-  <li>{{ $h['no_moderator'] ? 'Without an internal moderator ('.count($h['no_moderator']).'): '.implode('; ', $h['no_moderator']) : 'Every subject has an internal moderator.' }}</li>
-  <li>{{ $h['no_examiner'] ? 'Without an examiner ('.count($h['no_examiner']).'): '.implode('; ', $h['no_examiner']) : 'Every subject has an examiner.' }}</li>
-  @if ($h['no_activity'])<li>{{ $h['no_activity'] }} subject(s) have no assessment in this period.</li>@endif</ul>
+<h2>1. At a glance <span class="muted" style="font-weight:normal">(numbers only)</span></h2>
+<table><tr><th>Qualification code</th><th class="r">Subjects</th><th class="r">Assessments</th><th class="r">Completed</th><th class="r">Pending</th><th class="r">In process</th><th class="r">Overdue</th><th class="r">No moderator</th><th class="r">No examiner</th></tr>
+@forelse ($d['by_code'] as $x)<tr><td><b>{{ $x['code'] }}</b></td><td class="r">{{ $x['subjects'] }}</td><td class="r">{{ $x['assessments'] }}</td><td class="r good">{{ $x['completed'] }}</td><td class="r">{{ $x['pending'] }}</td><td class="r">{{ $x['in_process'] }}</td><td class="r {{ $x['overdue'] ? 'bad' : '' }}">{{ $x['overdue'] }}</td><td class="r {{ $x['no_moderator'] ? 'bad' : '' }}">{{ $x['no_moderator'] }}</td><td class="r">{{ $x['no_examiner'] }}</td></tr>@empty<tr><td colspan="9" class="muted">No subjects.</td></tr>@endforelse
+<tr style="font-weight:bold"><td style="border-top:1px solid #000">Total</td><td class="r" style="border-top:1px solid #000">{{ $h['subjects'] }}</td><td class="r" style="border-top:1px solid #000">{{ $h['assessments'] }}</td><td class="r" style="border-top:1px solid #000">{{ $h['completed'] }}</td><td class="r" style="border-top:1px solid #000">{{ $h['pending'] }}</td><td class="r" style="border-top:1px solid #000">{{ $h['in_process'] }}</td><td class="r" style="border-top:1px solid #000">{{ $h['overdue'] }}</td><td class="r" style="border-top:1px solid #000">{{ count($h['no_moderator']) }}</td><td class="r" style="border-top:1px solid #000">{{ count($h['no_examiner']) }}</td></tr></table>
+<table style="margin-top:8px"><tr><th>Term</th><th class="r">Assessments</th><th class="r">Completed</th><th class="r">Pending</th><th class="r">In process</th><th class="r">Overdue</th></tr>
+@foreach ($d['by_term'] as $x)<tr><td><b>{{ $x['label'] }}</b></td><td class="r">{{ $x['assessments'] }}</td><td class="r good">{{ $x['completed'] }}</td><td class="r">{{ $x['pending'] }}</td><td class="r">{{ $x['in_process'] }}</td><td class="r {{ $x['overdue'] ? 'bad' : '' }}">{{ $x['overdue'] }}</td></tr>@endforeach</table>
+<div class="muted" style="margin-top:3px;font-size:7.5px">Terms follow the month of the assessment date (Term 1 Jan–Mar, Term 2 Apr–Jun, Term 3 Jul–Sep, Term 4 Oct–Dec). Pending = waiting on a moderator or signatory; in process = with the examiner.</div>
 
 <h2>2. Moderation compliance</h2>{!! $para('compliance') !!}
 <table><tr><td>Moderated before the students wrote — Yes / No / not yet recorded</td><td class="r"><b>{{ $c['pre_yes'] }} / {{ $c['pre_no'] }} / {{ $c['pre_unknown'] }}</b></td></tr>
@@ -44,7 +43,7 @@
 
 <h2>4. Student results <span class="muted" style="font-weight:normal">(anonymous)</span></h2>{!! $para('results') !!}
 <div>Overall: {{ $r['overall']['assessments'] }} assessment(s) with results, {{ $r['overall']['candidates'] }} candidate results{{ $r['overall']['pass_rate'] !== null ? ', pass rate '.$r['overall']['pass_rate'].'%' : '' }}.</div>
-@foreach ([['Qualification', $r['by_qualification']], ['Year level', $r['by_level']]] as [$title, $set])
+@foreach ([['Qualification code', $r['by_qualification']], ['Term', $r['by_term']], ['Year level', $r['by_level']]] as [$title, $set])
   @if ($set)<table style="margin-top:5px"><tr><th>{{ $title }}</th><th class="r">Assessments</th><th class="r">Candidates</th><th class="r">Pass rate</th><th class="r">Class average</th><th class="r">Absent</th></tr>
     @foreach ($set as $x)<tr><td>{{ $x['name'] }}</td><td class="r">{{ $x['assessments'] }}</td><td class="r">{{ $x['candidates'] }}</td><td class="r"><b>{{ $x['pass_rate'] !== null ? $x['pass_rate'].'%' : '—' }}</b></td><td class="r">{{ $x['average'] }}%</td><td class="r">{{ $x['absent'] }}</td></tr>@endforeach</table>@endif
 @endforeach
@@ -55,15 +54,24 @@
 <h2>5. Matters for attention</h2>{!! $para('attention') !!}
 <h3>General mark adjustments recommended ({{ count($e['adjustments']) }})</h3><ul>@forelse ($e['adjustments'] as $x)<li>{{ $x['name'] }}@if ($x['why']): {{ $x['why'] }}@endif</li>@empty<li class="muted">None.</li>@endforelse</ul>
 <h3>Overdue ({{ count($e['overdue']) }})</h3><ul>@forelse ($e['overdue'] as $x)<li>{{ $x['name'] }} — {{ $x['status'] }} (examiner: {{ $x['examiner'] }})</li>@empty<li class="muted">None.</li>@endforelse</ul>
+<h3>Subjects without an internal moderator ({{ count($h['no_moderator']) }})</h3><ul>@forelse ($h['no_moderator'] as $x)<li>{{ $x }}</li>@empty<li class="muted">None.</li>@endforelse</ul>
+<h3>Subjects without an examiner ({{ count($h['no_examiner']) }})</h3><ul>@forelse ($h['no_examiner'] as $x)<li>{{ $x }}</li>@empty<li class="muted">None.</li>@endforelse</ul>
 <h3>External moderators’ recommendations ({{ count($e['external']) }})</h3><ul>@forelse ($e['external'] as $x)<li>{{ $x['name'] }}: {{ $x['text'] }}</li>@empty<li class="muted">None recorded.</li>@endforelse</ul>
 
 <h2>6. What examiners will do differently next time</h2>{!! $para('actions') !!}
 <ul>@forelse ($d['actions'] as $x)<li><b>{{ $x['name'] }}:</b> {{ $x['text'] }}</li>@empty<li class="muted">None recorded.</li>@endforelse</ul>
 
 <div style="page-break-before: always"></div>
-<h2>Appendix: all assessments ({{ count($d['appendix']) }})</h2>
-<table style="font-size:7.5px"><tr><th>Subject</th><th>Assessment</th><th>Date</th><th>Status</th><th>Examiner</th><th>Moderator</th><th class="r">Cand.</th><th class="r">Pass %</th><th class="r">Adj.</th></tr>
-@forelse ($d['appendix'] as $x)<tr><td><b>{{ $x['code'] }}</b> {{ $x['subject'] }}</td><td>{{ $x['title'] }}</td><td>{{ $x['date'] ?? '—' }}</td><td>{{ $x['status'] }}@if ($x['overdue']) <span class="bad">· overdue</span>@endif</td><td>{{ $x['examiner'] }}</td><td>{{ $x['moderator'] }}</td><td class="r">{{ $x['candidates'] ?? '—' }}</td><td class="r">{{ $x['pass_rate'] ?? '—' }}</td><td class="r">{{ $x['adjust'] ? 'Yes' : 'No' }}</td></tr>@empty<tr><td colspan="9" class="muted">No assessments match these filters.</td></tr>@endforelse</table>
+<h2>Appendix: all assessments by term ({{ count($d['appendix']) }})</h2>
+@php $byTerm = collect($d['appendix'])->groupBy('term'); @endphp
+@if (! count($d['appendix']))<p class="muted">No assessments match these filters.</p>@endif
+@foreach ([1, 2, 3, 4, 0] as $tn)
+  @php $rowsT = $byTerm->get($tn, collect()); @endphp
+  @continue($tn === 0 && $rowsT->isEmpty())
+  <h3 style="margin-top:10px">{{ $tn ? 'Term '.$tn : 'No assessment date' }} <span class="muted" style="font-weight:normal">· {{ $rowsT->count() }} assessment(s)</span></h3>
+  <table style="font-size:7.5px"><tr><th>Subject</th><th>Assessment</th><th>Date</th><th>Status</th><th>Examiner</th><th>Moderator</th><th class="r">Cand.</th><th class="r">Pass %</th><th class="r">Adj.</th></tr>
+  @forelse ($rowsT as $x)<tr><td><b>{{ $x['code'] }}</b> {{ $x['subject'] }}</td><td>{{ $x['title'] }}</td><td>{{ $x['date'] ?? '—' }}</td><td>{{ $x['status'] }}@if ($x['overdue']) <span class="bad">· overdue</span>@endif</td><td>{{ $x['examiner'] }}</td><td>{{ $x['moderator'] }}</td><td class="r">{{ $x['candidates'] ?? '—' }}</td><td class="r">{{ $x['pass_rate'] ?? '—' }}</td><td class="r">{{ $x['adjust'] ? 'Yes' : 'No' }}</td></tr>@empty<tr><td colspan="9" class="muted">No assessments in this term.</td></tr>@endforelse</table>
+@endforeach
 
 <div class="sig">Head of Department: ______________________________ &nbsp;&nbsp; Date: ________________<br><span class="muted">{{ $m['hod'] }}</span></div>
 </body></html>
