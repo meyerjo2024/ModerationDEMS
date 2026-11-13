@@ -459,9 +459,11 @@ Alpine.data('wordReview', (cfg) => {
     loading: true,
     error: '',
     comments: [],
-    can: { comment: false, address: false },
+    can: { comment: false, address: false, reply: false },
     draft: null,
     text: '',
+    replying: null,
+    replyText: '',
     busy: false,
     html: '',
     active: null,
@@ -604,6 +606,20 @@ Alpine.data('wordReview', (cfg) => {
             this.busy = false;
         }
     },
+    async sendReply(c) {
+        if (this.replyText.trim().length < 2) return;
+        this.busy = true;
+        try {
+            await api('POST', `/comments/${c.id}/replies`, { body: this.replyText });
+            this.replying = null;
+            this.replyText = '';
+            await this.load();
+        } catch (e) {
+            this.error = e.message;
+        } finally {
+            this.busy = false;
+        }
+    },
     async remove(c) {
         await api('DELETE', `/comments/${c.id}`);
         await this.load();
@@ -627,9 +643,11 @@ Alpine.data('pdfReview', (cfg) => {
     error: '',
     pages: 0,
     comments: [],
-    can: { comment: false, address: false },
+    can: { comment: false, address: false, reply: false },
     draft: null,
     text: '',
+    replying: null,
+    replyText: '',
     busy: false,
     active: null,
     async init() {
@@ -797,6 +815,20 @@ Alpine.data('pdfReview', (cfg) => {
             await api('POST', this.api, { body: this.text, quote: this.draft.quote, start_offset: this.draft.offset, page: this.draft.page });
             this.draft = null;
             window.getSelection()?.removeAllRanges();
+            await this.load();
+        } catch (e) {
+            this.error = e.message;
+        } finally {
+            this.busy = false;
+        }
+    },
+    async sendReply(c) {
+        if (this.replyText.trim().length < 2) return;
+        this.busy = true;
+        try {
+            await api('POST', `/comments/${c.id}/replies`, { body: this.replyText });
+            this.replying = null;
+            this.replyText = '';
             await this.load();
         } catch (e) {
             this.error = e.message;

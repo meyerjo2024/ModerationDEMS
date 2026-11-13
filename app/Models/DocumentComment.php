@@ -22,6 +22,11 @@ class DocumentComment extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function replies(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(DocumentCommentReply::class, 'comment_id')->orderBy('created_at')->orderBy('id');
+    }
+
     public function attachment(): BelongsTo
     {
         return $this->belongsTo(Attachment::class);

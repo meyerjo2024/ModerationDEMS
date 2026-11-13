@@ -21,11 +21,11 @@ class DocumentCommentController extends Controller
         // every version of the same document (same name), so comments survive a re-upload but stay with their own document
         $ids = Attachment::where('assessment_id', $a->id)->where('kind', $attachment->kind->value)->get()
             ->filter(fn (Attachment $x) => mb_strtolower($x->doc_label) === mb_strtolower($attachment->doc_label))->pluck('id');
-        $comments = DocumentComment::with('author:id,name')->where('assessment_id', $a->id)->whereIn('attachment_id', $ids)->orderBy('created_at')->get();
+        $comments = DocumentComment::with(['author:id,name', 'replies.author:id,name'])->where('assessment_id', $a->id)->whereIn('attachment_id', $ids)->orderBy('created_at')->get();
 
         return response()->json([
             'comments' => $comments->map(fn ($c) => $this->row($c, $attachment, $request))->values(),
-            'can' => ['comment' => $this->canComment($request, $a), 'address' => $this->canAddress($request, $a)],
+            'can' => ['comment' => $this->canComment($request, $a), 'address' => $this->canAddress($request, $a), 'reply' => $this->canComment($request, $a) || $this->canAddress($request, $a)],
         ]);
     }
 
@@ -55,6 +55,21 @@ class DocumentCommentController extends Controller
         $comment->delete();
 
         return response()->json(['ok' => true]);
+    }
+
+    /** Reply under a comment: the examiner while the record is with them, the moderator while it is with the moderator. */
+    public function reply(Request $request, DocumentComment $comment, Audit $audit, \App\Services\Notifier $notifier)
+    {
+        $a = $this->visible($request, Assessment::findOrFail($comment->assessment_id));
+        $asExaminer = $this->canAddress($request, $a);
+        abort_unless($asExaminer || $this->canComment($request, $a), 403, 'You cannot reply to this comment at this stage.');
+        $d = $request->validate(['body' => ['required', 'string', 'min:2', 'max:1500']]);
+        $reply = \App\Models\DocumentCommentReply::create(['comment_id' => $comment->id, 'user_id' => $request->user()->id, 'body' => trim($d['body'])]);
+        $audit->log('DOCUMENT_REPLIED', $a->id, $request->user()->id, ['filename' => $comment->attachment->filename], $request->ip());
+        $who = $asExaminer ? array_filter([$comment->user_id, $a->internal_moderator_id]) : [$a->examiner_id];
+        $notifier->inApp(array_values(array_diff($who, [$request->user()->id])), $a, "{$request->user()->name} replied to a comment on {$a->title()}: “".\Illuminate\Support\Str::limit($reply->body, 80).'”');
+
+        return response()->json(['id' => $reply->id], 201);
     }
 
     /** The examiner marks a comment as dealt with, optionally with a short reply. */
@@ -96,6 +111,7 @@ class DocumentCommentController extends Controller
         return [
             'id' => $c->id, 'author' => $c->author->name, 'mine' => $c->user_id === $request->user()->id,
             'body' => $c->body, 'quote' => $c->quote, 'offset' => $c->start_offset, 'page' => $c->page, 'addressed' => $c->addressed, 'reply' => $c->reply,
+            'replies' => $c->replies->map(fn ($r) => ['id' => $r->id, 'author' => $r->author->name, 'mine' => $r->user_id === $request->user()->id, 'body' => $r->body, 'at' => $r->created_at->utc()->format('j M Y, H:i')])->values(),
             'current' => $c->attachment_id === $current->id, 'at' => $c->created_at->utc()->format('j M Y, H:i'),
         ];
     }

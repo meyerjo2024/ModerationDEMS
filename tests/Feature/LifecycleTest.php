@@ -1043,4 +1043,26 @@ class LifecycleTest extends TestCase
         // the PDF is shown with the page viewer
         $this->as($this->internal)->get("/assessments/{$a->id}")->assertOk()->assertSee('pdfReview', false);
     }
+
+    public function test_examiner_and_moderator_reply_to_each_other_under_a_comment(): void
+    {
+        $a = $this->newAssessment();
+        $paper = $this->as($this->examiner)->post("/assessments/{$a->id}/attachments", ['kind' => 'PAPER', 'label' => 'Exam paper', 'file' => $this->pdf('p.pdf')], ['Accept' => 'application/json'])->json('attachment.id');
+        $this->as($this->examiner)->postJson("/assessments/{$a->id}/submit-pre", ['s1' => $this->s1(), 'signature' => $this->sig()])->assertOk();
+        $cid = $this->as($this->internal)->postJson("/attachments/{$paper}/comments", ['body' => 'Q2 is too easy.', 'page' => 1, 'quote' => 'Q2', 'start_offset' => 3])->assertCreated()->json('id');
+
+        // the examiner cannot reply while the record is with the moderator; the moderator can
+        $this->as($this->examiner)->postJson("/comments/{$cid}/replies", ['body' => 'Not allowed yet'])->assertForbidden();
+        $this->as($this->internal)->postJson("/comments/{$cid}/replies", ['body' => 'Please see the memo too.'])->assertCreated();
+        $this->as($this->external)->postJson("/comments/{$cid}/replies", ['body' => 'x'])->assertStatus(404);
+
+        $this->as($this->internal)->postJson("/assessments/{$a->id}/pre-review", ['decision' => 'REVISION_REQUESTED', 'comments' => 'See comments.'])->assertOk();
+        $this->as($this->examiner)->postJson("/comments/{$cid}/replies", ['body' => 'Made it harder, see Q2 again.'])->assertCreated();
+        $this->as($this->examiner)->postJson("/comments/{$cid}/replies", ['body' => 'x'])->assertStatus(422);
+
+        $r = $this->as($this->examiner)->getJson("/attachments/{$paper}/comments")->assertOk()->assertJsonPath('can.reply', true);
+        $this->assertSame(['Please see the memo too.', 'Made it harder, see Q2 again.'], collect($r->json('comments.0.replies'))->pluck('body')->all());
+        $this->assertTrue(\App\Models\Notification::where('user_id', $this->internal->id)->where('message', 'like', '%replied to a comment%')->exists());
+        $this->assertTrue(\App\Models\Notification::where('user_id', $this->examiner->id)->where('message', 'like', '%replied to a comment%')->exists());
+    }
 }
