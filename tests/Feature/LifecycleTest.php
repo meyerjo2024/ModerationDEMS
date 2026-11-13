@@ -1251,4 +1251,25 @@ class LifecycleTest extends TestCase
         $this->assertTrue(\App\Models\Notification::where('user_id', $this->examiner->id)->where('message', 'like', '%deleted the record%')->exists());
         $this->assertFalse(\App\Models\Notification::where('user_id', $this->hod->id)->where('message', 'like', '%deleted the record%')->exists());
     }
+
+    public function test_sick_and_deferred_assessments_are_available_like_tests(): void
+    {
+        $this->assertContains('SICK', config('dems.assessment_numbers'));
+        $this->assertContains('DEFER', config('dems.assessment_numbers'));
+        $this->as($this->examiner)->get('/assessments/create')->assertOk()->assertSee('Sick assessment')->assertSee('Deferred assessment');
+        $this->as($this->examiner)->get('/my-subjects')->assertOk()->assertSee('Sick')->assertSee('Deferred');
+
+        $this->as($this->examiner)->put('/my-subjects', ['subjects' => ['EXAMINER' => [$this->subject->id]], 'plans' => [$this->subject->id => ['SICK' => '2026-07-01', 'DEFER' => '2026-07-08']]])->assertSessionHasNoErrors();
+        $this->assertSame(2, \App\Models\AssessmentPlan::where('user_id', $this->examiner->id)->whereIn('number', ['SICK', 'DEFER'])->count());
+
+        $sick = $this->newAssessment(false, null, 'SICK');
+        $def = $this->newAssessment(false, null, 'DEFER');
+        $this->assertSame('Sick', $sick->number_label);
+        $this->assertSame('Deferred', $def->number_label);
+        $this->assertSame('2026-07-08', $def->assessment_date->toDateString()); // picked up from the calendar
+        $this->assertContains('DEFERRED', $def->marksHeaders());
+        $this->assertContains('AEGROTAT', $sick->marksHeaders());
+        $this->assertSame(1, preg_match(config('dems.marks_column_pattern'), 'Deferred'));
+        $this->assertSame(1, preg_match(config('dems.marks_column_pattern'), 'Sick test'));
+    }
 }

@@ -242,7 +242,7 @@ class Assessment extends Model
         return config('dems.assessment_labels.'.$this->number, $this->number);
     }
 
-    /** Marks-sheet headings that belong to this assessment (T3 → [T3]; supplementary → SUPP, SUPPLEMENTARY …). */
+    /** Marks-sheet headings that belong to this assessment (T3 → [T3]; supplementary → SUPP, SUPPLEMENTARY …; sick → SICK; deferred → DEFERRED …). */
     public function marksHeaders(): array
     {
         return config('dems.marks_aliases.'.$this->number, [mb_strtoupper($this->number)]);

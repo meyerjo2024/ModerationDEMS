@@ -34,7 +34,7 @@ class AssessmentController extends Controller
             'qualification' => ['nullable', 'string', 'max:200'],
             'label' => ['nullable', 'string', 'max:80'],
             'year_level' => ['required', \Illuminate\Validation\Rule::in(config('moderation_form.levels'))],
-        ], ['number.required' => 'Choose the assessment number.', 'number.in' => 'Choose T1 to T7.', 'year_level.required' => 'Choose the year level.', 'year_level.in' => 'Choose Y0 to Y4.', 'internal_moderator_id.required' => 'Choose an internal moderator.']);
+        ], ['number.required' => 'Choose the assessment number.', 'number.in' => 'Choose a test (T1–T7) or a supplementary, special, sick or deferred assessment.', 'year_level.required' => 'Choose the year level.', 'year_level.in' => 'Choose Y0 to Y4.', 'internal_moderator_id.required' => 'Choose an internal moderator.']);
         $a = $workflow->create($request->user(), $data, $this->meta($request));
 
         return redirect()->route('assessments.show', $a);

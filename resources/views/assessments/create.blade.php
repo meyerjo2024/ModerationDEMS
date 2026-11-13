@@ -29,7 +29,7 @@
     <p class="mt-1 text-xs text-slate-400">Taken from the subject list. It appears on every section and on the final report.</p></div>
   <div class="grid gap-5 sm:grid-cols-2"><div><label class="label" for="academic_year">Academic year</label>
     <select id="academic_year" name="academic_year" class="field">@foreach (range((int) date('Y') + 1, (int) date('Y') - 2) as $y)<option value="{{ $y }}" @selected((int) old('academic_year', date('Y')) === $y)>{{ $y }}</option>@endforeach</select></div>
-    <div x-show="['SUPP','SPEC'].includes(number)" x-cloak><label class="label" for="label">Note <span class="font-normal">(optional)</span></label><input id="label" name="label" maxlength="80" class="field" value="{{ old('label') }}" placeholder="e.g. Aegrotat group, 3 students">
+    <div x-show="number && !/^T\d+$/.test(number)" x-cloak><label class="label" for="label">Note <span class="font-normal">(optional)</span></label><input id="label" name="label" maxlength="80" class="field" value="{{ old('label') }}" placeholder="e.g. Aegrotat group, 3 students">
       <p class="mt-1 text-xs text-slate-400">Needed to tell apart a second sitting in the same year.</p></div></div>
   <div class="grid gap-5 sm:grid-cols-2"><div><label class="label" for="year_level">Year level</label>
     <select id="year_level" name="year_level" required class="field"><option value="">Select…</option>@foreach (config('moderation_form.levels') as $l)<option value="{{ $l }}" @selected(old('year_level') === $l)>{{ $l }}</option>@endforeach</select></div></div>
