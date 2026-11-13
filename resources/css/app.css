@@ -162,3 +162,12 @@ ol[aria-label='Moderation progress'] li > div > span.rounded-full { box-shadow: 
     .glass-header { padding-top: env(safe-area-inset-top); }
     body { padding-bottom: env(safe-area-inset-bottom); }
 }
+
+/* PDF review pages */
+.pdf-page { position: relative; margin: 0 auto; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .18); }
+.pdf-page canvas { display: block; }
+.pdf-page .textLayer { position: absolute; inset: 0; }
+.pdf-page-tag { position: absolute; left: 8px; top: 6px; font: 600 11px/1 system-ui; padding: 3px 7px; border-radius: 99px; background: rgb(0 0 0 / .55); color: #fff; pointer-events: none; }
+.pdf-page-btn { position: absolute; right: 8px; top: 6px; font: 600 11px/1 system-ui; padding: 4px 9px; border-radius: 99px; background: #fff; color: #0a5a94; border: 1px solid rgb(0 0 0 / .15); cursor: pointer; z-index: 5; }
+.pdf-page .textLayer mark.doc-mark { background: rgb(250 204 21 / .45); color: transparent; mix-blend-mode: multiply; cursor: pointer; }
+.pdf-page .textLayer mark.doc-mark-done { background: rgb(52 211 153 / .35); }
