@@ -35,6 +35,7 @@
           </nav>
         </div>
         <div class="flex shrink-0 items-center gap-1 sm:gap-2">
+          <x-install-button />
           <div class="relative" x-data="notifs" @click.outside="open = false">
             <button type="button" @click="toggle()" class="relative rounded-full p-2 text-[#303233] hover:bg-[var(--fog)] dark:text-zinc-300" :aria-label="'Notifications' + (unread ? ' (' + unread + ' unread)' : '')">
               <x-icon name="bell" class="h-[18px] w-[18px]" /><span x-show="unread > 0" x-cloak class="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></span>
