@@ -69,6 +69,7 @@ return [
         'USER_ROLES_CHANGED' => 'User roles changed',
         'DOCUMENT_COMMENTED' => 'Comment added to a document',
         'DOCUMENT_REPLIED' => 'Reply to a document comment',
+        'QUALIFICATION_CODES_SET' => 'Qualification codes updated',
         'SECTION1_SUBMITTED' => 'Section 1 signed & submitted',
         'PRE_REVIEW_APPROVED' => 'Pre-moderation approved',
         'PRE_REVIEW_REVISION' => 'Revision requested',

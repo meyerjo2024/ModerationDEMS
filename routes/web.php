@@ -80,6 +80,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('admin');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users');
         Route::post('/users/import', [AdminController::class, 'importUsers'])->name('admin.users.import');
+        Route::post('/qualifications', [AdminController::class, 'saveQualificationCodes'])->name('admin.qualifications');
         Route::post('/test-email', [AdminController::class, 'testEmail'])->name('admin.test-email');
         Route::get('/users/template', [AdminController::class, 'usersTemplate'])->name('admin.users.template');
         Route::patch('/users/{user}/roles', [AdminController::class, 'updateRoles'])->name('admin.roles');

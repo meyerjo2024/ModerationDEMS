@@ -26,6 +26,21 @@ class Subject extends Model
         return array_map(fn ($n, $i) => ['name' => $n, 'code' => $codes[$i] ?? ''], $names, array_keys($names));
     }
 
+    /** Known code of each qualification (lower-cased name => code). @return array<string, string> */
+    public static function qualificationCodes(): array
+    {
+        $out = [];
+        foreach (static::whereNotNull('qualification')->get() as $s) {
+            foreach ($s->qualificationOptions() as $o) {
+                if ($o['code'] !== '') {
+                    $out[mb_strtolower($o['name'])] = $o['code'];
+                }
+            }
+        }
+
+        return $out;
+    }
+
     /** Every qualification name in use, for pickers. @return list<string> */
     public static function allQualifications(): array
     {

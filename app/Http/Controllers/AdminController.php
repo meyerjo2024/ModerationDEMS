@@ -21,6 +21,7 @@ class AdminController extends Controller
             'hods' => User::withRole(Role::Hod)->where('active', true)->orderBy('name')->get(),
             'assignable' => $this->assignable($request),
             'quals' => Subject::allQualifications(),
+            'qualCodes' => Subject::qualificationCodes(),
         ]);
     }
 
@@ -77,6 +78,38 @@ class AdminController extends Controller
         return $err === null
             ? back()->with('status', "Test e-mail sent to {$request->user()->email} through ".config('mail.mailers.'.$mailer.'.host', $mailer).'. Check your inbox (and junk folder).')
             : back()->with('error', 'The mail server refused the message: '.\Illuminate\Support\Str::limit($err, 400));
+    }
+
+    /** Set the code of each qualification once; every subject and every unfinished record in that qualification follows. */
+    public function saveQualificationCodes(Request $request, Audit $audit)
+    {
+        $in = $request->validate(['codes' => ['required', 'array'], 'codes.*' => ['nullable', 'string', 'max:40']]);
+        $known = collect(Subject::allQualifications())->keyBy(fn ($q) => mb_strtolower($q));
+        $map = [];
+        foreach ($in['codes'] as $i => $code) {
+            $name = $known->get(mb_strtolower(trim((string) ($request->input('names')[$i] ?? ''))));
+            if ($name && trim((string) $code) !== '') {
+                $map[mb_strtolower($name)] = strtoupper(trim($code));
+            }
+        }
+        $changed = 0;
+        DB::transaction(function () use ($map, &$changed) {
+            foreach (Subject::whereNotNull('qualification')->get() as $s) {
+                $existing = collect($s->qualificationOptions())->mapWithKeys(fn ($o) => [mb_strtolower($o['name']) => $o['code']]);
+                $codes = collect($s->qualificationList())->map(fn ($n) => $map[mb_strtolower($n)] ?? $existing[mb_strtolower($n)] ?? '');
+                $new = $codes->filter()->isNotEmpty() ? $codes->implode(', ') : null;
+                if ($new !== $s->qualification_code) {
+                    $s->update(['qualification_code' => $new]);
+                    $changed++;
+                }
+            }
+            foreach ($map as $lower => $code) { // unfinished records follow; completed ones keep what was signed
+                \App\Models\Assessment::whereRaw('lower(qualification) = ?', [$lower])->where('status', '!=', \App\Enums\AssessmentStatus::Completed->value)->update(['qualification_code' => $code]);
+            }
+        });
+        $audit->log('QUALIFICATION_CODES_SET', null, $request->user()->id, ['codes' => $map], $request->ip());
+
+        return back()->with('status', 'Qualification codes saved ('.count($map).' qualification(s), '.$changed.' subject(s) updated).');
     }
 
     /** A ready-to-fill CSV for the staff upload. */
